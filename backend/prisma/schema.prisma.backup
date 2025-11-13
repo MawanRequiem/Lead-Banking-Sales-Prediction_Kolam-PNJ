@@ -1,0 +1,174 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ==========================================
+// LOOKUP TABLES
+// ==========================================
+
+model JenisKelamin {
+  idJenisKelamin   String    @id @map("id_jenis_kelamin") @db.VarChar(10)
+  namaJenisKelamin String    @unique @map("nama_jenis_kelamin") @db.VarChar(20)
+
+  nasabah          Nasabah[]
+
+  @@map("jenis_kelamin")
+}
+
+model StatusPernikahan {
+  idStatusPernikahan String    @id @map("id_status_pernikahan") @db.VarChar(20)
+  namaStatus         String    @unique @map("nama_status") @db.VarChar(50)
+  createdAt          DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt          DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  nasabah            Nasabah[]
+
+  @@map("status_pernikahan")
+}
+
+model StatusDeposito {
+  idStatusDeposito String     @id @map("id_status_deposito") @db.VarChar(20)
+  namaStatus       String     @unique @map("nama_status") @db.VarChar(50)
+  deskripsi        String?    @db.Text
+  isActive         Boolean    @default(true) @map("is_active")
+  createdAt        DateTime   @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt        DateTime   @updatedAt @map("updated_at") @db.Timestamptz
+
+  deposito         Deposito[]
+
+  @@map("status_deposito")
+}
+
+// ==========================================
+// USER TABLES
+// ==========================================
+
+model Admin {
+  idAdmin       String    @id @default(dbgenerated("uuid_generate_v4()")) @map("id_admin") @db.Uuid
+  email         String    @unique @db.VarChar(255)
+  passwordHash  String    @map("password_hash") @db.Text
+  emailRecovery String?   @map("email_recovery") @db.VarChar(255)
+  isActive      Boolean   @default(true) @map("is_active")
+  lastLogin     DateTime? @map("last_login") @db.Timestamptz
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt     DateTime? @map("deleted_at") @db.Timestamptz
+
+  @@map("admin")
+}
+
+model Sales {
+  idSales       String    @id @default(dbgenerated("uuid_generate_v4()")) @map("id_sales") @db.Uuid
+  nama          String    @db.VarChar(255)
+  email         String    @unique @db.VarChar(255)
+  passwordHash  String    @map("password_hash") @db.Text
+  nomorTelepon  String?   @map("nomor_telepon") @db.VarChar(20)
+  domisili      String?   @db.VarChar(255)
+  isActive      Boolean   @default(true) @map("is_active")
+  lastLogin     DateTime? @map("last_login") @db.Timestamptz
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt     DateTime? @map("deleted_at") @db.Timestamptz
+
+  historiTelepon HistoriTelepon[]
+  assignments    SalesNasabahAssignment[]
+
+  @@map("sales")
+}
+
+// ==========================================
+// NASABAH
+// ==========================================
+
+model Nasabah {
+  idNasabah          String    @id @default(dbgenerated("uuid_generate_v4()")) @map("id_nasabah") @db.Uuid
+  nama               String    @db.VarChar(255)
+  umur               Int?      @db.SmallInt
+  pekerjaan          String?   @db.VarChar(255)
+  domisili           String?   @db.VarChar(255)
+  gaji               Decimal?  @db.Decimal(15, 2)
+  idStatusPernikahan String?   @map("id_status_pernikahan") @db.VarChar(20)
+  jenisKelamin       String?   @map("jenis_kelamin") @db.VarChar(10)
+  skorPrediksi       Decimal?  @map("skor_prediksi") @db.Decimal(5, 4)
+  lastScoredAt       DateTime? @map("last_scored_at") @db.Timestamptz
+  createdAt          DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt          DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt          DateTime? @map("deleted_at") @db.Timestamptz
+
+  statusPernikahan   StatusPernikahan? @relation(fields: [idStatusPernikahan], references: [idStatusPernikahan], onDelete: SetNull, onUpdate: Cascade)
+  jenisKelaminRel    JenisKelamin?     @relation(fields: [jenisKelamin], references: [idJenisKelamin], onDelete: SetNull, onUpdate: Cascade)
+  deposito           Deposito[]
+  historiTelepon     HistoriTelepon[]
+  assignments        SalesNasabahAssignment[]
+
+  @@map("nasabah")
+}
+
+// ==========================================
+// DEPOSITO
+// ==========================================
+
+model Deposito {
+  idDeposito     String    @id @default(dbgenerated("uuid_generate_v4()")) @map("id_deposito") @db.Uuid
+  idNasabah      String    @map("id_nasabah") @db.Uuid
+  jenisDeposito  String    @map("jenis_deposito") @db.VarChar(50)
+  statusDeposito String    @map("status_deposito") @db.VarChar(20)
+  idNasabahRef   String?   @map("id_nasabah_ref") @db.VarChar(255)
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt      DateTime? @map("deleted_at") @db.Timestamptz
+
+  nasabah        Nasabah         @relation(fields: [idNasabah], references: [idNasabah], onDelete: Cascade, onUpdate: Cascade)
+  status         StatusDeposito  @relation(fields: [statusDeposito], references: [idStatusDeposito], onDelete: Restrict, onUpdate: Cascade)
+
+  @@map("deposito")
+}
+
+// ==========================================
+// HISTORI TELEPON
+// ==========================================
+
+model HistoriTelepon {
+  idHistori        String    @id @default(dbgenerated("uuid_generate_v4()")) @map("id_histori") @db.Uuid
+  idNasabah        String    @map("id_nasabah") @db.Uuid
+  idSales          String    @map("id_sales") @db.Uuid
+  nomorTelepon     String    @map("nomor_telepon") @db.VarChar(20)
+  tanggalTelepon   DateTime  @default(now()) @map("tanggal_telepon") @db.Timestamptz
+  lamaTelepon      Int?      @map("lama_telepon") @db.Integer
+  hasilTelepon     String?   @map("hasil_telepon") @db.Text
+  jumlahTelepon    Int       @default(1) @map("jumlah_telepon") @db.Integer
+  catatan          String?   @db.Text
+  nextFollowupDate DateTime? @map("next_followup_date") @db.Date
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt        DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  nasabah          Nasabah   @relation(fields: [idNasabah], references: [idNasabah], onDelete: Cascade, onUpdate: Cascade)
+  sales            Sales     @relation(fields: [idSales], references: [idSales], onDelete: Restrict, onUpdate: Cascade)
+
+  @@map("histori_telepon")
+}
+
+// ==========================================
+// ASSIGNMENT
+// ==========================================
+
+model SalesNasabahAssignment {
+  idAssignment       String    @id @default(dbgenerated("uuid_generate_v4()")) @map("id_assignment") @db.Uuid
+  idSales            String    @map("id_sales") @db.Uuid
+  idNasabah          String    @map("id_nasabah") @db.Uuid
+  tanggalAssignment  DateTime  @default(now()) @map("tanggal_assignment") @db.Timestamptz
+  isActive           Boolean   @default(true) @map("is_active")
+  createdAt          DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt          DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  sales              Sales     @relation(fields: [idSales], references: [idSales], onDelete: Cascade, onUpdate: Cascade)
+  nasabah            Nasabah   @relation(fields: [idNasabah], references: [idNasabah], onDelete: Cascade, onUpdate: Cascade)
+
+  @@unique([idSales, idNasabah, isActive])
+  @@map("sales_nasabah_assignment")
+}

@@ -1,0 +1,65 @@
+module.exports = {
+  env: {
+    node: true,
+    es2021: true,
+    jest: true,
+  },
+  extends: ['eslint:recommended'],
+  parserOptions: {
+    ecmaVersion: 'latest',
+    sourceType: 'module',
+  },
+  rules: {
+    'no-console': process.env.NODE_ENV === 'production' ? 'warn' : 'off',
+    'no-unused-vars': ['warn', {
+      argsIgnorePattern: '^_',
+      varsIgnorePattern: '^_',
+    }],
+    'no-undef': 'error',
+    'no-unreachable': 'error',
+    'no-empty': 'warn',
+    'eqeqeq': ['error', 'always'],
+    'curly': ['error', 'all'],
+    'no-var': 'error',
+    'prefer-const': 'warn',
+    'prefer-arrow-callback': 'warn',
+    'no-throw-literal': 'error',
+    'indent': ['error', 2, { SwitchCase: 1 }],
+    'linebreak-style': 0,
+    'quotes': ['error', 'single', { avoidEscape: true }],
+    'semi': ['error', 'always'],
+    'comma-dangle': ['error', 'always-multiline'],
+    'object-curly-spacing': ['error', 'always'],
+    'array-bracket-spacing': ['error', 'never'],
+    'space-before-function-paren': ['error', {
+      anonymous: 'always',
+      named: 'never',
+      asyncArrow: 'always',
+    }],
+    'arrow-spacing': ['error', { before: true, after: true }],
+    'keyword-spacing': ['error', { before: true, after: true }],
+    'space-infix-ops': 'error',
+    'no-trailing-spaces': 'error',
+    'eol-last': ['error', 'always'],
+    'max-len': ['warn', {
+      code: 120,
+      ignoreComments: true,
+      ignoreStrings: true,
+      ignoreTemplateLiterals: true,
+    }],
+    'no-async-promise-executor': 'error',
+    'require-await': 'warn',
+    'no-return-await': 'error',
+  },
+  overrides: [
+    {
+      files: ['**/*.test.js', '**/*.spec.js'],
+      env: {
+        jest: true,
+      },
+      rules: {
+        'no-unused-expressions': 'off',
+      },
+    },
+  ],
+};
