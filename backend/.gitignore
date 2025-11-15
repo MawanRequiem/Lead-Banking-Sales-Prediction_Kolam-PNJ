@@ -38,6 +38,7 @@ Thumbs.db
 coverage/
 .nyc_output/
 *.lcov
+tests/postman/postman-environment.json
 
 # Build
 dist/

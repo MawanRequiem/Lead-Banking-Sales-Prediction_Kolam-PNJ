@@ -149,15 +149,18 @@ model SalesNasabahAssignment {
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
-model RefreshTokens {
-  token                String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  expires_at           DateTime         @db.Timestamp(6)
-  revoked_at           DateTime?        @db.Timestamp(6)
-  created_at           DateTime         @default(now()) @db.Timestamptz(6)
-  modified_at          DateTime?        @default(now()) @db.Timestamp(6)
-  replaced_by          String?          @db.Uuid
-  refresh_tokens       RefreshTokens?  @relation("refresh_tokensTorefresh_tokens", fields: [replaced_by], references: [token], onDelete: NoAction, onUpdate: NoAction)
-  other_refresh_tokens RefreshTokens[] @relation("refresh_tokensTorefresh_tokens")
+model RefreshToken {
+  token       String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  expiresAt   DateTime  @map("expires_at") @db.Timestamp(6)
+  revokedAt   DateTime? @map("revoked_at") @db.Timestamp(6)
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  modifiedAt  DateTime? @default(now()) @map("modified_at") @db.Timestamp(6)
+  replacedBy  String?   @map("replaced_by") @db.Uuid
+
+  // Self-relation
+  parentToken       RefreshToken?  @relation("TokenReplacement", fields: [replacedBy], references: [token], onDelete: NoAction, onUpdate: NoAction)
+  replacementTokens RefreshToken[] @relation("TokenReplacement")
 
   @@map("refresh_tokens")
 }
+
