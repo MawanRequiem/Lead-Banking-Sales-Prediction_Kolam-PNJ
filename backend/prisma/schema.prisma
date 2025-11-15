@@ -7,14 +7,9 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ==========================================
-// LOOKUP TABLES
-// ==========================================
-
 model JenisKelamin {
   idJenisKelamin   String    @id @map("id_jenis_kelamin") @db.VarChar(10)
   namaJenisKelamin String    @unique @map("nama_jenis_kelamin") @db.VarChar(20)
-
   nasabah          Nasabah[]
 
   @@map("jenis_kelamin")
@@ -23,9 +18,8 @@ model JenisKelamin {
 model StatusPernikahan {
   idStatusPernikahan String    @id @map("id_status_pernikahan") @db.VarChar(20)
   namaStatus         String    @unique @map("nama_status") @db.VarChar(50)
-  createdAt          DateTime  @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt          DateTime  @updatedAt @map("updated_at") @db.Timestamptz
-
+  createdAt          DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
   nasabah            Nasabah[]
 
   @@map("status_pernikahan")
@@ -34,141 +28,136 @@ model StatusPernikahan {
 model StatusDeposito {
   idStatusDeposito String     @id @map("id_status_deposito") @db.VarChar(20)
   namaStatus       String     @unique @map("nama_status") @db.VarChar(50)
-  deskripsi        String?    @db.Text
+  deskripsi        String?
   isActive         Boolean    @default(true) @map("is_active")
-  createdAt        DateTime   @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt        DateTime   @updatedAt @map("updated_at") @db.Timestamptz
-
+  createdAt        DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime   @updatedAt @map("updated_at") @db.Timestamptz(6)
   deposito         Deposito[]
 
   @@map("status_deposito")
 }
 
-// ==========================================
-// USER TABLES
-// ==========================================
-
 model Admin {
   idAdmin       String    @id @default(dbgenerated("uuid_generate_v4()")) @map("id_admin") @db.Uuid
   email         String    @unique @db.VarChar(255)
-  passwordHash  String    @map("password_hash") @db.Text
+  passwordHash  String    @map("password_hash")
   emailRecovery String?   @map("email_recovery") @db.VarChar(255)
   isActive      Boolean   @default(true) @map("is_active")
-  lastLogin     DateTime? @map("last_login") @db.Timestamptz
-  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt     DateTime  @updatedAt @map("updated_at") @db.Timestamptz
-  deletedAt     DateTime? @map("deleted_at") @db.Timestamptz
+  lastLogin     DateTime? @map("last_login") @db.Timestamptz(6)
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt     DateTime? @map("deleted_at") @db.Timestamptz(6)
 
+  @@index([email, deletedAt])
   @@map("admin")
 }
 
 model Sales {
-  idSales       String    @id @default(dbgenerated("uuid_generate_v4()")) @map("id_sales") @db.Uuid
-  nama          String    @db.VarChar(255)
-  email         String    @unique @db.VarChar(255)
-  passwordHash  String    @map("password_hash") @db.Text
-  nomorTelepon  String?   @map("nomor_telepon") @db.VarChar(20)
-  domisili      String?   @db.VarChar(255)
-  isActive      Boolean   @default(true) @map("is_active")
-  lastLogin     DateTime? @map("last_login") @db.Timestamptz
-  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt     DateTime  @updatedAt @map("updated_at") @db.Timestamptz
-  deletedAt     DateTime? @map("deleted_at") @db.Timestamptz
-
+  idSales        String                   @id @default(dbgenerated("uuid_generate_v4()")) @map("id_sales") @db.Uuid
+  nama           String                   @db.VarChar(255)
+  email          String                   @unique @db.VarChar(255)
+  passwordHash   String                   @map("password_hash")
+  nomorTelepon   String?                  @map("nomor_telepon") @db.VarChar(20)
+  domisili       String?                  @db.VarChar(255)
+  isActive       Boolean                  @default(true) @map("is_active")
+  lastLogin      DateTime?                @map("last_login") @db.Timestamptz(6)
+  createdAt      DateTime                 @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime                 @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt      DateTime?                @map("deleted_at") @db.Timestamptz(6)
   historiTelepon HistoriTelepon[]
   assignments    SalesNasabahAssignment[]
 
   @@map("sales")
 }
 
-// ==========================================
-// NASABAH
-// ==========================================
-
 model Nasabah {
-  idNasabah          String    @id @default(dbgenerated("uuid_generate_v4()")) @map("id_nasabah") @db.Uuid
-  nama               String    @db.VarChar(255)
-  umur               Int?      @db.SmallInt
-  pekerjaan          String?   @db.VarChar(255)
-  domisili           String?   @db.VarChar(255)
-  gaji               Decimal?  @db.Decimal(15, 2)
-  idStatusPernikahan String?   @map("id_status_pernikahan") @db.VarChar(20)
-  jenisKelamin       String?   @map("jenis_kelamin") @db.VarChar(10)
-  skorPrediksi       Decimal?  @map("skor_prediksi") @db.Decimal(5, 4)
-  lastScoredAt       DateTime? @map("last_scored_at") @db.Timestamptz
-  createdAt          DateTime  @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt          DateTime  @updatedAt @map("updated_at") @db.Timestamptz
-  deletedAt          DateTime? @map("deleted_at") @db.Timestamptz
-
-  statusPernikahan   StatusPernikahan? @relation(fields: [idStatusPernikahan], references: [idStatusPernikahan], onDelete: SetNull, onUpdate: Cascade)
-  jenisKelaminRel    JenisKelamin?     @relation(fields: [jenisKelamin], references: [idJenisKelamin], onDelete: SetNull, onUpdate: Cascade)
+  idNasabah          String                   @id @default(dbgenerated("uuid_generate_v4()")) @map("id_nasabah") @db.Uuid
+  nama               String                   @db.VarChar(255)
+  umur               Int?                     @db.SmallInt
+  pekerjaan          String?                  @db.VarChar(255)
+  domisili           String?                  @db.VarChar(255)
+  gaji               Decimal?                 @db.Decimal(15, 2)
+  idStatusPernikahan String?                  @map("id_status_pernikahan") @db.VarChar(20)
+  jenisKelamin       String?                  @map("jenis_kelamin") @db.VarChar(10)
+  skorPrediksi       Decimal?                 @map("skor_prediksi") @db.Decimal(5, 4)
+  lastScoredAt       DateTime?                @map("last_scored_at") @db.Timestamptz(6)
+  createdAt          DateTime                 @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime                 @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt          DateTime?                @map("deleted_at") @db.Timestamptz(6)
   deposito           Deposito[]
   historiTelepon     HistoriTelepon[]
+  jenisKelaminRel    JenisKelamin?            @relation(fields: [jenisKelamin], references: [idJenisKelamin], map: "fk_nasabah_jenis_kelamin")
+  statusPernikahan   StatusPernikahan?        @relation(fields: [idStatusPernikahan], references: [idStatusPernikahan], map: "fk_nasabah_status_pernikahan")
   assignments        SalesNasabahAssignment[]
 
   @@map("nasabah")
 }
 
-// ==========================================
-// DEPOSITO
-// ==========================================
-
 model Deposito {
-  idDeposito     String    @id @default(dbgenerated("uuid_generate_v4()")) @map("id_deposito") @db.Uuid
-  idNasabah      String    @map("id_nasabah") @db.Uuid
-  jenisDeposito  String    @map("jenis_deposito") @db.VarChar(50)
-  statusDeposito String    @map("status_deposito") @db.VarChar(20)
-  idNasabahRef   String?   @map("id_nasabah_ref") @db.VarChar(255)
-  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamptz
-  deletedAt      DateTime? @map("deleted_at") @db.Timestamptz
-
-  nasabah        Nasabah         @relation(fields: [idNasabah], references: [idNasabah], onDelete: Cascade, onUpdate: Cascade)
-  status         StatusDeposito  @relation(fields: [statusDeposito], references: [idStatusDeposito], onDelete: Restrict, onUpdate: Cascade)
+  idDeposito     String         @id @default(dbgenerated("uuid_generate_v4()")) @map("id_deposito") @db.Uuid
+  idNasabah      String         @map("id_nasabah") @db.Uuid
+  jenisDeposito  String         @map("jenis_deposito") @db.VarChar(50)
+  statusDeposito String         @map("status_deposito") @db.VarChar(20)
+  idNasabahRef   String?        @map("id_nasabah_ref") @db.VarChar(255)
+  createdAt      DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime       @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt      DateTime?      @map("deleted_at") @db.Timestamptz(6)
+  nasabah        Nasabah        @relation(fields: [idNasabah], references: [idNasabah], onDelete: Cascade, map: "fk_deposito_nasabah")
+  status         StatusDeposito @relation(fields: [statusDeposito], references: [idStatusDeposito], map: "fk_deposito_status")
 
   @@map("deposito")
 }
-
-// ==========================================
-// HISTORI TELEPON
-// ==========================================
 
 model HistoriTelepon {
   idHistori        String    @id @default(dbgenerated("uuid_generate_v4()")) @map("id_histori") @db.Uuid
   idNasabah        String    @map("id_nasabah") @db.Uuid
   idSales          String    @map("id_sales") @db.Uuid
   nomorTelepon     String    @map("nomor_telepon") @db.VarChar(20)
-  tanggalTelepon   DateTime  @default(now()) @map("tanggal_telepon") @db.Timestamptz
-  lamaTelepon      Int?      @map("lama_telepon") @db.Integer
-  hasilTelepon     String?   @map("hasil_telepon") @db.Text
-  jumlahTelepon    Int       @default(1) @map("jumlah_telepon") @db.Integer
-  catatan          String?   @db.Text
+  tanggalTelepon   DateTime  @default(now()) @map("tanggal_telepon") @db.Timestamptz(6)
+  lamaTelepon      Int?      @map("lama_telepon")
+  hasilTelepon     String?   @map("hasil_telepon")
+  jumlahTelepon    Int       @default(1) @map("jumlah_telepon")
+  catatan          String?
   nextFollowupDate DateTime? @map("next_followup_date") @db.Date
-  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt        DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  nasabah          Nasabah   @relation(fields: [idNasabah], references: [idNasabah], onDelete: Cascade, map: "fk_histori_nasabah")
+  sales            Sales     @relation(fields: [idSales], references: [idSales], map: "fk_histori_sales")
 
-  nasabah          Nasabah   @relation(fields: [idNasabah], references: [idNasabah], onDelete: Cascade, onUpdate: Cascade)
-  sales            Sales     @relation(fields: [idSales], references: [idSales], onDelete: Restrict, onUpdate: Cascade)
-
+  @@index([idNasabah], map: "idx_histori_nasabah")
+  @@index([idNasabah, tanggalTelepon(sort: Desc)], map: "idx_histori_nasabah_tanggal")
+  @@index([idSales], map: "idx_histori_sales")
+  @@index([idSales, tanggalTelepon(sort: Desc)], map: "idx_histori_sales_tanggal")
+  @@index([tanggalTelepon(sort: Desc)], map: "idx_histori_tanggal")
   @@map("histori_telepon")
 }
 
-// ==========================================
-// ASSIGNMENT
-// ==========================================
-
 model SalesNasabahAssignment {
-  idAssignment       String    @id @default(dbgenerated("uuid_generate_v4()")) @map("id_assignment") @db.Uuid
-  idSales            String    @map("id_sales") @db.Uuid
-  idNasabah          String    @map("id_nasabah") @db.Uuid
-  tanggalAssignment  DateTime  @default(now()) @map("tanggal_assignment") @db.Timestamptz
-  isActive           Boolean   @default(true) @map("is_active")
-  createdAt          DateTime  @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt          DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  idAssignment      String   @id @default(dbgenerated("uuid_generate_v4()")) @map("id_assignment") @db.Uuid
+  idSales           String   @map("id_sales") @db.Uuid
+  idNasabah         String   @map("id_nasabah") @db.Uuid
+  tanggalAssignment DateTime @default(now()) @map("tanggal_assignment") @db.Timestamptz(6)
+  isActive          Boolean  @default(true) @map("is_active")
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  nasabah           Nasabah  @relation(fields: [idNasabah], references: [idNasabah], onDelete: Cascade, map: "fk_assignment_nasabah")
+  sales             Sales    @relation(fields: [idSales], references: [idSales], onDelete: Cascade, map: "fk_assignment_sales")
 
-  sales              Sales     @relation(fields: [idSales], references: [idSales], onDelete: Cascade, onUpdate: Cascade)
-  nasabah            Nasabah   @relation(fields: [idNasabah], references: [idNasabah], onDelete: Cascade, onUpdate: Cascade)
-
-  @@unique([idSales, idNasabah, isActive])
+  @@unique([idSales, idNasabah, isActive], map: "uq_sales_nasabah_active")
+  @@index([isActive, tanggalAssignment(sort: Desc)], map: "idx_assignment_active")
   @@map("sales_nasabah_assignment")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model RefreshTokens {
+  token                String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  expires_at           DateTime         @db.Timestamp(6)
+  revoked_at           DateTime?        @db.Timestamp(6)
+  created_at           DateTime         @default(now()) @db.Timestamptz(6)
+  modified_at          DateTime?        @default(now()) @db.Timestamp(6)
+  replaced_by          String?          @db.Uuid
+  refresh_tokens       RefreshTokens?  @relation("refresh_tokensTorefresh_tokens", fields: [replaced_by], references: [token], onDelete: NoAction, onUpdate: NoAction)
+  other_refresh_tokens RefreshTokens[] @relation("refresh_tokensTorefresh_tokens")
+
+  @@map("refresh_tokens")
 }

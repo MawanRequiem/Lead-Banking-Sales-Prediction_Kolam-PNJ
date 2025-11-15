@@ -172,3 +172,21 @@ model SalesNasabahAssignment {
   @@unique([idSales, idNasabah, isActive])
   @@map("sales_nasabah_assignment")
 }
+
+// ==========================================
+// REFRESH TOKENS
+// ==========================================
+
+model RefreshTokens {
+  token                String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  expires_at           DateTime         @db.Timestamp(6)
+  revoked_at           DateTime?        @db.Timestamp(6)
+  created_at           DateTime         @default(now()) @db.Timestamptz(6)
+  modified_at          DateTime?        @default(now()) @db.Timestamp(6)
+  replaced_by          String?          @db.Uuid
+
+  refresh_tokens       refresh_tokens?  @relation("refresh_tokensTorefresh_tokens", fields: [replaced_by], references: [token], onDelete: NoAction, onUpdate: NoAction)
+  other_refresh_tokens refresh_tokens[] @relation("refresh_tokensTorefresh_tokens")
+
+  @@map("refresh_tokens")
+}
