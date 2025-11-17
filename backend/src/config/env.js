@@ -16,10 +16,14 @@ const config = {
     origin: process.env.CORS_ORIGIN || '*',
     credentials: true,
   },
+  token: {
+    secret: process.env.JWT_SECRET,
+    expiresIn: process.env.JWT_ACCESS_TOKEN_EXPIRY,
+  },
 };
 
 function validateEnv() {
-  const required = ['DATABASE_URL'];
+  const required = ['DATABASE_URL', 'JWT_SECRET', 'JWT_ACCESS_TOKEN_EXPIRY'];
   const missing = required.filter((key) => !process.env[key]);
 
   if (missing.length > 0) {

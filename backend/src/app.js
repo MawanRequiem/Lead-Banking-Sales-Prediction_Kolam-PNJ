@@ -8,6 +8,7 @@ const { connectDatabase, setupGracefulShutdown } = require('./config/prisma');
 
 // Routes
 const adminRoutes = require('./routes/admin.routes');
+const authRoutes = require('./routes/authentication.routes');
 
 // Validate environment
 validateEnv();
@@ -32,6 +33,7 @@ app.get('/health', (req, res) => {
 
 // Routes
 app.use('/api/admin', adminRoutes);
+app.use('/api', authRoutes);
 
 // 404 handler
 app.use((req, res) => {
@@ -75,3 +77,5 @@ async function startServer() {
 startServer();
 
 module.exports = app;
+// Pengkor ngerjain ini
+
