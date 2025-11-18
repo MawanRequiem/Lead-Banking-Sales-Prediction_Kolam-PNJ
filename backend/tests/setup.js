@@ -1,5 +1,5 @@
 // Load environment variables for testing
-require('dotenv').config({ path: '.env.test' });
+require('dotenv').config({ path: '.env' });
 
 // Global test timeout
 jest.setTimeout(10000);
@@ -15,13 +15,31 @@ jest.mock('../src/config/logger', () => ({
   },
 }));
 
-// Global teardown
+const { prisma } = require('../src/config/prisma');
+
+// Setup global test hooks
+beforeAll(async () => {
+  // Connect to test database
+  await prisma.$connect();
+});
+
 afterAll(async () => {
-  // Close database connections
-  const { prisma } = require('../src/config/prisma');
+  // Cleanup and disconnect
   await prisma.$disconnect();
 
-  // Close Redis connections
-  const { redis } = require('../src/config/redis');
-  await redis.quit();
+  // Close Redis connections only if redis config exists
+  try {
+    const { redis } = require('../src/config/redis');
+    if (redis && redis.quit) {
+      await redis.quit();
+    }
+  } catch (error) {
+    // Redis config might not exist, skip
+    console.log('Redis config not found, skipping cleanup');
+  }
+});
+
+// Reset mocks after each test
+afterEach(() => {
+  jest.clearAllMocks();
 });
