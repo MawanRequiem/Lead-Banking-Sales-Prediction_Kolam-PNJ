@@ -65,14 +65,14 @@ async function verifyToken(token) {
     }
 
     // Verify user still exists and is active
-    const user = await verifyUserStatus(decoded.userId || decoded.id, decoded.role);
+    const user = await verifyUserStatus(decoded.id, decoded.role);
     if (!user) {
       throw new UnauthorizedError('User account not found or inactive', 'USER_INACTIVE');
     }
 
     return {
       ...decoded,
-      userId: decoded.userId || decoded.id,
+      userId: decoded.userId,
       user,
     };
   } catch (error) {
