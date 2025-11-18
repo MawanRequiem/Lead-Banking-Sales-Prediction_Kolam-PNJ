@@ -1,19 +1,34 @@
-﻿const bcrypt = require('bcrypt');
-const { config } = require('../config/env');
+﻿/**
+ * Password Utilities
+ * ✅ FIXED: Clean regex
+ */
 
-async function hashPassword(password) {
-  return await bcrypt.hash(password, config.bcrypt.saltRounds);
+const bcrypt = require('bcrypt');
+
+const SALT_ROUNDS = parseInt(process.env.BCRYPT_ROUNDS, 10) || 12;
+
+/**
+ * Hash password with bcrypt
+ */
+function hashPassword(password) {
+  return bcrypt.hash(password, SALT_ROUNDS);
 }
 
-async function comparePassword(plainPassword, hashedPassword) {
-  return await bcrypt.compare(plainPassword, hashedPassword);
+/**
+ * Compare password with hash
+ */
+function comparePassword(password, hash) {
+  return bcrypt.compare(password, hash);
 }
 
+/**
+ * Validate password strength
+ */
 function validatePasswordStrength(password) {
   const errors = [];
 
-  if (password.length < 8) {
-    errors.push('Password must be at least 8 characters long');
+  if (!password || password.length < 12) {
+    errors.push('Password must be at least 12 characters long');
   }
 
   if (!/[A-Z]/.test(password)) {
@@ -28,8 +43,9 @@ function validatePasswordStrength(password) {
     errors.push('Password must contain at least one number');
   }
 
-  if (!/[!@#$%^&*]/.test(password)) {
-    errors.push('Password must contain at least one special character (!@#$%^&*)');
+  // Only escape - and \
+  if (!/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(password)) {
+    errors.push('Password must contain at least one special character');
   }
 
   return {

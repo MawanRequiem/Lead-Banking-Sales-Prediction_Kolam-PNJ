@@ -1,81 +1,127 @@
+/**
+ * Main Application Entry Point
+ */
+
 const express = require('express');
-const cors = require('cors');
-require('dotenv').config();
-
-const { config, validateEnv } = require('./config/env');
+const { helmetConfig, corsConfig } = require('./config/security.config');
+const { errorHandler, notFoundHandler } = require('./middlewares/errorHandler.middleware');
+const { apiLimiter } = require('./middlewares/rateLimiter.middleware');
+const { auditMiddleware } = require('./middlewares/audit.middleware');
+const { validateEncryptionConfig } = require('./utils/encryption.util');
 const logger = require('./config/logger');
-const { connectDatabase, setupGracefulShutdown } = require('./config/prisma');
-
-// Routes
-const adminRoutes = require('./routes/admin.routes');
-const authRoutes = require('./routes/authentication.routes');
-
-// Validate environment
-validateEnv();
+const { prisma } = require('./config/prisma'); // ✅ Just import prisma
 
 const app = express();
 
-// Middleware
-app.use(cors(config.cors));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// Validate encryption on startup
+validateEncryptionConfig();
 
-// Request logging
+// Trust proxy
+app.set('trust proxy', 1);
+
+// Security middleware
+app.use(helmetConfig);
+app.use(corsConfig);
+
+// Body parsing
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Request tracking
 app.use((req, res, next) => {
-  logger.info(`${req.method} ${req.path}`);
+  const crypto = require('crypto');
+  res.locals.requestId = crypto.randomUUID();
+  res.locals.correlationId = req.headers['x-correlation-id'] || `corr_${crypto.randomBytes(8).toString('hex')}`;
+  res.locals.clientIp = req.ip || req.connection.remoteAddress;
+  res.locals.userAgent = req.get('user-agent');
   next();
 });
 
+// Request logging
+app.use((req, res, next) => {
+  logger.info('Incoming Request', {
+    requestId: res.locals.requestId,
+    method: req.method,
+    path: req.path,
+    ip: res.locals.clientIp,
+  });
+  next();
+});
+
+// Rate limiting
+app.use(apiLimiter);
+
+// Audit logging
+app.use(auditMiddleware);
+
 // Health check
 app.get('/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  res.json({
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+  });
 });
 
-// Routes
-app.use('/api/admin', adminRoutes);
-app.use('/api', authRoutes);
+// API Routes
+app.use('/api', require('./routes/authentication.routes'));
+app.use('/api/admin', require('./routes/admin.routes'));
 
 // 404 handler
-app.use((req, res) => {
-  res.status(404).json({
-    success: false,
-    message: 'Route not found',
-  });
-});
+app.use(notFoundHandler);
 
-// Error handler
-app.use((err, req, res, next) => {
-  logger.error('Unhandled error:', err);
-  res.status(err.statusCode || 500).json({
-    success: false,
-    message: err.message || 'Internal Server Error',
-  });
-});
+// Global error handler
+app.use(errorHandler);
 
-// Start server
+/**
+ * Start Server
+ */
 async function startServer() {
   try {
-    // Connect to database
-    await connectDatabase();
-
-    // Setup graceful shutdown
-    setupGracefulShutdown();
+    // Test database connection
+    await prisma.$connect();
+    logger.info('Database connected successfully');
 
     // Start listening
-    const PORT = config.app.port;
-    app.listen(PORT, () => {
-      logger.info(`🚀 Server running on port ${PORT}`);
-      logger.info(`📝 Environment: ${config.app.env}`);
-      logger.info(`🔗 Admin API: http://localhost:${PORT}/api/admin`);
+    const PORT = process.env.PORT || 3000;
+    const server = app.listen(PORT, () => {
+      logger.info(`Server running on port ${PORT}`);
+      logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
+      logger.info(`API Base: http://localhost:${PORT}/api`);
+      logger.info(`Admin API: http://localhost:${PORT}/api/admin`);
+      console.log('\nServer is ready!\n');
     });
+
+    // Graceful shutdown
+    const gracefulShutdown = (signal) => {
+      logger.info(`${signal} received, shutting down gracefully`);
+
+      server.close(async () => {
+        logger.info('HTTP server closed');
+
+        await prisma.$disconnect();
+        logger.info('Database connection closed');
+
+        process.exit(0);
+      });
+
+      // Force shutdown after 10 seconds
+      setTimeout(() => {
+        logger.error('Forced shutdown after timeout');
+        process.exit(1);
+      }, 10000);
+    };
+
+    process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+    process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+
   } catch (error) {
     logger.error('Failed to start server:', error);
     process.exit(1);
   }
 }
 
+// Start the server
 startServer();
 
 module.exports = app;
-// Pengkor ngerjain ini
-

@@ -43,20 +43,20 @@ model Admin {
   createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  idUser        String   @map("id_user") @db.Uuid
-  user          user     @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
+  idUser String @map("id_user") @db.Uuid
+  user   user   @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
 
   @@map("admin")
 }
 
 model Sales {
-  idSales        String                   @id @default(dbgenerated("uuid_generate_v4()")) @map("id_sales") @db.Uuid
-  nama           String                   @db.VarChar(255)
-  nomorTelepon   String?                  @map("nomor_telepon") @db.VarChar(20)
-  domisili       String?                  @db.VarChar(255)
-  createdAt      DateTime                 @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt      DateTime                 @updatedAt @map("updated_at") @db.Timestamptz(6)
-  idUser         String                   @map("id_user") @db.Uuid
+  idSales      String   @id @default(dbgenerated("uuid_generate_v4()")) @map("id_sales") @db.Uuid
+  nama         String   @db.VarChar(255)
+  nomorTelepon String?  @map("nomor_telepon") @db.VarChar(20)
+  domisili     String?  @db.VarChar(255)
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  idUser       String   @map("id_user") @db.Uuid
 
   historiTelepon HistoriTelepon[]
   user           user                     @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
@@ -66,41 +66,41 @@ model Sales {
 }
 
 model Nasabah {
-  idNasabah          String                   @id @default(dbgenerated("uuid_generate_v4()")) @map("id_nasabah") @db.Uuid
-  nama               String                   @db.VarChar(255)
-  umur               Int?                     @db.SmallInt
-  pekerjaan          String?                  @db.VarChar(255)
-  domisili           String?                  @db.VarChar(255)
-  gaji               Decimal?                 @db.Decimal(15, 2)
-  idStatusPernikahan String?                  @map("id_status_pernikahan") @db.VarChar(20)
-  jenisKelamin       String?                  @map("jenis_kelamin") @db.VarChar(10)
-  skorPrediksi       Decimal?                 @map("skor_prediksi") @db.Decimal(5, 4)
-  lastScoredAt       DateTime?                @map("last_scored_at") @db.Timestamptz(6)
-  createdAt          DateTime                 @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt          DateTime                 @updatedAt @map("updated_at") @db.Timestamptz(6)
-  deletedAt          DateTime?                @map("deleted_at") @db.Timestamptz(6)
+  idNasabah          String    @id @default(dbgenerated("uuid_generate_v4()")) @map("id_nasabah") @db.Uuid
+  nama               String    @db.VarChar(255)
+  umur               Int?      @db.SmallInt
+  pekerjaan          String?   @db.VarChar(255)
+  domisili           String?   @db.VarChar(255)
+  gaji               Decimal?  @db.Decimal(15, 2)
+  idStatusPernikahan String?   @map("id_status_pernikahan") @db.VarChar(20)
+  jenisKelamin       String?   @map("jenis_kelamin") @db.VarChar(10)
+  skorPrediksi       Decimal?  @map("skor_prediksi") @db.Decimal(5, 4)
+  lastScoredAt       DateTime? @map("last_scored_at") @db.Timestamptz(6)
+  createdAt          DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt          DateTime? @map("deleted_at") @db.Timestamptz(6)
 
-  deposito           Deposito[]
-  historiTelepon     HistoriTelepon[]
-  jenisKelaminRel    JenisKelamin?            @relation(fields: [jenisKelamin], references: [idJenisKelamin], map: "fk_nasabah_jenis_kelamin")
-  statusPernikahan   StatusPernikahan?        @relation(fields: [idStatusPernikahan], references: [idStatusPernikahan], map: "fk_nasabah_status_pernikahan")
-  assignments        SalesNasabahAssignment[]
+  deposito         Deposito[]
+  historiTelepon   HistoriTelepon[]
+  jenisKelaminRel  JenisKelamin?            @relation(fields: [jenisKelamin], references: [idJenisKelamin], map: "fk_nasabah_jenis_kelamin")
+  statusPernikahan StatusPernikahan?        @relation(fields: [idStatusPernikahan], references: [idStatusPernikahan], map: "fk_nasabah_status_pernikahan")
+  assignments      SalesNasabahAssignment[]
 
   @@map("nasabah")
 }
 
 model Deposito {
-  idDeposito     String         @id @default(dbgenerated("uuid_generate_v4()")) @map("id_deposito") @db.Uuid
-  idNasabah      String         @map("id_nasabah") @db.Uuid
-  jenisDeposito  String         @map("jenis_deposito") @db.VarChar(50)
-  statusDeposito String         @map("status_deposito") @db.VarChar(20)
-  idNasabahRef   String?        @map("id_nasabah_ref") @db.VarChar(255)
-  createdAt      DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt      DateTime       @updatedAt @map("updated_at") @db.Timestamptz(6)
-  deletedAt      DateTime?      @map("deleted_at") @db.Timestamptz(6)
+  idDeposito     String    @id @default(dbgenerated("uuid_generate_v4()")) @map("id_deposito") @db.Uuid
+  idNasabah      String    @map("id_nasabah") @db.Uuid
+  jenisDeposito  String    @map("jenis_deposito") @db.VarChar(50)
+  statusDeposito String    @map("status_deposito") @db.VarChar(20)
+  idNasabahRef   String?   @map("id_nasabah_ref") @db.VarChar(255)
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt      DateTime? @map("deleted_at") @db.Timestamptz(6)
 
-  nasabah        Nasabah        @relation(fields: [idNasabah], references: [idNasabah], onDelete: Cascade, map: "fk_deposito_nasabah")
-  status         StatusDeposito @relation(fields: [statusDeposito], references: [idStatusDeposito], map: "fk_deposito_status")
+  nasabah Nasabah        @relation(fields: [idNasabah], references: [idNasabah], onDelete: Cascade, map: "fk_deposito_nasabah")
+  status  StatusDeposito @relation(fields: [statusDeposito], references: [idStatusDeposito], map: "fk_deposito_status")
 
   @@map("deposito")
 }
@@ -119,8 +119,8 @@ model HistoriTelepon {
   createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt        DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  nasabah          Nasabah   @relation(fields: [idNasabah], references: [idNasabah], onDelete: Cascade, map: "fk_histori_nasabah")
-  sales            Sales     @relation(fields: [idSales], references: [idSales], map: "fk_histori_sales")
+  nasabah Nasabah @relation(fields: [idNasabah], references: [idNasabah], onDelete: Cascade, map: "fk_histori_nasabah")
+  sales   Sales   @relation(fields: [idSales], references: [idSales], map: "fk_histori_sales")
 
   @@index([idNasabah], map: "idx_histori_nasabah")
   @@index([idNasabah, tanggalTelepon(sort: Desc)], map: "idx_histori_nasabah_tanggal")
@@ -139,8 +139,8 @@ model SalesNasabahAssignment {
   createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt         DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  nasabah           Nasabah  @relation(fields: [idNasabah], references: [idNasabah], onDelete: Cascade, map: "fk_assignment_nasabah")
-  sales             Sales    @relation(fields: [idSales], references: [idSales], onDelete: Cascade, map: "fk_assignment_sales")
+  nasabah Nasabah @relation(fields: [idNasabah], references: [idNasabah], onDelete: Cascade, map: "fk_assignment_nasabah")
+  sales   Sales   @relation(fields: [idSales], references: [idSales], onDelete: Cascade, map: "fk_assignment_sales")
 
   @@unique([idSales, idNasabah, isActive], map: "uq_sales_nasabah_active")
   @@index([isActive, tanggalAssignment(sort: Desc)], map: "idx_assignment_active")
@@ -149,13 +149,13 @@ model SalesNasabahAssignment {
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model RefreshToken {
-  token             String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  expiresAt         DateTime       @map("expires_at") @db.Timestamp(6)
-  revokedAt         DateTime?      @map("revoked_at") @db.Timestamp(6)
-  createdAt         DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
-  modifiedAt        DateTime?      @default(now()) @map("modified_at") @db.Timestamp(6)
-  replacedBy        String?        @map("replaced_by") @db.Uuid
-  idUser           String         @db.Uuid
+  token      String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  expiresAt  DateTime  @map("expires_at") @db.Timestamp(6)
+  revokedAt  DateTime? @map("revoked_at") @db.Timestamp(6)
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  modifiedAt DateTime? @default(now()) @map("modified_at") @db.Timestamp(6)
+  replacedBy String?   @map("replaced_by") @db.Uuid
+  idUser     String    @map("id_user") @db.Uuid
 
   user              user           @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
   parentToken       RefreshToken?  @relation("TokenReplacement", fields: [replacedBy], references: [token], onDelete: NoAction, onUpdate: NoAction)
@@ -165,16 +165,61 @@ model RefreshToken {
 }
 
 model user {
-  idUser        String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid @map("id_user")
-  email         String         @unique
-  passwordHash  String         @map("password_hash")
-  isActive      Boolean        @map("is_active") @default(true)
-  lastLogin     DateTime?      @map("last_login") @db.Timestamp(6)
-  createdAt     DateTime       @map("created_at") @default(now()) @db.Timestamptz(6)
-  modifiedAt    DateTime?      @map("modified_at") @default(now()) @db.Timestamp(6)
-  deletedAt     DateTime?      @map("deleted_at") @db.Timestamp(6)
+  idUser       String    @id @default(dbgenerated("gen_random_uuid()")) @map("id_user") @db.Uuid
+  email        String    @unique
+  passwordHash String    @map("password_hash")
+  isActive     Boolean   @default(true) @map("is_active")
+  lastLogin    DateTime? @map("last_login") @db.Timestamp(6)
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  modifiedAt   DateTime? @default(now()) @map("modified_at") @db.Timestamp(6)
+  deletedAt    DateTime? @map("deleted_at") @db.Timestamp(6)
 
-  admin          Admin[]
+  admin         Admin[]
   refreshTokens RefreshToken[]
-  sales          Sales[]
+  sales         Sales[]
+}
+
+model AuditLog {
+  id            String   @id @db.VarChar(100)
+  timestamp     DateTime @default(now()) @db.Timestamptz(6)
+  userId        String?  @map("user_id") @db.Uuid
+  userRole      String?  @map("user_role") @db.VarChar(50)
+  actionType    String   @map("action_type") @db.VarChar(100)
+  resourceType  String?  @map("resource_type") @db.VarChar(100)
+  resourceId    String?  @map("resource_id") @db.VarChar(100)
+  ipAddress     String?  @map("ip_address") @db.Inet
+  userAgent     String?  @map("user_agent")
+  requestMethod String?  @map("request_method") @db.VarChar(10)
+  requestPath   String?  @map("request_path")
+  statusCode    Int?     @map("status_code")
+  requestBody   Json?    @map("request_body")
+  responseBody  Json?    @map("response_body")
+  changes       Json?
+  metadata      Json?
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([timestamp(sort: Desc)])
+  @@index([userId])
+  @@index([actionType])
+  @@index([resourceId])
+  @@index([ipAddress])
+  @@map("audit_logs")
+}
+
+model SecurityLog {
+  id        String   @id @db.VarChar(100)
+  timestamp DateTime @default(now()) @db.Timestamptz(6)
+  eventType String   @map("event_type") @db.VarChar(100)
+  severity  String   @db.VarChar(20)
+  userId    String?  @map("user_id") @db.Uuid
+  ipAddress String?  @map("ip_address") @db.Inet
+  userAgent String?  @map("user_agent")
+  details   Json?
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([timestamp(sort: Desc)])
+  @@index([eventType])
+  @@index([severity])
+  @@index([userId])
+  @@map("security_logs")
 }
