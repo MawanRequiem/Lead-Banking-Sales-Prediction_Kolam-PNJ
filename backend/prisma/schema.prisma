@@ -38,33 +38,28 @@ model StatusDeposito {
 }
 
 model Admin {
-  idAdmin       String    @id @default(dbgenerated("uuid_generate_v4()")) @map("id_admin") @db.Uuid
-  email         String    @unique @db.VarChar(255)
-  passwordHash  String    @map("password_hash")
-  emailRecovery String?   @map("email_recovery") @db.VarChar(255)
-  isActive      Boolean   @default(true) @map("is_active")
-  lastLogin     DateTime? @map("last_login") @db.Timestamptz(6)
-  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt     DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
-  deletedAt     DateTime? @map("deleted_at") @db.Timestamptz(6)
+  idAdmin       String   @id @default(dbgenerated("uuid_generate_v4()")) @map("id_admin") @db.Uuid
+  emailRecovery String?  @map("email_recovery") @db.VarChar(255)
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  @@index([email, deletedAt])
+  idUser        String   @map("id_user") @db.Uuid
+  user          user     @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
+
   @@map("admin")
 }
 
 model Sales {
   idSales        String                   @id @default(dbgenerated("uuid_generate_v4()")) @map("id_sales") @db.Uuid
   nama           String                   @db.VarChar(255)
-  email          String                   @unique @db.VarChar(255)
-  passwordHash   String                   @map("password_hash")
   nomorTelepon   String?                  @map("nomor_telepon") @db.VarChar(20)
   domisili       String?                  @db.VarChar(255)
-  isActive       Boolean                  @default(true) @map("is_active")
-  lastLogin      DateTime?                @map("last_login") @db.Timestamptz(6)
   createdAt      DateTime                 @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt      DateTime                 @updatedAt @map("updated_at") @db.Timestamptz(6)
-  deletedAt      DateTime?                @map("deleted_at") @db.Timestamptz(6)
+  idUser         String                   @map("id_user") @db.Uuid
+
   historiTelepon HistoriTelepon[]
+  user           user                     @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
   assignments    SalesNasabahAssignment[]
 
   @@map("sales")
@@ -84,6 +79,7 @@ model Nasabah {
   createdAt          DateTime                 @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt          DateTime                 @updatedAt @map("updated_at") @db.Timestamptz(6)
   deletedAt          DateTime?                @map("deleted_at") @db.Timestamptz(6)
+
   deposito           Deposito[]
   historiTelepon     HistoriTelepon[]
   jenisKelaminRel    JenisKelamin?            @relation(fields: [jenisKelamin], references: [idJenisKelamin], map: "fk_nasabah_jenis_kelamin")
@@ -102,6 +98,7 @@ model Deposito {
   createdAt      DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt      DateTime       @updatedAt @map("updated_at") @db.Timestamptz(6)
   deletedAt      DateTime?      @map("deleted_at") @db.Timestamptz(6)
+
   nasabah        Nasabah        @relation(fields: [idNasabah], references: [idNasabah], onDelete: Cascade, map: "fk_deposito_nasabah")
   status         StatusDeposito @relation(fields: [statusDeposito], references: [idStatusDeposito], map: "fk_deposito_status")
 
@@ -121,6 +118,7 @@ model HistoriTelepon {
   nextFollowupDate DateTime? @map("next_followup_date") @db.Date
   createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt        DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
   nasabah          Nasabah   @relation(fields: [idNasabah], references: [idNasabah], onDelete: Cascade, map: "fk_histori_nasabah")
   sales            Sales     @relation(fields: [idSales], references: [idSales], map: "fk_histori_sales")
 
@@ -140,6 +138,7 @@ model SalesNasabahAssignment {
   isActive          Boolean  @default(true) @map("is_active")
   createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt         DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
   nasabah           Nasabah  @relation(fields: [idNasabah], references: [idNasabah], onDelete: Cascade, map: "fk_assignment_nasabah")
   sales             Sales    @relation(fields: [idSales], references: [idSales], onDelete: Cascade, map: "fk_assignment_sales")
 
@@ -150,17 +149,32 @@ model SalesNasabahAssignment {
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model RefreshToken {
-  token       String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  expiresAt   DateTime  @map("expires_at") @db.Timestamp(6)
-  revokedAt   DateTime? @map("revoked_at") @db.Timestamp(6)
-  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-  modifiedAt  DateTime? @default(now()) @map("modified_at") @db.Timestamp(6)
-  replacedBy  String?   @map("replaced_by") @db.Uuid
+  token             String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  expiresAt         DateTime       @map("expires_at") @db.Timestamp(6)
+  revokedAt         DateTime?      @map("revoked_at") @db.Timestamp(6)
+  createdAt         DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  modifiedAt        DateTime?      @default(now()) @map("modified_at") @db.Timestamp(6)
+  replacedBy        String?        @map("replaced_by") @db.Uuid
+  idUser           String         @db.Uuid
 
-  // Self-relation
+  user              user           @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
   parentToken       RefreshToken?  @relation("TokenReplacement", fields: [replacedBy], references: [token], onDelete: NoAction, onUpdate: NoAction)
   replacementTokens RefreshToken[] @relation("TokenReplacement")
 
   @@map("refresh_tokens")
 }
 
+model user {
+  idUser        String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid @map("id_user")
+  email         String         @unique
+  passwordHash  String
+  isActive      Boolean        @default(true)
+  lastLogin     DateTime?      @db.Timestamp(6)
+  createdAt     DateTime       @default(now()) @db.Timestamptz(6)
+  modifiedAt    DateTime?      @default(now()) @db.Timestamp(6)
+  deletedAt     DateTime?      @db.Timestamp(6)
+
+  admin          Admin[]
+  refreshTokens RefreshToken[]
+  sales          Sales[]
+}
