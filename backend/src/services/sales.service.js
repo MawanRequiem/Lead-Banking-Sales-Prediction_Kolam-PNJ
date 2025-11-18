@@ -8,6 +8,7 @@ const {
 const logger = require('../config/logger');
 const { encryptSensitiveFields, decryptSensitiveFields } = require('../utils/prismaEncryption.util');
 const { encrypt } = require('../utils/encryption.util');
+const e = require('express');
 
 /**
  * Create Sales
@@ -25,20 +26,15 @@ async function createSales(data) {
   const encryptedData = encryptSensitiveFields({
     nomorTelepon: data.nomorTelepon,
     domisili: data.domisili,
-  });
-
+  }); //enkripsi ke database kita sendiri?
+  //TODO: Kalau masih mau pake enkripsi cari cara biar pas di database udah didecrypt, kepanjangan nilainya buat kolom-nya
   // Create sales
   const sales = await salesRepository.create({
     nama: data.nama,
-    user: {
-      create: {
-        email: data.email,
-        passwordHash: passwordHash,
-        role: 'sales',
-      },
-    },
-    nomorTelepon: encryptedData.nomorTelepon,
-    domisili: encryptedData.domisili,
+    email: data.email,
+    passwordHash,
+    nomorTelepon: data.nomorTelepon,
+    domisili: data.domisili,
   });
 
   const decryptedSales = decryptSensitiveFields(sales);

@@ -8,11 +8,11 @@ function containsSQLInjection(input) {
   const sqlPatterns = [
     /(\b(SELECT|INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|EXEC|EXECUTE)\b)/gi,
     /(UNION\s+SELECT)/gi,
-    /(--|#|\/\*|\*\/)/g,
-    /(\bOR\b\s+\d+\s*=\s*\d+)/gi,
-    /(\bAND\b\s+\d+\s*=\s*\d+)/gi,
-    /('|;|<|>|\||[{}$])/g,
-    /(0x[0-9a-f]+)/gi,
+    /(--|#|\/\*|\*\/)/g,                    // SQL comments
+    /(\bOR\b\s+\d+\s*=\s*\d+)/gi,          // OR 1=1 patterns
+    /(\bAND\b\s+\d+\s*=\s*\d+)/gi,         // AND 1=1 patterns
+    /(\b(SLEEP|WAITFOR|BENCHMARK)\s*\(\s*\d+\s*\))/gi, // Time-based attacks
+    /(\b(LOAD_FILE|INTO\s+OUTFILE|INTO\s+DUMPFILE)\b)/gi, // File operations
   ];
 
   return sqlPatterns.some(pattern => pattern.test(input));
