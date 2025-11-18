@@ -167,12 +167,12 @@ model RefreshToken {
 model user {
   idUser        String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid @map("id_user")
   email         String         @unique
-  passwordHash  String
-  isActive      Boolean        @default(true)
-  lastLogin     DateTime?      @db.Timestamp(6)
-  createdAt     DateTime       @default(now()) @db.Timestamptz(6)
-  modifiedAt    DateTime?      @default(now()) @db.Timestamp(6)
-  deletedAt     DateTime?      @db.Timestamp(6)
+  passwordHash  String         @map("password_hash")
+  isActive      Boolean        @map("is_active") @default(true)
+  lastLogin     DateTime?      @map("last_login") @db.Timestamp(6)
+  createdAt     DateTime       @map("created_at") @default(now()) @db.Timestamptz(6)
+  modifiedAt    DateTime?      @map("modified_at") @default(now()) @db.Timestamp(6)
+  deletedAt     DateTime?      @map("deleted_at") @db.Timestamp(6)
 
   admin          Admin[]
   refreshTokens RefreshToken[]
