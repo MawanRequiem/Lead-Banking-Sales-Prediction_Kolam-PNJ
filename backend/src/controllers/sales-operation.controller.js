@@ -52,9 +52,19 @@ const updateStatus = asyncHandler(async (req, res) => {
   return successResponse(res, result, 'Status updated successfully');
 });
 
+/**
+ * Get Lead Details
+ * GET /api/sales/leads/:id
+ */
+const getLeadDetail = asyncHandler(async (req, res) => {
+  const result = await salesOpService.getLeadDetail(req.user.userId, req.params.id);
+  return successResponse(res, result, 'Lead details retrieved successfully');
+});
+
 module.exports = {
   getDashboard,
   logCall,
   exportData,
   updateStatus,
+  getLeadDetail,
 };

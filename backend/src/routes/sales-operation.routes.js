@@ -13,6 +13,7 @@ const {
   validateGetAllQuery,
   validateLogCall,
   validateUpdateStatus,
+  validateUUIDParam,
 } = require('../middlewares/validation.middleware');
 
 // Global Middleware untuk router ini
@@ -67,6 +68,16 @@ router.patch(
   writeLimiter,
   validateUpdateStatus,
   controller.updateStatus,
+);
+
+/**
+ * Get Detail Nasabah
+ * GET /api/sales/leads/:id
+ */
+router.get(
+  '/leads/:id',
+  validateUUIDParam('id'), // Validasi parameter :id harus UUID
+  controller.getLeadDetail,
 );
 
 module.exports = router;

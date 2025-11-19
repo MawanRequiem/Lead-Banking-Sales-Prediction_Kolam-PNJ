@@ -95,6 +95,15 @@ function getLeadDetail(salesId, nasabahId) {
 
 function createCallLog(data) {
   return prisma.$transaction(async (tx) => {
+    // 1. Hitung history sebelumnya (untuk urutan)
+    const previousCallsCount = await tx.historiTelepon.count({
+      where: {
+        idNasabah: data.idNasabah,
+        idSales: data.idSales,
+      },
+    });
+
+    // 2. Create Log Telepon (INSERT)
     const log = await tx.historiTelepon.create({
       data: {
         idNasabah: data.idNasabah,
@@ -104,9 +113,38 @@ function createCallLog(data) {
         hasilTelepon: data.hasilTelepon,
         catatan: data.catatan,
         nextFollowupDate: data.nextFollowupDate ? new Date(data.nextFollowupDate) : null,
-        jumlahTelepon: { increment: 1 },
+        jumlahTelepon: previousCallsCount + 1,
       },
     });
+
+    // 3. Update Status Deposito (UPDATE - Jika diminta)
+    // Frontend harus kirim: { updateStatusDeposito: true, newStatus: 'TERTARIK' }
+    if (data.updateStatusDeposito && data.newStatus) {
+
+      // Cari deposito terakhir milik nasabah ini
+      const lastDeposito = await tx.deposito.findFirst({
+        where: { idNasabah: data.idNasabah },
+        orderBy: { createdAt: 'desc' },
+      });
+
+      if (lastDeposito) {
+        // Update yang sudah ada
+        await tx.deposito.update({
+          where: { idDeposito: lastDeposito.idDeposito },
+          data: { statusDeposito: data.newStatus },
+        });
+      } else {
+        // Atau buat baru jika belum ada (Safety net)
+        await tx.deposito.create({
+          data: {
+            idNasabah: data.idNasabah,
+            jenisDeposito: 'General',
+            statusDeposito: data.newStatus,
+          },
+        });
+      }
+    }
+
     return log;
   });
 }

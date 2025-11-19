@@ -91,9 +91,56 @@ async function updateLeadStatus(salesId, data) {
   return salesOpRepo.updateDepositoStatus(salesId, data.nasabahId, data.status);
 }
 
+/**
+ * Get Lead Detail
+ * Termasuk history telepon & status deposito
+ */
+async function getLeadDetail(salesId, nasabahId) {
+  const lead = await salesOpRepo.getLeadDetail(salesId, nasabahId);
+
+  if (!lead) {
+    throw new NotFoundError('Nasabah not found or not assigned to you');
+  }
+
+  // Formatting response agar lebih bersih
+  return {
+    id: lead.idNasabah,
+    profil: {
+      nama: lead.nama,
+      nomorTelepon: lead.nomorTelepon, // Pastikan ini sudah didecrypt oleh repo/middleware jika pakai enkripsi
+      pekerjaan: lead.pekerjaan,
+      domisili: lead.domisili,
+      umur: lead.umur,
+      gaji: parseFloat(lead.gaji || 0),
+      statusPernikahan: lead.statusPernikahan?.namaStatus || '-',
+      jenisKelamin: lead.jenisKelaminRel?.namaJenisKelamin || '-',
+    },
+    metrik: {
+      skorAI: parseFloat(lead.skorPrediksi || 0),
+      totalTelepon: lead.historiTelepon.length,
+    },
+    history: {
+      deposito: lead.deposito.map(d => ({
+        id: d.idDeposito,
+        status: d.statusDeposito,
+        jenis: d.jenisDeposito,
+        tanggal: d.createdAt,
+      })),
+      telepon: lead.historiTelepon.map(h => ({
+        id: h.idHistori,
+        tanggal: h.tanggalTelepon,
+        durasi: h.lamaTelepon,
+        hasil: h.hasilTelepon,
+        catatan: h.catatan,
+      })),
+    },
+  };
+}
+
 module.exports = {
   getMyDashboard,
   logActivity,
   exportWorkReport,
   updateLeadStatus,
+  getLeadDetail,
 };
