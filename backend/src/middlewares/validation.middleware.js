@@ -18,6 +18,8 @@ const {
   updateSalesSchema,
   resetPasswordSchema,
   salesQuerySchema,
+  logCallSchema,
+  updateStatusSchema,
 } = require('../validation/schemas/sales.schema');
 
 const {
@@ -400,6 +402,48 @@ function validateGetAllQuery(req, res, next) {
 }
 
 /**
+ * Validate Log Call (Sales Operation)
+ */
+function validateLogCall(req, res, next) {
+  // Layer 1: Security Scan (Cek SQL Injection / XSS di body)
+  const threats = deepSecurityScan(req.body, 'body');
+  if (threats.length > 0) {
+    logSecurityThreat(req, res, threats);
+    // Jika ada ancaman kritis, tolak request
+    if (threats.some(t => t.severity === 'CRITICAL')) {
+      return validationErrorResponse(res, [{
+        field: 'general',
+        message: 'Security violation detected',
+        code: 'SECURITY_THREAT_DETECTED',
+      }]);
+    }
+  }
+
+  // Layer 2: Joi Schema Validation
+  const joiValidation = validateWithJoi(logCallSchema, req.body);
+  if (joiValidation.hasError) {
+    return validationErrorResponse(res, joiValidation.errors);
+  }
+
+  // Layer 3: Sanitization (Bersihkan HTML/Script dari catatan)
+  req.body = deepSanitize(joiValidation.value);
+
+  next();
+}
+
+/**
+ * Validate Update Status
+ */
+function validateUpdateStatus(req, res, next) {
+  const joiValidation = validateWithJoi(updateStatusSchema, req.body);
+  if (joiValidation.hasError) {
+    return validationErrorResponse(res, joiValidation.errors);
+  }
+  req.body = joiValidation.value;
+  next();
+}
+
+/**
  * ========================================
  * AUTHENTICATION VALIDATION
  * ========================================
@@ -470,6 +514,8 @@ module.exports = {
   validateResetPassword,
   validateUUIDParam,
   validateGetAllQuery,
+  validateLogCall,
+  validateUpdateStatus,
 
   // Auth validation
   validateLogin,

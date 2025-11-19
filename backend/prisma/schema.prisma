@@ -52,8 +52,8 @@ model Admin {
 model Sales {
   idSales      String   @id @default(dbgenerated("uuid_generate_v4()")) @map("id_sales") @db.Uuid
   nama         String   @db.VarChar(255)
-  nomorTelepon String?  @map("nomor_telepon") @db.VarChar(20)
-  domisili     String?  @db.VarChar(255)
+  nomorTelepon String?  @map("nomor_telepon") @db.Text
+  domisili     String?  @db.Text
   createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
   idUser       String   @map("id_user") @db.Uuid
@@ -70,7 +70,7 @@ model Nasabah {
   nama               String    @db.VarChar(255)
   umur               Int?      @db.SmallInt
   pekerjaan          String?   @db.VarChar(255)
-  domisili           String?   @db.VarChar(255)
+  domisili           String?   @db.Text
   gaji               Decimal?  @db.Decimal(15, 2)
   idStatusPernikahan String?   @map("id_status_pernikahan") @db.VarChar(20)
   jenisKelamin       String?   @map("jenis_kelamin") @db.VarChar(10)

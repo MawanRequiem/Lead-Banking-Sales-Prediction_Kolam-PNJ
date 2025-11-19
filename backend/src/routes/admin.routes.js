@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const adminController = require('../controllers/admin.controller');
+const assignmentController = require('../controllers/assignment.controller');
 const {
   authenticateToken,
   requireAdmin,
@@ -76,6 +77,13 @@ router.delete(
   writeLimiter,
   validateUUIDParam('id'),
   adminController.deleteSales,
+);
+
+// Assignment Routes
+router.post(
+  '/assignments/distribute',
+  writeLimiter, // Rate limit operasi berat
+  assignmentController.triggerDistribution,
 );
 
 module.exports = router;

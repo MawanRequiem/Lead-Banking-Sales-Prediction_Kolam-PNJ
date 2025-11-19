@@ -9,7 +9,8 @@ const { apiLimiter } = require('./middlewares/rateLimiter.middleware');
 const { auditMiddleware } = require('./middlewares/audit.middleware');
 const { validateEncryptionConfig } = require('./utils/encryption.util');
 const logger = require('./config/logger');
-const { prisma } = require('./config/prisma'); // ✅ Just import prisma
+const { prisma } = require('./config/prisma');
+const { initCronJobs } = require('./jobs/scheduler');
 
 const app = express();
 
@@ -66,6 +67,8 @@ app.get('/health', (req, res) => {
 // API Routes
 app.use('/api', require('./routes/authentication.routes'));
 app.use('/api/admin', require('./routes/admin.routes'));
+app.use('/api/sales', require('./routes/sales-operation.routes'));
+
 
 // 404 handler
 app.use(notFoundHandler);
@@ -81,6 +84,8 @@ async function startServer() {
     // Test database connection
     await prisma.$connect();
     logger.info('Database connected successfully');
+
+    initCronJobs();
 
     // Start listening
     const PORT = process.env.PORT || 3000;

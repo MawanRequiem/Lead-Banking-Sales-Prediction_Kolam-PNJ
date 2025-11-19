@@ -190,9 +190,81 @@ const salesQuerySchema = Joi.object({
   stripUnknown: true,
 });
 
+const logCallSchema = Joi.object({
+  nasabahId: Joi.string()
+    .uuid({ version: 'uuidv4' })
+    .required()
+    .messages({
+      'string.guid': 'Invalid Nasabah ID format',
+      'any.required': 'Nasabah ID is required',
+    }),
+
+  nomorTelepon: Joi.string()
+    .trim()
+    .pattern(/^(\+62|62|0)[0-9]{8,12}$/)
+    .max(20)
+    .required()
+    .messages({
+      'string.pattern.base': 'Phone number format is invalid',
+      'any.required': 'Phone number is required',
+    }),
+
+  lamaTelepon: Joi.number()
+    .integer()
+    .min(0)
+    .required()
+    .messages({
+      'number.base': 'Duration must be a number (seconds)',
+      'any.required': 'Call duration is required',
+    }),
+
+  hasilTelepon: Joi.string()
+    .max(255)
+    .required()
+    .messages({
+      'any.required': 'Call result is required',
+    }),
+
+  catatan: Joi.string()
+    .allow(null, '')
+    .max(1000)
+    .messages({
+      'string.max': 'Note is too long (max 1000 chars)',
+    }),
+
+  nextFollowupDate: Joi.date()
+    .iso()
+    //.min('now') // Opsional: Aktifkan jika tidak boleh tanggal mundur
+    .allow(null)
+    .messages({
+      'date.format': 'Invalid date format (ISO required)',
+    }),
+
+  updateStatusDeposito: Joi.boolean()
+    .default(false),
+}).options({
+  abortEarly: false,
+  stripUnknown: true,
+});
+
+const updateStatusSchema = Joi.object({
+  nasabahId: Joi.string()
+    .uuid({ version: 'uuidv4' })
+    .required(),
+
+  status: Joi.string()
+    .valid('PROSPEK', 'DIHUBUNGI', 'TERTARIK', 'TIDAK_TERTARIK', 'AKTIF', 'JATUH_TEMPO', 'DICAIRKAN')
+    .required(),
+}).options({
+  abortEarly: false,
+  stripUnknown: true,
+});
+
 module.exports = {
   createSalesSchema,
   updateSalesSchema,
   resetPasswordSchema,
   salesQuerySchema,
+  logCallSchema,
+  updateStatusSchema,
 };
