@@ -145,7 +145,7 @@ async function createAuditLog(auditData) {
       VALUES (
         ${auditData.id},
         ${auditData.timestamp},
-        ${auditData.userId},
+        ${auditData.userId}::uuid,
         ${auditData.userRole},
         ${auditData.actionType},
         ${auditData.resourceType},
@@ -218,12 +218,10 @@ function auditMiddleware(req, res, next) {
       requestMethod: req.method,
       requestPath: req.path,
       statusCode: res.statusCode,
-      requestBody: JSON.stringify(maskSensitiveData(req.body)),
-      responseBody: JSON.stringify(maskSensitiveData(
-        typeof responseBody === 'string' ? JSON.parse(responseBody) : responseBody,
-      )),
-      changes: JSON.stringify(extractChanges(req, responseBody)),
-      metadata: JSON.stringify({
+      requestBody: safeStringify(maskSensitiveData(req.body)),
+      responseBody: safeStringify(maskSensitiveData(safeJsonParse(responseBody))),
+      changes: safeStringify(extractChanges(req, responseBody)),
+      metadata: safeStringify({
         duration,
         requestId: res.locals.requestId,
         correlationId: res.locals.correlationId,
@@ -243,6 +241,23 @@ function auditMiddleware(req, res, next) {
   next();
 }
 
+function safeJsonParse(value) {
+  try {
+    return typeof value === 'string' ? JSON.parse(value) : value;
+  } catch {
+    return value; // keep raw body
+  }
+}
+
+function safeStringify(value) {
+  try {
+    // Avoid undefined → return null or {}
+    if (value === undefined) {return '{}';}
+    return JSON.stringify(value);
+  } catch {
+    return '{}';
+  }
+}
 
 /**
  * Extract resource type from path

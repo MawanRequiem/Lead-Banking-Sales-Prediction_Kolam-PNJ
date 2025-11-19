@@ -187,7 +187,7 @@ model AuditLog {
   actionType    String   @map("action_type") @db.VarChar(100)
   resourceType  String?  @map("resource_type") @db.VarChar(100)
   resourceId    String?  @map("resource_id") @db.VarChar(100)
-  ipAddress     String?  @map("ip_address") @db.Inet
+  ipAddress     String?  @map("ip_address") @db.VarChar(45)
   userAgent     String?  @map("user_agent")
   requestMethod String?  @map("request_method") @db.VarChar(10)
   requestPath   String?  @map("request_path")
@@ -212,7 +212,7 @@ model SecurityLog {
   eventType String   @map("event_type") @db.VarChar(100)
   severity  String   @db.VarChar(20)
   userId    String?  @map("user_id") @db.Uuid
-  ipAddress String?  @map("ip_address") @db.Inet
+  ipAddress String?  @map("ip_address") @db.VarChar(45)
   userAgent String?  @map("user_agent")
   details   Json?
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)

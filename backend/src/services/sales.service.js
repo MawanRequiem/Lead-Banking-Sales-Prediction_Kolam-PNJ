@@ -27,7 +27,7 @@ async function createSales(data) {
     nomorTelepon: data.nomorTelepon,
     domisili: data.domisili,
   }); //enkripsi ke database kita sendiri?
-  //TODO: Kalau masih mau pake enkripsi cari cara biar pas di database udah didecrypt, kepanjangan nilainya buat kolom-nya
+  //TODO: Kalau enkripsi di database perlu direfaktor yang lain buat ngedecrypt juga.
   // Create sales
   const sales = await salesRepository.create({
     nama: data.nama,
@@ -69,6 +69,12 @@ async function getSalesById(id) {
  * Get All Sales
  */
 async function getAllSales(filters) {
+  const { isActive } = filters;
+
+  if (isActive !== undefined) {
+    filters.isActive = isActive === 'true'; // Convert to boolean if "true" then true else false
+  }
+
   const result = await salesRepository.findAll(filters);
 
   const decryptedSales = result.sales.map(sales => {
