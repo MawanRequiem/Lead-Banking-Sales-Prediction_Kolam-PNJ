@@ -12,6 +12,9 @@ import { CategoryBadge } from "./components/ui/badges"
 import CustomerOverviewTable from "./components/ui/tables/customers-overview-table"
 import LoginForm from './components/ui/auth/login-form'
 import OtpForm from "./components/ui/auth/otp-form"
+import AdminsTable from "./components/ui/tables/admins-table"
+import AdminBulkAddTable from "./components/ui/tables/admin-bulk-add-table"
+import { Toaster } from "sonner"
 
 function App() {
   return (
@@ -19,6 +22,8 @@ function App() {
       {/* Min-h-screen agar background mengisi seluruh tinggi halaman */}
       <div className="min-h-screen bg-background text-foreground transition-colors duration-300 font-[Inter]">
 
+      {/* Untuk memunculkan notifikasi dari fungsi toaster di AdminsTable */}
+      <Toaster />
         {/* Header */}
         <Header />
         <div>
@@ -42,6 +47,7 @@ function App() {
               <SalesBarChartCard />
               <DepositPieChartCard />
             </div>
+            <AdminsTable />
             <div className="my-4 grid grid-cols-1 md:grid-cols-1 lg:grid-cols-2 gap-6">
               <CustomerStatusCard 
                 customerId="12345" 
@@ -56,6 +62,7 @@ function App() {
                 className="w-full"
               />
             </div>
+            <AdminBulkAddTable />
             <CustomerOverviewTable />
             <AssignmentTable />
             <CallHistoryTable />

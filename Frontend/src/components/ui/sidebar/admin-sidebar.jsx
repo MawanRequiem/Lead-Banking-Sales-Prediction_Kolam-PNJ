@@ -1,6 +1,6 @@
 import React from 'react';
 import { useSidebar } from '@/hooks/useSidebar';
-import { navItems, footerItem } from '@/components/ui/sidebar/sidebar-consts';
+import { adminNavItems, footerItem } from '@/components/ui/sidebar/sidebar-consts';
 import { cn } from '@/lib/utils';
 
 export function Sidebar() {
@@ -27,7 +27,7 @@ export function Sidebar() {
 
       {/* Content (Menu Utama) */}
       <nav className="flex flex-col pl-2 w-full space-y-0 flex-grow overflow-auto pt-6">
-        {navItems.map((item) => (
+        {adminNavItems.map((item) => (
           <SidebarItem
             key={item.id}
             item={item}
