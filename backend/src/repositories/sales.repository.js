@@ -78,6 +78,26 @@ async function findById(id, includeSoftDeleted = false) {
   }
 }
 
+async function findByUserId(userId, includeSoftDeleted = false) {
+  try {
+    const sales = await prisma.sales.findFirst({
+      where: { idUser: userId },
+      include: {
+        user: true,
+      },
+    });
+
+    if (sales && sales.user.deletedAt && !includeSoftDeleted) {
+      return null;
+    }
+
+    return sales;
+  } catch (error) {
+    logger.error('Error finding sales by User ID:', error);
+    throw error;
+  }
+}
+
 /**
  * Find All Sales
  */
@@ -309,6 +329,7 @@ module.exports = {
   create,
   findByEmail,
   findById,
+  findByUserId,
   findAll,
   update,
   updatePassword,

@@ -39,6 +39,7 @@
     "helmet": "^7.2.0",
     "hyper-express": "^6.14.8",
     "joi": "^17.13.3",
+    "json2csv": "^6.0.0-alpha.2",
     "jsonwebtoken": "^9.0.2",
     "node-cron": "^3.0.3",
     "prom-client": "^15.1.0",

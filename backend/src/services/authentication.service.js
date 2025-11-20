@@ -94,9 +94,51 @@ async function createRefreshToken(userId) {
   }
 }
 
+async function validateRefreshToken(token) {
+  try {
+    const existingToken = await tokenRepository.findByToken(token);
+    if (!existingToken) {
+      return null;
+    }
+
+    if (existingToken.expiresAt < new Date() || existingToken.revokedAt) {
+      return null;
+    }
+
+    return existingToken;
+  } catch (error) {
+    logger.error('Error validating refresh token:', error);
+    throw error;
+  }
+}
+
+async function rotateRefreshToken(oldToken) {
+  try {
+    const existingToken = await tokenRepository.findByToken(oldToken);
+    if (!existingToken) {
+      throw new Error('Invalid refresh token');
+    }
+
+    const newExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    const newToken = await tokenRepository.createToken({
+      userId: existingToken.idUser,
+      expiresAt: newExpiresAt,
+    });
+
+    await tokenRepository.revokeToken(oldToken, newToken.token);
+
+    return newToken.token;
+  } catch (error) {
+    logger.error('Error rotating refresh token:', error);
+    throw error;
+  }
+}
+
 module.exports = {
   authenticateAdmin,
   authenticateSales,
   createRefreshToken,
   generateAccessToken,
+  rotateRefreshToken,
+  validateRefreshToken,
 };

@@ -76,6 +76,26 @@ async function findById(id) {
   }
 }
 
+async function findByUserId(userId, includeSoftDeleted = false) {
+  try {
+    const admin = await prisma.admin.findFirst({
+      where: { idUser: userId },
+      include: {
+        user: true,
+      },
+    });
+
+    if (admin && admin.user.deletedAt && !includeSoftDeleted) {
+      return null;
+    }
+
+    return admin;
+  } catch (error) {
+    logger.error('Error finding admin by User ID:', error);
+    throw error;
+  }
+}
+
 /**
  * Update Password
  */
@@ -108,5 +128,6 @@ module.exports = {
   create,
   findByEmail,
   findById,
+  findByUserId,
   updatePassword,
 };

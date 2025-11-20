@@ -5,9 +5,13 @@
  */
 
 const jwt = require('jsonwebtoken');
+const tokenService = require('../services/authentication.service');
+const adminRepository = require('../repositories/admin.repository');
+const salesRepository = require('../repositories/sales.repository');
 const { UnauthorizedError, ForbiddenError } = require('./errorHandler.middleware');
 const logger = require('../config/logger');
 const { prisma } = require('../config/prisma');
+const { generateAccessToken } = require('../services/authentication.service');
 
 /**
  * Extract JWT from Authorization header
@@ -89,6 +93,96 @@ async function verifyToken(token) {
     }
 
     throw error;
+  }
+}
+
+async function handleRefreshFlow(oldToken, req, res, next){
+  const refreshToken = req.headers['x-refresh-token']; // Custom header for refresh token, check for cookies in production.
+  if (!refreshToken) {
+    throw new UnauthorizedError('Access token invalid and refresh token missing from request header', 'TOKEN_REQUIRED');
+  }
+
+  const validToken = await tokenService.validateRefreshToken(refreshToken);
+  if (!validToken) {
+    throw new UnauthorizedError('Refresh token is invalid or expired', 'INVALID_REFRESH_TOKEN');
+  }
+
+  const expired = jwt.decode(oldToken);
+  const stillValidUser = await verifyUserStatus(expired.id, expired.role);
+  if (!stillValidUser) {
+    throw new UnauthorizedError('User account not found or inactive', 'USER_INACTIVE');
+  }
+  const newPayload = await buildJwtPayload(expired.userId, expired.role);
+
+  const newRefreshToken = await tokenService.rotateRefreshToken(refreshToken);
+
+  // Issue new access token since user payload is verified it should be safe
+  const accessToken = generateAccessToken(newPayload);
+
+  const decoded = jwt.verify(accessToken, process.env.JWT_SECRET, {
+    algorithms: ['HS256'],
+    issuer: process.env.JWT_ISSUER || 'telesales-api',
+    audience: process.env.JWT_AUDIENCE || 'telesales-client',
+  });
+
+  const verified = { ...decoded, userId: decoded.userId, user: stillValidUser };
+
+  res.setHeader('x-new-access-Token', accessToken);
+  res.setHeader('x-new-refresh-Token', newRefreshToken);
+
+  req.user = verified;
+  res.locals.userId = verified.userId;
+  res.locals.userRole = verified.role;
+  res.locals.tokenValid = true;
+  res.locals.authMethod = 'jwt';
+
+  logger.debug('User authenticated with refresh token', {
+    requestId: res.locals.requestId,
+    userId: verified.userId,
+    role: verified.role,
+  });
+
+  return next();
+}
+
+async function buildJwtPayload(userId, role) {
+  if (!userId || !role) {
+    throw new Error('Missing userId or role for payload builder');
+  }
+
+  switch (role) {
+    case 'admin': {
+      const admin = await adminRepository.findByUserId(userId);
+      if (!admin || !admin.user?.isActive) {
+        return null;
+      }
+
+      return {
+        id: admin.idAdmin,
+        userId: admin.user.idUser,
+        email: admin.user.email,
+        nama: admin.user.email.split('@')[0],
+        role: 'admin',
+      };
+    }
+
+    case 'sales': {
+      const sales = await salesRepository.findByUserId(userId);
+      if (!sales || !sales.user?.isActive) {
+        return null;
+      }
+
+      return {
+        id: sales.idSales,
+        userId: sales.user.idUser,
+        email: sales.user.email,
+        nama: sales.nama,
+        role: 'sales',
+      };
+    }
+
+    default:
+      throw new Error(`Unknown user role: ${role}`);
   }
 }
 
@@ -201,6 +295,9 @@ async function authenticateToken(req, res, next) {
 
     next();
   } catch (error) {
+    if (error.code === 'TOKEN_EXPIRED'){
+      return handleRefreshFlow(extractToken(req), req, res, next);
+    }
     // Log authentication failure
     logger.security('Authentication failed', {
       requestId: res.locals.requestId,
