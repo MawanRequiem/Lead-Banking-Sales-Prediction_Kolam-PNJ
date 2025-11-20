@@ -2,10 +2,10 @@ import React, { useMemo } from 'react'
 import DataTable from '@/components/ui/tables/data-table'
 import { columns, mockData } from '@/components/ui/tables/customers-overview-column'
 import ActionCell from '@/components/ui/tables/detail-customer'
-import { useCustomersOverview } from '@/hooks/useCustomersOverview'
+import { useTable } from '@/hooks/useTable'
 
 export default function CustomersOverviewTable() {
-  const { data, loading } = useCustomersOverview()
+  const { data, loading } = useTable({ initial: mockData })
 
   const cols = useMemo(() => columns, [])
 

@@ -3,7 +3,7 @@ import { HoverCard, HoverCardTrigger, HoverCardContent } from '@/components/ui/h
 import { Button } from '@/components/ui/button'
 import CustomerDetailDialog from '@/components/ui/dialogs/customer-detail-dialog'
 import { MoreHorizontal, Info, Phone } from 'lucide-react'
-import CallTimerOverlay from '@/components/ui/call-timer-overlay'
+import CallTimerOverlay from '@/components/ui/dialogs/call-timer-overlay'
 import CallResultDialog from '@/components/ui/dialogs/call-result-dialog'
 
 // Component untuk menampilkan tombol aksi pada setiap baris data karyawan

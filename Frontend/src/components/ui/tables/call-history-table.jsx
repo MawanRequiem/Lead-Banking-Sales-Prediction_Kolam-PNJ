@@ -3,42 +3,42 @@ import DataTable from '@/components/ui/tables/data-table'
 import DataTableViewOptions from './data-table-view-options'
 import { Button } from '@/components/ui/button'
 import ExportDialog from '@/components/ui/dialogs/export-dialog'
-import useTable from '@/hooks/useTable'
+import useCallHistory from '@/hooks/useCallHistory'
 import FilterDropdown from '../dropdown/filter-dropdown'
+import CallNoteDialog from '@/components/ui/dialogs/call-note-dialog'
+import { CategoryBadge } from '@/components/ui/badges'
 
-const historyColumns = [
-  { accessorKey: 'time', header: 'Waktu' },
-  { accessorKey: 'agent', header: 'Agen' },
-  { accessorKey: 'duration', header: 'Durasi' },
-  { accessorKey: 'result', header: 'Hasil' },
-]
-
-const historyMock = [
-  { id: 'h1', time: '2025-11-18 10:00', agent: 'Ari', duration: '00:05:23', result: 'Terkoneksi' },
-  { id: 'h2', time: '2025-11-18 11:30', agent: 'Budi', duration: '00:02:10', result: 'Voicemail' },
+const historyColumns = (onOpenNote) => [
+  { accessorKey: 'id', header: 'No Penawaran' },
+  { accessorKey: 'time', header: 'Tanggal' },
+  { accessorKey: 'namaNasabah', header: 'Nama Nasabah' },
+  { accessorKey: 'result', header: 'Hasil Telepon' },
+  { 
+    accessorKey: 'grade', header: 'Kategori',
+    cell: ({ row }) => <CategoryBadge category={row.original.grade} />,
+  },
+  {
+    id: 'keterangan',
+    header: 'Keterangan',
+    cell: ({ row }) => (
+      <div className="flex items-center gap-2">
+        <Button size="sm" variant="ghost" onClick={() => onOpenNote(row.original)}>Lihat</Button>
+      </div>
+    ),
+  },
 ]
 
 export default function CallHistoryTable() {
   const [openExport, setOpenExport] = useState(false)
   const [filters, setFilters] = useState({ from: null, to: null, grade: 'all', status: 'any', keyword: '' })
+  const [selectedCall, setSelectedCall] = useState(null)
+  const [openNote, setOpenNote] = useState(false)
 
-  const { data, loading } = useTable({ initial: historyMock })
+  const { data, loading } = useCallHistory()
 
-  const cols = useMemo(() => historyColumns, [])
+  const cols = useMemo(() => historyColumns((call) => { setSelectedCall(call); setOpenNote(true) }), [])
 
   function applyFilter(payload) {
-    // jika berganting ke server-side filtering, ganti setFilters dengan 
-    // fetch ke backend. Contoh:
-    // const qs = new URLSearchParams(payload).toString()
-    // fetch(`/api/calls?${qs}`)
-    //   .then(r => r.json())
-    //   .then(json => setData(json.rows))
-    //   .catch(err => console.error(err))
-    //
-    // Backend/ORM notes:
-    // - Backend harus memvalidasi/memparsing tanggal dan kata kunci dengan aman.
-    // - Gunakan query parameterized atau query builder ORM dan hindari konkatenasi string.
-    // - Prefer mengembalikan hasil yang dipaginasi dan total count.
     setFilters(payload)
   }
 
@@ -55,11 +55,10 @@ export default function CallHistoryTable() {
       if (filters.keyword) {
         const kw = String(filters.keyword).toLowerCase()
         const agent = String(item.agent || '').toLowerCase()
-        const nama = String(item.nama || '').toLowerCase()
+        const nama = String(item.namaNasabah || '').toLowerCase()
         if (!agent.includes(kw) && !nama.includes(kw)) return false
       }
 
-      // mengatur filter rentang tanggal (mengasumsikan item.time dapat diurai)
       if (filters.from) {
         const fromD = new Date(filters.from)
         const itemD = new Date(item.time)
@@ -71,7 +70,6 @@ export default function CallHistoryTable() {
         if (isNaN(itemD.getTime()) || itemD > toD) return false
       }
 
-      // mengatur filter grade/status jika ada pada item
       if (filters.grade && filters.grade !== 'all' && item.grade && item.grade !== filters.grade) return false
       if (filters.status && filters.status !== 'any' && item.status && item.status !== filters.status) return false
 
@@ -93,9 +91,10 @@ export default function CallHistoryTable() {
       />
 
       <ExportDialog open={openExport} onOpenChange={(v) => setOpenExport(v)} data={data} onApply={({ from, to }) => {
-        // dummy logic export
         console.log('Export range', from, to)
       }} />
+
+      <CallNoteDialog open={openNote} onOpenChange={(v) => setOpenNote(v)} note={selectedCall?.note} />
     </>
   )
 }

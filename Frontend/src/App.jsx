@@ -62,7 +62,7 @@ function App() {
                 className="w-full"
               />
             </div>
-            <AdminBulkAddTable />
+            {/* <AdminBulkAddTable /> */}
             <CustomerOverviewTable />
             <AssignmentTable />
             <CallHistoryTable />

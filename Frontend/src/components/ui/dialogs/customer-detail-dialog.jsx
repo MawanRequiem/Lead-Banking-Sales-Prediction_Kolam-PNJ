@@ -8,6 +8,8 @@ import {
   DialogClose,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
+import { DepositStatusBadge, DepositTypeBadge } from '@/components/ui/badges'
+import { ScrollArea } from '@/components/ui/scroll-area'
 import { Phone } from 'lucide-react'
 
 // A focused dialog component for customer details. Keep presentation here
@@ -53,8 +55,9 @@ export default function CustomerDetailDialog({
         <div className="overflow-x-auto">
           <div className="flex gap-6 max-h-[70vh] pr-2 min-w-max">
             {/* Left: personal info (fixed small, proportional on sm) */}
-            <div className="w-[18rem] sm:w-1/3 min-w-0 overflow-auto">
-              <section className="mb-4">
+            <div className="w-[18rem] sm:w-1/3 min-w-0">
+              <ScrollArea className="h-full whitespace-nowrap ps-px">
+                <section className="mb-4">
                 <h3 className="text-sm font-semibold mb-2">Informasi Diri</h3>
                 <div className="grid grid-cols-1 gap-3 text-sm">
                   <div>
@@ -73,52 +76,77 @@ export default function CustomerDetailDialog({
                     <div className="text-muted-foreground text-xs">Umur</div>
                     <div className="text-foreground font-medium">{karyawan.umur} tahun</div>
                   </div>
+                  <div>
+                    <div className="text-muted-foreground text-xs">Domisili</div>
+                    <div className="text-foreground font-medium">{karyawan.domisili}</div>
+                  </div>
+                  <div>
+                    <div className="text-muted-foreground text-xs">Status Pernikahan</div>
+                    <div className="text-foreground font-medium"><MarriageBadge value={karyawan.statusPernikahan} /></div>
+                  </div>
                 </div>
-              </section>
+                </section>
+              </ScrollArea>
             </div>
 
             <div className="w-px bg-border hidden sm:block" />
 
             {/* Middle: call history (fixed small, flexible on sm) */}
-            <div className="w-[28rem] sm:flex-1 min-w-0 overflow-auto">
-              <section>
-                <h3 className="text-sm font-semibold mb-2">Riwayat Telepon</h3>
-                {Array.isArray(karyawan.calls) && karyawan.calls.length ? (
-                  <ul className="space-y-2 text-sm">
-                    {karyawan.calls.map((c, i) => (
-                      <li key={i} className="flex items-start justify-between">
-                        <div>
-                          <div className="text-muted-foreground text-xs">{c.date}</div>
-                          <div className="text-foreground">{c.note || c.type || 'Panggilan'}</div>
+            <div className="w-[28rem] sm:flex-1 min-w-0">
+              <ScrollArea className="h-full rounded-md border p-4">
+                <section>
+                  <h3 className="text-sm font-semibold mb-2">Riwayat Telepon Terakhir</h3>
+                  {Array.isArray(karyawan.calls) && karyawan.calls.length ? (
+                    <div className="space-y-3 text-sm pr-2">
+                      {karyawan.calls.map((c, i) => (
+                        <div key={i} className="p-2 rounded-md bg-background-secondary/50">
+                          <div className="flex items-start justify-between">
+                            <div className="min-w-0">
+                              <div className="text-muted-foreground text-xs">{c.date}</div>
+                              <div className="text-foreground font-medium">{c.result || c.type || 'Panggilan'}</div>
+                            </div>
+                            <div className="text-muted-foreground text-xs ml-4">{c.duration || ''}</div>
+                          </div>
+                          {c.note ? <div className="text-sm text-muted-foreground mt-2">{c.note}</div> : null}
                         </div>
-                        <div className="text-muted-foreground text-xs">{c.duration || ''}</div>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <div className="text-sm text-muted-foreground">Tidak ada riwayat telepon.</div>
-                )}
-              </section>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-sm text-muted-foreground">Tidak ada riwayat telepon.</div>
+                  )}
+                </section>
+              </ScrollArea>
             </div>
 
             {/* Divider (visible on sm+) */}
             <div className="w-px bg-border hidden sm:block" />
 
             {/* Right: deposits */}
-            <div className="w-[18rem] sm:w-80 min-w-[18rem] max-h-[70vh] overflow-auto">
+            <div className="w-[18rem] sm:w-80 min-w-[18rem]">
               <section>
                 <h3 className="text-sm font-semibold mb-2">Daftar Deposito</h3>
                 <div className="space-y-2">
                   {deposits.length ? (
-                    deposits.map((d, i) => (
-                      <div key={i} className="flex items-center justify-between p-2 rounded-md bg-background-secondary/50">
-                        <div>
-                          <div className="text-muted-foreground text-xs">Produk</div>
-                          <div className="text-foreground font-medium">{d.product}</div>
+                    <ScrollArea className="h-full">
+                      {deposits.map((d, i) => (
+                        <div key={i} className="p-2 rounded-md bg-background-secondary/50">
+                        <div className="flex items-start justify-between">
+                          <div className="min-w-0">
+                            <div className="text-muted-foreground text-xs">Produk</div>
+                            <div className="text-foreground font-medium">{d.product}</div>
+
+                            <div className="mt-2 text-xs text-muted-foreground">Jenis Deposito</div>
+                            <div className="mt-1"><DepositTypeBadge type={d.type || d.productType || `Type`} /></div>
+                          </div>
+
+                          <div className="text-right">
+                            <div className="text-sm text-foreground">{d.amount}</div>
+                            <div className="mt-2"><DepositStatusBadge status={d.status || d.state || (d.active ? 'Active' : 'Inactive')} /></div>
+                          </div>
                         </div>
-                        <div className="text-sm text-foreground">{d.amount}</div>
                       </div>
-                    ))
+                      ))}
+                    </ScrollArea>
                   ) : (
                     <div className="text-sm text-muted-foreground">Tidak ada deposito.</div>
                   )}

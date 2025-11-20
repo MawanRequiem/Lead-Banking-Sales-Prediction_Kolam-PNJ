@@ -1,6 +1,7 @@
 import React from "react"
 import DataTableColumnHeader from '@/components/ui/tables/data-table-header'
 import { mockData } from "@/hooks/useTable"
+import { MarriageBadge } from '@/components/ui/badges'
 
 // kolom kolom yang digunakan di DataTable untuk Customers
 export const columns = [
@@ -29,13 +30,9 @@ export const columns = [
     accessorKey: 'statusPernikahan',
     header: 'Status',
     cell: ({ row }) => (
-        <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-            row.original.statusPernikahan === 'Menikah' ? 'bg-green-100 text-green-700' : 
-            row.original.statusPernikahan === 'Lajang' ? 'bg-blue-100 text-blue-700' :
-            'bg-yellow-100 text-yellow-700'
-        }`}>
-            {row.original.statusPernikahan}
-        </span>
+      <div>
+        <MarriageBadge value={row.original.statusPernikahan} />
+      </div>
     ),
   },
     // Note: action cell is rendered by the DataTable via `renderRowActions`.

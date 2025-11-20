@@ -2,19 +2,19 @@ import { useState, useEffect } from 'react'
 
 // Dummy data moved here so table definitions remain clean.
 export const mockData = [
-  { id: '1', nama: 'Budi Santoso', pekerjaan: 'Developer', nomorTelepon: '081234567890', jenisKelamin: 'Pria', umur: 28, statusPernikahan: 'Lajang' },
-  { id: '2', nama: 'Siti Aisyah', pekerjaan: 'Designer', nomorTelepon: '081112233445', jenisKelamin: 'Wanita', umur: 35, statusPernikahan: 'Menikah' },
-  { id: '3', nama: 'Joko Prabowo', pekerjaan: 'Manager', nomorTelepon: '085678901234', jenisKelamin: 'Pria', umur: 45, statusPernikahan: 'Menikah' },
-  { id: '4', nama: 'Ayu Lestari', pekerjaan: 'Akuntan', nomorTelepon: '087776655443', jenisKelamin: 'Wanita', umur: 22, statusPernikahan: 'Lajang' },
-  { id: '5', nama: 'Rian Hidayat', pekerjaan: 'Marketing', nomorTelepon: '089988776655', jenisKelamin: 'Pria', umur: 31, statusPernikahan: 'Menikah' },
-  { id: '6', nama: 'Dewi Rahma', pekerjaan: 'HRD', nomorTelepon: '081231231231', jenisKelamin: 'Wanita', umur: 40, statusPernikahan: 'Cerai' },
-  { id: '7', nama: 'Faisal Akbar', pekerjaan: 'Analis', nomorTelepon: '082233445566', jenisKelamin: 'Pria', umur: 26, statusPernikahan: 'Lajang' },
-  { id: '8', nama: 'Lina Natalia', pekerjaan: 'Sekretaris', nomorTelepon: '081567890123', jenisKelamin: 'Wanita', umur: 38, statusPernikahan: 'Menikah' },
-  { id: '9', nama: 'Teguh Saputra', pekerjaan: 'Operator', nomorTelepon: '081776655442', jenisKelamin: 'Pria', umur: 24, statusPernikahan: 'Lajang' },
-  { id: '10', nama: 'Maya Sari', pekerjaan: 'Supervisor', nomorTelepon: '081887766554', jenisKelamin: 'Wanita', umur: 33, statusPernikahan: 'Menikah' },
-  { id: '11', nama: 'Andre Wijaya', pekerjaan: 'Developer', nomorTelepon: '081234098765', jenisKelamin: 'Pria', umur: 29, statusPernikahan: 'Lajang' },
-  { id: '12', nama: 'Citra Dewi', pekerjaan: 'Designer', nomorTelepon: '081110099887', jenisKelamin: 'Wanita', umur: 36, statusPernikahan: 'Menikah' },
-  { id: '13', nama: 'Hendra Kusuma', pekerjaan: 'Manager', nomorTelepon: '085678123456', jenisKelamin: 'Pria', umur: 48, statusPernikahan: 'Menikah' },
+  { id: '1', nama: 'Budi Santoso', pekerjaan: 'Developer', nomorTelepon: '081234567890', jenisKelamin: 'Pria', umur: 28, domisili: 'Jakarta', statusPernikahan: 'Lajang', statusNasabah: 'Dalam Panggilan', kategori: 'A' },
+  { id: '2', nama: 'Siti Aisyah', pekerjaan: 'Designer', nomorTelepon: '081112233445', jenisKelamin: 'Wanita', umur: 35, domisili: 'Bandung', statusPernikahan: 'Menikah', statusNasabah: 'Tersedia', kategori: 'B' },
+  { id: '3', nama: 'Joko Prabowo', pekerjaan: 'Manager', nomorTelepon: '085678901234', jenisKelamin: 'Pria', umur: 45, domisili: 'Surabaya', statusPernikahan: 'Menikah', statusNasabah: 'Assign', kategori: 'C' },
+  { id: '4', nama: 'Ayu Lestari', pekerjaan: 'Akuntan', nomorTelepon: '087776655443', jenisKelamin: 'Wanita', umur: 22, domisili: 'Medan', statusPernikahan: 'Lajang', statusNasabah: 'Tersedia', kategori: 'A' },
+  { id: '5', nama: 'Rian Hidayat', pekerjaan: 'Marketing', nomorTelepon: '089988776655', jenisKelamin: 'Pria', umur: 31, domisili: 'Semarang', statusPernikahan: 'Menikah', statusNasabah: 'Dalam Panggilan', kategori: 'B' },
+  { id: '6', nama: 'Dewi Rahma', pekerjaan: 'HRD', nomorTelepon: '081231231231', jenisKelamin: 'Wanita', umur: 40, domisili: 'Yogyakarta', statusPernikahan: 'Cerai', statusNasabah: 'Assign', kategori: 'C' },
+  { id: '7', nama: 'Faisal Akbar', pekerjaan: 'Analis', nomorTelepon: '082233445566', jenisKelamin: 'Pria', umur: 26, domisili: 'Bali', statusPernikahan: 'Lajang', statusNasabah: 'Tersedia', kategori: 'A' },
+  { id: '8', nama: 'Lina Natalia', pekerjaan: 'Sekretaris', nomorTelepon: '081567890123', jenisKelamin: 'Wanita', umur: 38, domisili: 'Jakarta', statusPernikahan: 'Menikah', statusNasabah: 'Dalam Panggilan', kategori: 'B' },
+  { id: '9', nama: 'Teguh Saputra', pekerjaan: 'Operator', nomorTelepon: '081776655442', jenisKelamin: 'Pria', umur: 24, domisili: 'Bandung', statusPernikahan: 'Lajang', statusNasabah: 'Assign', kategori: 'C' },
+  { id: '10', nama: 'Maya Sari', pekerjaan: 'Supervisor', nomorTelepon: '081887766554', jenisKelamin: 'Wanita', umur: 33, domisili: 'Surabaya', statusPernikahan: 'Menikah', statusNasabah: 'Tersedia', kategori: 'A' },
+  { id: '11', nama: 'Andre Wijaya', pekerjaan: 'Developer', nomorTelepon: '081234098765', jenisKelamin: 'Pria', umur: 29, domisili: 'Medan', statusPernikahan: 'Lajang', statusNasabah: 'Dalam Panggilan', kategori: 'B' },
+  { id: '12', nama: 'Citra Dewi', pekerjaan: 'Designer', nomorTelepon: '081110099887', jenisKelamin: 'Wanita', umur: 36, domisili: 'Semarang',   statusPernikahan: 'Menikah', statusNasabah: 'Assign', kategori: 'C' },
+  { id: '13', nama: 'Hendra Kusuma', pekerjaan: 'Manager', nomorTelepon: '085678123456', jenisKelamin: 'Pria', umur: 48, domisili: 'Yogyakarta', statusPernikahan: 'Menikah', statusNasabah: 'Tersedia', kategori: 'A' },
   // Tambah data lain untuk menguji pagination
   ...Array.from({ length: 17 }).map((_, i) => ({
     id: String(i + 14),

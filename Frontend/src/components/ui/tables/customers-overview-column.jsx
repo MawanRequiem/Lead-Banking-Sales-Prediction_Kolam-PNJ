@@ -1,6 +1,6 @@
 import React from 'react'
 import DataTableColumnHeader from '@/components/ui/tables/data-table-header'
-import { mockCustomersOverview } from '@/hooks/useCustomersOverview'
+import { mockData } from '@/hooks/useTable'
 
 
 import { StatusBadge, CategoryBadge } from '@/components/ui/badges'
@@ -31,6 +31,6 @@ export const columns = [
 ]
 
 // re-export mock data for convenience
-export const mockData = mockCustomersOverview
+export { mockData }
 
 export default columns

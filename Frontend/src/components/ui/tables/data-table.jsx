@@ -88,6 +88,7 @@ export default function DataTable({
         </div>
       </div>
 
+      {/** Ini adalah bagian konten tabel */}
       <div className="overflow-hidden rounded-lg border bg-card shadow-sm">
         <Table>
           <TableHeader>
@@ -107,6 +108,7 @@ export default function DataTable({
           <TableBody>
             {loading && (
               <>
+              {/* Ini adalah bagian loading tabel */}
                 {Array.from({ length: 6 }).map((_, rIndex) => (
                   <TableRow key={`skeleton-${rIndex}`}>
                     {Array.from({ length: columns.length + (renderRowActions ? 1 : 0) }).map((__, cIndex) => (
@@ -119,6 +121,7 @@ export default function DataTable({
               </>
             )}
 
+            {/** Ini adalah bagian isi tabel */}
             {!loading && table.getPaginationRowModel().rows.length ? (
               table.getPaginationRowModel().rows.map((row) => (
                 <TableRow key={row.id} data-state={row.getIsSelected() && 'selected'}>
@@ -136,6 +139,7 @@ export default function DataTable({
               ))
             ) : null}
 
+            {/** Ini adalah bagian ketika data tidak ditemukan */}
             {!loading && !table.getPaginationRowModel().rows.length ? (
               <TableRow>
                 <TableCell colSpan={columns.length + (renderRowActions ? 1 : 0)} className="h-24 text-center">
@@ -147,8 +151,10 @@ export default function DataTable({
         </Table>
       </div>
 
+      {/** Ini adalah bagian footer tabel */}
       <div className="mt-2">
         <div className="flex items-center justify-between">
+          {/** Ini adalah bagian pagination tabel */}
           <div className="text-muted-foreground text-sm">Total {table.getFilteredRowModel().rows.length} Data</div>
           <div className="flex items-center space-x-2">
             <Button variant="outline" size="icon" onClick={() => table.setPageIndex(0)} disabled={!table.getCanPreviousPage()}>
