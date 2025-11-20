@@ -1,8 +1,8 @@
 import React from "react";
 import { ThemeProvider } from "@/contexts/theme-context";
-import { SidebarProvider } from "@/components/ui/sidebar";
-import { Sidebar } from "@/components/ui/app-sidebar";
-import { Header } from "@/components/ui/header";
+import { SidebarProvider } from "@/components/ui/sidebar/sidebar";
+import { Sidebar } from "@/components/ui/sidebar/app-sidebar";
+import { Header } from "@/components/ui/header/header";
 
 export default function NotFound() {
   return (

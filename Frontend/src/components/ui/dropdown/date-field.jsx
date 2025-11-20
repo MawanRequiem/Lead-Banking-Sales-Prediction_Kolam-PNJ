@@ -4,25 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover'
 import { Calendar } from '@/components/ui/calendar'
-
-function isoToDate(iso) {
-  if (!iso) return undefined
-  const d = new Date(iso)
-  return isNaN(d.getTime()) ? undefined : d
-}
-
-function dateToIso(date) {
-  if (!date) return ''
-  const yyyy = date.getFullYear()
-  const mm = String(date.getMonth() + 1).padStart(2, '0')
-  const dd = String(date.getDate()).padStart(2, '0')
-  return `${yyyy}-${mm}-${dd}`
-}
-
-function formatDisplay(date) {
-  if (!date) return ''
-  return date.toLocaleDateString()
-}
+import { isoToDate, toIso, formatDisplay } from '@/lib/date-utils'
 
 export default function DateField({ value, onChange, placeholder = '', id }) {
   const date = isoToDate(value)
@@ -50,7 +32,7 @@ export default function DateField({ value, onChange, placeholder = '', id }) {
             selected={date}
             captionLayout="dropdown"
             onSelect={(d) => {
-              onChange(dateToIso(d))
+              onChange(toIso(d))
             }}
           />
         </PopoverContent>

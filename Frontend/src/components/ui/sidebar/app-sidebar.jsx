@@ -1,7 +1,7 @@
 import React from 'react';
 import { LayoutGrid } from 'lucide-react';
 import { useSidebar } from '@/hooks/useSidebar';
-import { navItems, footerItem } from '@/components/ui/sidebar-consts';
+import { navItems, footerItem } from '@/components/ui/sidebar/sidebar-consts';
 import { cn } from '@/lib/utils';
 
 export function Sidebar() {
