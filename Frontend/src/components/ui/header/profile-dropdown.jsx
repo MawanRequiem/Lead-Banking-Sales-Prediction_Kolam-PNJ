@@ -2,7 +2,7 @@ import React from 'react'
 import { Globe, Key, SunMoon, Info, Bell, LogOut } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import useProfile from '@/hooks/useProfile'
-import { Switch } from './switch'
+import { Switch } from '../switch'
 import { useTheme } from '@/hooks/useTheme'
 
 export default function ProfileDropdown(props) {

@@ -1,18 +1,26 @@
 import React, { useState } from 'react'
 import { Sliders } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { Button } from '../button'
 import {
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuSeparator,
-} from './dropdown-menu'
-import DateField from './date-field'
+} from '@/components/ui/dropdown-menu'
+import { 
+  Select, 
+  SelectTrigger, 
+  SelectValue, 
+  SelectContent, 
+  SelectItem 
+} from '@/components/ui/select'
+import DateField from '@/components/ui/dropdown/date-field'
 
 // FilterDropdown uses your Radix-based DropdownMenu primitives.
 // Pass a `trigger` prop (React node) to render a custom trigger inside the
 // DropdownMenuTrigger. If omitted, a default button is rendered.
-export default function FilterDropdown({ className, trigger = null }) {
+export default function FilterDropdown({ className, trigger = null, onApply }) {
   const [from, setFrom] = useState(() => {
     const d = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
     return d.toISOString().slice(0, 10)
@@ -48,7 +56,26 @@ export default function FilterDropdown({ className, trigger = null }) {
   }
 
   function apply(close) {
-    console.log({ from, to, grade, status, keyword })
+    const payload = { from, to, grade, status, keyword }
+    // NOTE: jika mau berganti ke server-side filtering, ini adalah tempatnya
+    // bisa menggunakan (A) panggil backend langsung dari dropdown (kurang
+    // direkomendasikan), atau (B) kirim payload ke parent melalui `onApply`
+    // (direkomendasikan). Parent kemudian dapat memanggil endpoint API Anda dengan
+    // parameter query yang dibangun dari `payload` dan memperbarui data tabel.
+    //
+    // Example (parent-side fetch):
+    // onApply(payload) -> parent builds query string and fetches:
+    // const qs = new URLSearchParams(payload).toString()
+    // fetch(`/api/calls?${qs}`)
+    //   .then(r => r.json())
+    //   .then(data => setData(data.rows))
+    //
+    // Penting untuk mengingat keamanan pada server-side:
+    // - Selalu validasi dan sanitasi parameter query di server.
+    // - Gunakan query parameterized / placeholder ORM untuk menghindari injeksi.
+    // - Terapkan batasan (max `limit`) dan paginasi di backend.
+
+    if (typeof onApply === 'function') onApply(payload)
     if (typeof close === 'function') close()
   }
 
@@ -56,9 +83,10 @@ export default function FilterDropdown({ className, trigger = null }) {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         {trigger ?? (
-          <button aria-label="Open filter" className="flex items-center gap-2 rounded-md px-2 py-1 hover:bg-muted">
+          <Button variant="outline" size="sm" className="ml-auto hidden h-8 lg:flex">
             <Sliders className="h-5 w-5" />
-          </button>
+            <span className="text-sm font-medium hidden lg:block">Filter</span>
+          </Button>
         )}
       </DropdownMenuTrigger>
 
@@ -93,12 +121,17 @@ export default function FilterDropdown({ className, trigger = null }) {
             <button className="text-xs text-foreground underline" onClick={() => resetSection('grade')}>Reset</button>
           </div>
           <div className="mt-2">
-            <select value={grade} onChange={(e) => setGrade(e.target.value)} className="w-full rounded-md border px-2 py-1">
-              <option value="all">Semua</option>
-              <option value="A">A</option>
-              <option value="B">B</option>
-              <option value="C">C</option>
-            </select>
+            <Select value={grade} onValueChange={(v) => setGrade(v)}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Pilih grade" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Semua</SelectItem>
+                <SelectItem value="A">A</SelectItem>
+                <SelectItem value="B">B</SelectItem>
+                <SelectItem value="C">C</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
@@ -111,12 +144,17 @@ export default function FilterDropdown({ className, trigger = null }) {
             <button className="text-xs text-foreground underline" onClick={() => resetSection('status')}>Reset</button>
           </div>
           <div className="mt-2">
-            <select value={status} onChange={(e) => setStatus(e.target.value)} className="w-full rounded-md border px-2 py-1">
-              <option value="any">Semua</option>
-              <option value="open">Open</option>
-              <option value="closed">Closed</option>
-              <option value="pending">Pending</option>
-            </select>
+            <Select value={status} onValueChange={(v) => setStatus(v)}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Pilih status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="any">Semua</SelectItem>
+                <SelectItem value="open">Open</SelectItem>
+                <SelectItem value="closed">Closed</SelectItem>
+                <SelectItem value="pending">Pending</SelectItem>
+              </SelectContent>
+          </Select>
           </div>
         </div>
 

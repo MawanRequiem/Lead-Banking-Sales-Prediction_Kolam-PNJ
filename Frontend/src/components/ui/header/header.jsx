@@ -1,9 +1,9 @@
 import React from 'react';
 import { Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import NotificationButton from '@/components/ui/notification-button';
-import ProfileDropdown from '@/components/ui/profile-dropdown';
-import { Input } from './input';
+import NotificationButton from '@/components/ui/header/notification-button';
+import ProfileDropdown from '@/components/ui/header/profile-dropdown';
+import { Input } from '../input';
 import logoUrl from '@/assets/Logo Sales.svg';
 import useHeaderHeight from '@/hooks/useHeaderHeight';
 

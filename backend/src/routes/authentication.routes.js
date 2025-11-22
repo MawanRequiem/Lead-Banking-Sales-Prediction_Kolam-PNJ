@@ -1,15 +1,17 @@
 const express = require('express');
-const authenticationController = require('../controllers/authentication.controller');
-const { validate } = require('../middlewares/validation.middleware');
-const { postAuthenticationSchema } = require('../validators/authentication.validator');
-
 const router = express.Router();
+const authController = require('../controllers/authentication.controller');
+const { authenticateToken } = require('../middlewares/auth.middleware');
+const { validateLogin, validateRefreshToken, validateLogout } = require('../middlewares/validation.middleware');
+const { authLimiter } = require('../middlewares/rateLimiter.middleware');
 
-router.post(
-  '/login',
-  validate(postAuthenticationSchema),
-  authenticationController.login,
-);
-// router.post('/logout');
+// Login
+router.post('/login', authLimiter, validateLogin, authController.login);
+
+// Logout
+router.post('/logout', authenticateToken, validateLogout, authController.logout);
+
+// Refresh token
+router.post('/refresh', validateRefreshToken, authController.refresh);
 
 module.exports = router;

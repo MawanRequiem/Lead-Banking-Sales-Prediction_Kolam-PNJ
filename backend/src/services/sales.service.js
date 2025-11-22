@@ -1,295 +1,261 @@
 const salesRepository = require('../repositories/sales.repository');
-const logger = require('../config/logger');
 const { hashPassword, validatePasswordStrength } = require('../utils/password.util');
 const {
   BadRequestError,
   ConflictError,
   NotFoundError,
-} = require('../utils/error.util');
+} = require('../middlewares/errorHandler.middleware');
+const logger = require('../config/logger');
+const { encryptSensitiveFields, decryptSensitiveFields } = require('../utils/prismaEncryption.util');
+const { encrypt } = require('../utils/encryption.util');
 
 /**
- * Create Sales Account
+ * Create Sales
  */
 async function createSales(data) {
-  try {
-    const { nama, email, password, nomorTelepon, domisili } = data;
-
-    // Validate password strength
-    const passwordValidation = validatePasswordStrength(password);
-    if (!passwordValidation.valid) {
-      throw new BadRequestError(passwordValidation.errors.join(', '));
-    }
-
-    // Check if email already exists
-    const existingSales = await salesRepository.findByEmail(email);
-    if (existingSales) {
-      throw new ConflictError('Email already registered');
-    }
-
-    // Hash password
-    const passwordHash = await hashPassword(password);
-
-    // Create sales
-    const sales = await salesRepository.create({
-      nama,
-      email,
-      passwordHash,
-      nomorTelepon,
-      domisili,
-    });
-
-    logger.info(`Sales user created: ${sales.idSales}`);
-
-    // Return without sensitive data
-    const { passwordHash: _, ...safeSales } = sales;
-    return safeSales;
-  } catch (error) {
-    logger.error('Error in createSales service:', error);
-    throw error;
+  // Check if email already exists
+  const existingSales = await salesRepository.findByEmail(data.email);
+  if (existingSales) {
+    throw new ConflictError('Email already registered', 'EMAIL_EXISTS');
   }
-}
 
-/**
- * Get All Sales with pagination
- */
-async function getAllSales(options = {}) {
-  try {
-    const {
-      page = 1,
-      limit = 10,
-      isActive,
-      search,
-    } = options;
+  // Hash password
+  const passwordHash = await hashPassword(data.password);
 
-    const skip = (page - 1) * limit;
+  const encryptedData = encryptSensitiveFields({
+    nomorTelepon: data.nomorTelepon,
+    domisili: data.domisili,
+  });
 
-    const result = await salesRepository.findAll({
-      skip,
-      take: parseInt(limit),
-      isActive: isActive !== undefined ? isActive === 'true' : undefined,
-      search,
-    });
+  // Create sales
+  const sales = await salesRepository.create({
+    nama: data.nama,
+    email: data.email,
+    passwordHash,
+    nomorTelepon: encryptedData.nomorTelepon, // Pass the encrypted version
+    domisili: encryptedData.domisili,         // Pass the encrypted version
+  });
 
-    return {
-      sales: result.sales,
-      pagination: {
-        total: result.total,
-        page: parseInt(page),
-        limit: parseInt(limit),
-        totalPages: Math.ceil(result.total / limit),
-      },
-    };
-  } catch (error) {
-    logger.error('Error in getAllSales service:', error);
-    throw error;
-  }
+  // Decrypt for the return value so the API response is readable
+  const decryptedSales = decryptSensitiveFields(sales);
+
+  // Remove sensitive data
+  delete decryptedSales.user.passwordHash;
+
+  return decryptedSales;
 }
 
 /**
  * Get Sales by ID
  */
 async function getSalesById(id) {
-  try {
-    const sales = await salesRepository.findById(id);
+  const sales = await salesRepository.findById(id);
 
-    if (!sales) {
-      throw new NotFoundError('Sales account not found');
-    }
-
-    // Return without sensitive data
-    const { passwordHash: _, ...safeSales } = sales;
-    return safeSales;
-  } catch (error) {
-    logger.error('Error in getSalesById service:', error);
-    throw error;
+  if (!sales) {
+    throw new NotFoundError('Sales not found', 'SALES_NOT_FOUND');
   }
+
+  const decryptedSales = decryptSensitiveFields(sales);
+
+  // Remove password hash
+  if (decryptedSales.user) {
+    delete decryptedSales.user.passwordHash;
+  }
+
+  return decryptedSales;
 }
 
 /**
- * Update Sales Account
+ * Get All Sales
+ */
+async function getAllSales(filters) {
+  const { isActive } = filters;
+
+  if (isActive !== undefined) {
+    filters.isActive = isActive === 'true'; // Convert to boolean if "true" then true else false
+  }
+
+  const result = await salesRepository.findAll(filters);
+
+  const decryptedSales = result.sales.map(sales => {
+    const decrypted = decryptSensitiveFields(sales);
+    if (decrypted.user) {
+      delete decrypted.user.passwordHash;
+    }
+    return decrypted;
+  });
+
+  return {
+    sales: decryptedSales,
+    pagination: result.pagination,
+  };
+}
+
+/**
+ * Update Sales
  */
 async function updateSales(id, data) {
-  try {
-    const { nama, email, nomorTelepon, domisili } = data;
+  const existingSales = await salesRepository.findById(id);
 
-    // Check if sales exists
-    const existingSales = await salesRepository.findById(id);
-    if (!existingSales) {
-      throw new NotFoundError('Sales account not found');
-    }
-
-    // Check if email is being changed and already exists
-    if (email && email !== existingSales.email) {
-      const emailExists = await salesRepository.findByEmail(email);
-      if (emailExists) {
-        throw new ConflictError('Email already registered');
-      }
-    }
-
-    // Update sales
-    const updateData = {};
-    if (nama) {updateData.nama = nama;}
-    if (email) {updateData.email = email;}
-    if (nomorTelepon !== undefined) {updateData.nomorTelepon = nomorTelepon;}
-    if (domisili !== undefined) {updateData.domisili = domisili;}
-
-    const updatedSales = await salesRepository.update(id, updateData);
-
-    logger.info(`Sales user updated: ${id}`);
-
-    // Return without sensitive data
-    const { passwordHash: _, ...safeSales } = updatedSales;
-    return safeSales;
-  } catch (error) {
-    logger.error('Error in updateSales service:', error);
-    throw error;
+  if (!existingSales) {
+    throw new NotFoundError('Sales not found', 'SALES_NOT_FOUND');
   }
+
+  const encryptedData = {};
+  if (data.nama !== undefined) {encryptedData.nama = data.nama;}
+  if (data.nomorTelepon !== undefined) {
+    encryptedData.nomorTelepon = data.nomorTelepon ? encrypt(data.nomorTelepon) : null;
+  }
+  if (data.domisili !== undefined) {
+    encryptedData.domisili = data.domisili ? encrypt(data.domisili) : null;
+  }
+
+  const updated = await salesRepository.update(id, encryptedData);
+
+  const decryptedSales = decryptSensitiveFields(updated);
+  if (decryptedSales.user) {
+    delete decryptedSales.user.passwordHash;
+  }
+
+  return decryptedSales;
 }
 
 /**
- * Reset Sales Password (Admin only)
+ * Reset Sales Password
  */
 async function resetSalesPassword(id, newPassword) {
-  try {
-    // Check if sales exists
-    const existingSales = await salesRepository.findById(id);
-    if (!existingSales) {
-      throw new NotFoundError('Sales account not found');
-    }
+  const existingSales = await salesRepository.findById(id);
 
-    // Validate password strength
-    const passwordValidation = validatePasswordStrength(newPassword);
-    if (!passwordValidation.valid) {
-      throw new BadRequestError(passwordValidation.errors.join(', '));
-    }
-
-    // Hash new password
-    const passwordHash = await hashPassword(newPassword);
-
-    // Update password
-    await salesRepository.updatePassword(id, passwordHash);
-
-    logger.info(`Sales password reset: ${id}`);
-
-    return { message: 'Password reset successfully' };
-  } catch (error) {
-    logger.error('Error in resetSalesPassword service:', error);
-    throw error;
+  if (!existingSales) {
+    throw new NotFoundError('Sales account not found', 'SALES_NOT_FOUND');
   }
+
+  // Validate new password
+  const passwordValidation = validatePasswordStrength(newPassword);
+  if (!passwordValidation.valid) {
+    throw new BadRequestError(
+      'Password does not meet security requirements',
+      'WEAK_PASSWORD',
+    );
+  }
+
+  const passwordHash = await hashPassword(newPassword);
+
+  await salesRepository.updatePassword(id, passwordHash);
+
+  logger.audit('Password reset', {
+    salesId: id,
+    email: existingSales.user.email,
+  });
+
+  return { message: 'Password reset successfully' };
 }
 
 /**
- * Deactivate Sales Account
- * Now also sets deletedAt timestamp
- */
-/**
- * Deactivate Sales Account
- * Sets isActive = false AND deletedAt = current timestamp
- * @param {string} id - Sales ID
- * @returns {Promise<Object>}
+ * Deactivate Sales
  */
 async function deactivateSales(id) {
-  try {
-    // Check if sales exists
-    const existingSales = await salesRepository.findById(id);
-    if (!existingSales) {
-      throw new NotFoundError('Sales account not found');
-    }
+  const existingSales = await salesRepository.findById(id);
 
-    // Check if already deactivated
-    if (!existingSales.isActive) {
-      throw new BadRequestError('Sales account is already deactivated');
-    }
-
-    // Deactivate sales (will also set deletedAt)
-    await salesRepository.deactivate(id);
-
-    logger.info(`Sales user deactivated with soft delete: ${id}`);
-
-    return {
-      message: 'Sales account deactivated successfully',
-      details: {
-        id: id,
-        deactivatedAt: new Date().toISOString(),
-      },
-    };
-  } catch (error) {
-    logger.error('Error in deactivateSales service:', error);
-    throw error;
+  if (!existingSales) {
+    throw new NotFoundError('Sales account not found', 'SALES_NOT_FOUND');
   }
+
+  if (!existingSales.user.isActive && !existingSales.user.deletedAt) {
+    throw new BadRequestError(
+      'Sales account is already deactivated',
+      'ALREADY_DEACTIVATED',
+    );
+  }
+
+  if (existingSales.user.deletedAt) {
+    throw new BadRequestError(
+      'Cannot deactivate a deleted account',
+      'ACCOUNT_DELETED',
+    );
+  }
+
+  await salesRepository.deactivate(id);
+
+  logger.audit('Sales deactivated', {
+    salesId: id,
+    email: existingSales.user.email,
+  });
+
+  return {
+    message: 'Sales account deactivated successfully',
+    note: 'Use activate endpoint to restore access',
+  };
 }
 
 /**
- * Activate Sales Account
- * Sets isActive = true AND deletedAt = null (restore)
- * @param {string} id - Sales ID
- * @returns {Promise<Object>}
+ * Activate Sales
  */
 async function activateSales(id) {
-  try {
-    // Find sales even if soft deleted
-    const existingSales = await salesRepository.findUnique({
-      where: { idSales: id },
-    });
+  const existingSales = await salesRepository.findById(id, true);
 
-    if (!existingSales) {
-      throw new NotFoundError('Sales account not found');
-    }
-
-    // Check if already active
-    if (existingSales.isActive && !existingSales.deletedAt) {
-      throw new BadRequestError('Sales account is already active');
-    }
-
-    // Activate sales (will also clear deletedAt)
-    await salesRepository.activate(id);
-
-    logger.info(`Sales user activated and restored: ${id}`);
-
-    return {
-      message: 'Sales account activated successfully',
-      details: {
-        id: id,
-        restoredAt: new Date().toISOString(),
-      },
-    };
-  } catch (error) {
-    logger.error('Error in activateSales service:', error);
-    throw error;
+  if (!existingSales) {
+    throw new NotFoundError('Sales account not found', 'SALES_NOT_FOUND');
   }
+
+  if (existingSales.user.isActive && !existingSales.user.deletedAt) {
+    throw new BadRequestError(
+      'Sales account is already active',
+      'ALREADY_ACTIVE',
+    );
+  }
+
+  await salesRepository.activate(id);
+
+  logger.audit('Sales activated', {
+    salesId: id,
+    email: existingSales.user.email,
+    wasDeleted: !!existingSales.user.deletedAt,
+  });
+
+  return {
+    message: existingSales.user.deletedAt
+      ? 'Sales account restored from deletion'
+      : 'Sales account activated successfully',
+  };
 }
 
 /**
- * Delete Sales Account (Soft Delete)
- * This method stays the same - already sets deletedAt via repository
+ * Delete Sales (Soft Delete)
  */
 async function deleteSales(id) {
-  try {
-    // Check if sales exists
-    const existingSales = await salesRepository.findById(id);
-    if (!existingSales) {
-      throw new NotFoundError('Sales account not found');
-    }
+  const existingSales = await salesRepository.findById(id);
 
-    // Soft delete sales
-    await salesRepository.softDelete(id);
-
-    logger.info(`Sales user deleted: ${id}`);
-
-    return { message: 'Sales account deleted successfully' };
-  } catch (error) {
-    logger.error('Error in deleteSales service:', error);
-    throw error;
+  if (!existingSales) {
+    throw new NotFoundError('Sales account not found', 'SALES_NOT_FOUND');
   }
+
+  if (existingSales.user.deletedAt) {
+    throw new BadRequestError(
+      'Sales account is already deleted',
+      'ALREADY_DELETED',
+    );
+  }
+
+  await salesRepository.softDelete(id);
+
+  logger.audit('Sales deleted (soft)', {
+    salesId: id,
+    email: existingSales.user.email,
+  });
+
+  return {
+    message: 'Sales account deleted successfully',
+    note: 'Use activate endpoint to restore if needed',
+  };
 }
 
-// ⚠️ PENTING: Export semua method yang dibutuhkan
 module.exports = {
   createSales,
   getAllSales,
   getSalesById,
   updateSales,
-  resetSalesPassword,  // ✅ Tambahkan ini
+  resetSalesPassword,
   deactivateSales,
   activateSales,
   deleteSales,

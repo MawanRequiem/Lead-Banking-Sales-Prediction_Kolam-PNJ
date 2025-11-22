@@ -1,119 +1,89 @@
 const express = require('express');
-const adminController = require('../controllers/admin.controller');
-const { validate } = require('../middlewares/validation.middleware');
-const { requireAuth } = require('../middlewares/auth.middleware');
-const { requireRole } = require('../middlewares/role.middleware');
-const { createAdminSchema } = require('../validators/admin.validator');
-const {
-  createSalesSchema,
-  updateSalesSchema,
-  resetPasswordSchema,
-} = require('../validators/sales.validator');
-
 const router = express.Router();
+const adminController = require('../controllers/admin.controller');
+const assignmentController = require('../controllers/assignment.controller');
+const {
+  authenticateToken,
+  requireAdmin,
+} = require('../middlewares/auth.middleware');
+const {
+  validateCreateSales,
+  validateUpdateSales,
+  validateResetPassword,
+  validateUUIDParam,
+  validateGetAllQuery,
+} = require('../middlewares/validation.middleware');
+const {
+  writeLimiter,
+  searchLimiter,
+  passwordResetLimiter,
+} = require('../middlewares/rateLimiter.middleware');
 
-/**
- * Admin Routes
- * Base path: /api/admin
- * All routes require admin authentication
- */
+router.use(authenticateToken);
+router.use(requireAdmin);
 
-// Apply authentication middleware to all admin routes
-router.use(requireAuth);
-router.use(requireRole(['admin']));
-
-/**
- * @route POST /api/admin
- * @desc Create new admin account
- * @access Admin only
- */
-router.post(
-  '/',
-  validate(createAdminSchema),
-  adminController.createAdmin,
-);
-
-/**
- * @route POST /api/admin/sales
- * @desc Create new sales account
- * @access Admin only
- */
 router.post(
   '/sales',
-  validate(createSalesSchema),
+  writeLimiter,
+  validateCreateSales,
   adminController.createSales,
 );
 
-/**
- * @route GET /api/admin/sales
- * @desc Get all sales accounts with pagination and filters
- * @access Admin only
- */
 router.get(
   '/sales',
+  searchLimiter,
+  validateGetAllQuery,
   adminController.getAllSales,
 );
 
-/**
- * @route GET /api/admin/sales/:id
- * @desc Get sales account details by ID
- * @access Admin only
- */
 router.get(
   '/sales/:id',
+  validateUUIDParam('id'),
   adminController.getSalesById,
 );
 
-/**
- * @route PUT /api/admin/sales/:id
- * @desc Update sales account
- * @access Admin only
- */
 router.put(
   '/sales/:id',
-  validate(updateSalesSchema),
+  writeLimiter,
+  validateUUIDParam('id'),
+  validateUpdateSales,
   adminController.updateSales,
 );
 
-/**
- * @route POST /api/admin/sales/:id/reset-password
- * @desc Reset password for sales account
- * @access Admin only
- */
 router.post(
   '/sales/:id/reset-password',
-  validate(resetPasswordSchema),
-  adminController.resetSalesPassword,
+  passwordResetLimiter,
+  validateUUIDParam('id'),
+  validateResetPassword,
+  adminController.resetPassword,
 );
 
-/**
- * @route POST /api/admin/sales/:id/deactivate
- * @desc Deactivate sales account (soft delete)
- * @access Admin only
- */
 router.post(
   '/sales/:id/deactivate',
+  writeLimiter,
+  validateUUIDParam('id'),
   adminController.deactivateSales,
 );
 
-/**
- * @route POST /api/admin/sales/:id/activate
- * @desc Activate sales account
- * @access Admin only
- */
 router.post(
   '/sales/:id/activate',
+  writeLimiter,
+  validateUUIDParam('id'),
   adminController.activateSales,
 );
 
-/**
- * @route DELETE /api/admin/sales/:id
- * @desc Permanently delete sales account
- * @access Admin only
- */
 router.delete(
   '/sales/:id',
+  writeLimiter,
+  validateUUIDParam('id'),
   adminController.deleteSales,
+);
+
+// Assignment Routes
+router.post(
+  '/assignments/distribute',
+  writeLimiter, // Rate limit operasi berat
+  assignmentController.triggerDistribution,
 );
 
 module.exports = router;

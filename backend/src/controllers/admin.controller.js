@@ -1,217 +1,137 @@
 const adminService = require('../services/admin.service');
 const salesService = require('../services/sales.service');
-const { successResponse, errorResponse } = require('../utils/response.util');
-const logger = require('../config/logger');
+const {
+  successResponse,
+  createdResponse,
+} = require('../utils/response.util');
+const { asyncHandler } = require('../middlewares/errorHandler.middleware');
 
 /**
  * Create Admin Account
  */
-async function createAdmin(req, res) {
-  try {
-    const adminData = req.body;
-    const admin = await adminService.createAdmin(adminData);
+const createAdmin = asyncHandler(async (req, res) => {
+  const adminData = req.body;
+  const admin = await adminService.createAdmin(adminData);
 
-    return successResponse(
-      res,
-      admin,
-      'Admin account created successfully',
-      201,
-    );
-  } catch (error) {
-    logger.error('Error in createAdmin controller:', error);
-    if (error.statusCode) {
-      return errorResponse(res, error.message, error.statusCode);
-    }
-    return errorResponse(res, 'Failed to create admin account', 500);
-  }
-}
+  return successResponse(res, admin, 'Admin account created successfully', 201);
+});
 
 /**
  * Create Sales Account
+ * POST /api/admin/sales
  */
-async function createSales(req, res) {
-  try {
-    const salesData = req.body;
-    const sales = await salesService.createSales(salesData);
+const createSales = asyncHandler(async (req, res) => {
+  const result = await salesService.createSales(req.body);
 
-    return successResponse(
-      res,
-      sales,
-      'Sales account created successfully',
-      201,
-    );
-  } catch (error) {
-    logger.error('Error in createSales controller:', error);
-    if (error.statusCode) {
-      return errorResponse(res, error.message, error.statusCode);
-    }
-    return errorResponse(res, 'Failed to create sales account', 500);
-  }
-}
+  return createdResponse(
+    res,
+    result,
+    'Sales account created successfully',
+    `/api/admin/sales/${result.idSales}`,
+  );
+});
 
 /**
- * Get All Sales Accounts
+ * Get All Sales
+ * GET /api/admin/sales
  */
-async function getAllSales(req, res) {
-  try {
-    const { page, limit, isActive, search } = req.query;
+const getAllSales = asyncHandler(async (req, res) => {
+  const { sales, pagination } = await salesService.getAllSales(req.query);
 
-    const result = await salesService.getAllSales({
-      page,
-      limit,
-      isActive,
-      search,
-    });
-
-    return successResponse(
-      res,
-      result,
-      'Sales accounts retrieved successfully',
-    );
-  } catch (error) {
-    logger.error('Error in getAllSales controller:', error);
-    if (error.statusCode) {
-      return errorResponse(res, error.message, error.statusCode);
-    }
-    return errorResponse(res, 'Failed to retrieve sales accounts', 500);
-  }
-}
+  return successResponse(
+    res,
+    { sales },
+    'Sales list retrieved successfully',
+    { pagination },
+  );
+});
 
 /**
- * Get Sales by ID
+ * Get Sales By ID
+ * GET /api/admin/sales/:id
  */
-async function getSalesById(req, res) {
-  try {
-    const { id } = req.params;
-    const sales = await salesService.getSalesById(id);
+const getSalesById = asyncHandler(async (req, res) => {
+  const sales = await salesService.getSalesById(req.params.id);
 
-    return successResponse(
-      res,
-      sales,
-      'Sales account retrieved successfully',
-    );
-  } catch (error) {
-    logger.error('Error in getSalesById controller:', error);
-    if (error.statusCode) {
-      return errorResponse(res, error.message, error.statusCode);
-    }
-    return errorResponse(res, 'Failed to retrieve sales account', 500);
-  }
-}
+  return successResponse(
+    res,
+    sales,
+    'Sales details retrieved successfully',
+  );
+});
 
 /**
- * Update Sales Account
+ * Update Sales
+ * PUT /api/admin/sales/:id
  */
-async function updateSales(req, res) {
-  try {
-    const { id } = req.params;
-    const updateData = req.body;
+const updateSales = asyncHandler(async (req, res) => {
+  const updated = await salesService.updateSales(req.params.id, req.body);
 
-    const sales = await salesService.updateSales(id, updateData);
-
-    return successResponse(
-      res,
-      sales,
-      'Sales account updated successfully',
-    );
-  } catch (error) {
-    logger.error('Error in updateSales controller:', error);
-    if (error.statusCode) {
-      return errorResponse(res, error.message, error.statusCode);
-    }
-    return errorResponse(res, 'Failed to update sales account', 500);
-  }
-}
+  return successResponse(
+    res,
+    updated,
+    'Sales account updated successfully',
+  );
+});
 
 /**
  * Reset Sales Password
+ * POST /api/admin/sales/:id/reset-password
  */
-async function resetSalesPassword(req, res) {
-  try {
-    const { id } = req.params;
-    const { newPassword } = req.body;
+const resetPassword = asyncHandler(async (req, res) => {
+  const result = await salesService.resetSalesPassword(
+    req.params.id,
+    req.body.newPassword,
+  );
 
-    const result = await salesService.resetSalesPassword(id, newPassword);
-
-    return successResponse(
-      res,
-      result,
-      'Password reset successfully',
-    );
-  } catch (error) {
-    logger.error('Error in resetSalesPassword controller:', error);
-    if (error.statusCode) {
-      return errorResponse(res, error.message, error.statusCode);
-    }
-    return errorResponse(res, 'Failed to reset password', 500);
-  }
-}
+  return successResponse(
+    res,
+    result,
+    'Password reset successfully',
+  );
+});
 
 /**
- * Deactivate Sales Account
+ * Deactivate Sales
+ * POST /api/admin/sales/:id/deactivate
  */
-async function deactivateSales(req, res) {
-  try {
-    const { id } = req.params;
-    const result = await salesService.deactivateSales(id);
+const deactivateSales = asyncHandler(async (req, res) => {
+  const result = await salesService.deactivateSales(req.params.id);
 
-    return successResponse(
-      res,
-      result,
-      'Sales account deactivated successfully',
-    );
-  } catch (error) {
-    logger.error('Error in deactivateSales controller:', error);
-    if (error.statusCode) {
-      return errorResponse(res, error.message, error.statusCode);
-    }
-    return errorResponse(res, 'Failed to deactivate sales account', 500);
-  }
-}
+  return successResponse(
+    res,
+    result,
+    'Sales account deactivated successfully',
+  );
+});
 
 /**
- * Activate Sales Account
+ * Activate Sales
+ * POST /api/admin/sales/:id/activate
  */
-async function activateSales(req, res) {
-  try {
-    const { id } = req.params;
-    const result = await salesService.activateSales(id);
+const activateSales = asyncHandler(async (req, res) => {
+  const result = await salesService.activateSales(req.params.id);
 
-    return successResponse(
-      res,
-      result,
-      'Sales account activated successfully',
-    );
-  } catch (error) {
-    logger.error('Error in activateSales controller:', error);
-    if (error.statusCode) {
-      return errorResponse(res, error.message, error.statusCode);
-    }
-    return errorResponse(res, 'Failed to activate sales account', 500);
-  }
-}
+  return successResponse(
+    res,
+    result,
+    'Sales account activated successfully',
+  );
+});
 
 /**
- * Delete Sales Account
+ * Delete Sales (Soft Delete)
+ * DELETE /api/admin/sales/:id
  */
-async function deleteSales(req, res) {
-  try {
-    const { id } = req.params;
-    const result = await salesService.deleteSales(id);
+const deleteSales = asyncHandler(async (req, res) => {
+  const result = await salesService.deleteSales(req.params.id);
 
-    return successResponse(
-      res,
-      result,
-      'Sales account deleted successfully',
-    );
-  } catch (error) {
-    logger.error('Error in deleteSales controller:', error);
-    if (error.statusCode) {
-      return errorResponse(res, error.message, error.statusCode);
-    }
-    return errorResponse(res, 'Failed to delete sales account', 500);
-  }
-}
+  return successResponse(
+    res,
+    result,
+    'Sales account deleted successfully',
+  );
+});
 
 module.exports = {
   createAdmin,
@@ -219,7 +139,7 @@ module.exports = {
   getAllSales,
   getSalesById,
   updateSales,
-  resetSalesPassword,
+  resetPassword,
   deactivateSales,
   activateSales,
   deleteSales,

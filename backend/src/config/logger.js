@@ -1,48 +1,109 @@
+/**
+ * Enhanced Winston Logger
+ * Levels: audit, security, error, warn, info, http, debug
+ */
+
 const winston = require('winston');
-const DailyRotateFile = require('winston-daily-rotate-file');
 const path = require('path');
 
-const logDir = 'logs';
+const { format, transports } = winston;
+const { combine, timestamp, printf, errors, colorize, json } = format;
 
-// Define log format
-const logFormat = winston.format.combine(
-  winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
-  winston.format.errors({ stack: true }),
-  winston.format.printf(({ timestamp, level, message, stack }) => {
-    return stack
-      ? `${timestamp} [${level.toUpperCase()}]: ${message}\n${stack}`
-      : `${timestamp} [${level.toUpperCase()}]: ${message}`;
-  }),
-);
+// Custom format for console
+const consoleFormat = printf(({ level, message, timestamp, ...metadata }) => {
+  let msg = `${timestamp} [${level}]: ${message}`;
 
-// Create logger
+  if (Object.keys(metadata).length > 0) {
+    msg += ` ${JSON.stringify(metadata)}`;
+  }
+
+  return msg;
+});
+
+// Create logs directory if it doesn't exist
+const fs = require('fs');
+const logsDir = path.join(__dirname, '../../logs');
+if (!fs.existsSync(logsDir)) {
+  fs.mkdirSync(logsDir, { recursive: true });
+}
+
+// Custom log levels
+const levels = {
+  error: 0,
+  security: 1,
+  audit: 2,
+  warn: 3,
+  info: 4,
+  http: 5,
+  debug: 6,
+};
+
+const colors = {
+  error: 'red',
+  security: 'magenta',
+  audit: 'yellow',
+  warn: 'yellow',
+  info: 'green',
+  http: 'cyan',
+  debug: 'blue',
+};
+
+winston.addColors(colors);
+
+// Create logger instance
 const logger = winston.createLogger({
+  levels,
   level: process.env.LOG_LEVEL || 'info',
-  format: logFormat,
+  format: combine(
+    timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
+    errors({ stack: true }),
+    json(),
+  ),
   transports: [
-    // Console output
-    new winston.transports.Console({
-      format: winston.format.combine(
-        winston.format.colorize(),
-        logFormat,
-      ),
-    }),
     // Error logs
-    new DailyRotateFile({
-      filename: path.join(logDir, 'error-%DATE%.log'),
-      datePattern: 'YYYY-MM-DD',
+    new transports.File({
+      filename: path.join(logsDir, 'error.log'),
       level: 'error',
-      maxSize: '20m',
-      maxFiles: '14d',
+      maxsize: 10485760, // 10MB
+      maxFiles: 10,
     }),
+
+    // Security logs (separate file for compliance)
+    new transports.File({
+      filename: path.join(logsDir, 'security.log'),
+      level: 'security',
+      maxsize: 10485760,
+      maxFiles: 30, // Keep longer
+    }),
+
+    // Audit logs (separate file for compliance)
+    new transports.File({
+      filename: path.join(logsDir, 'audit.log'),
+      level: 'audit',
+      maxsize: 10485760,
+      maxFiles: 30,
+    }),
+
     // Combined logs
-    new DailyRotateFile({
-      filename: path.join(logDir, 'combined-%DATE%.log'),
-      datePattern: 'YYYY-MM-DD',
-      maxSize: '20m',
-      maxFiles: '14d',
+    new transports.File({
+      filename: path.join(logsDir, 'combined.log'),
+      maxsize: 10485760,
+      maxFiles: 14,
     }),
   ],
 });
+
+// Console transport for development
+if (process.env.NODE_ENV !== 'production') {
+  logger.add(
+    new transports.Console({
+      format: combine(colorize(), consoleFormat),
+    }),
+  );
+}
+
+// Add convenience methods
+logger.security = (message, meta) => logger.log('security', message, meta);
+logger.audit = (message, meta) => logger.log('audit', message, meta);
 
 module.exports = logger;

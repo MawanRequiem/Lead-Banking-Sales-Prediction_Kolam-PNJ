@@ -2,44 +2,23 @@ const { prisma } = require('../config/prisma');
 const logger = require('../config/logger');
 
 /**
- * Admin Repository
- */
-
-/**
- * Find Admin by Email
- * @param {string} email
- * @returns {Promise<object|null>}
- */
-async function findByEmail(email) {
-  try {
-    const admin = await prisma.admin.findUnique({
-      where: { email },
-    });
-
-    if (admin && admin.deletedAt) {
-      return null;
-    }
-
-    return admin;
-  } catch (error) {
-    logger.error('Error finding admin by email:', error);
-    throw error;
-  }
-}
-
-/**
- * Create Admin
- * @param {object} data - { email, passwordHash, emailRecovery? }
- * @returns {Promise<object>}
+ * Create Admin with User
  */
 async function create(data) {
   try {
     const admin = await prisma.admin.create({
       data: {
-        email: data.email,
-        passwordHash: data.passwordHash,
         emailRecovery: data.emailRecovery || null,
-        isActive: true,
+        user: {
+          create: {
+            email: data.email,
+            passwordHash: data.passwordHash,
+            isActive: true,
+          },
+        },
+      },
+      include: {
+        user: true,
       },
     });
 
@@ -51,25 +30,104 @@ async function create(data) {
 }
 
 /**
- * Count Active Admins
- * @returns {Promise<number>}
+ * Find Admin by Email
  */
-async function countActive() {
+async function findByEmail(email) {
   try {
-    return await prisma.admin.count({
+    const admin = await prisma.admin.findFirst({
       where: {
-        isActive: true,
-        deletedAt: null,
+        user: {
+          email: email,
+          deletedAt: null,
+        },
+      },
+      include: {
+        user: true,
       },
     });
+
+    return admin;
   } catch (error) {
-    logger.error('Error counting active admins:', error);
+    logger.error('Error finding admin by email:', error);
+    throw error;
+  }
+}
+
+/**
+ * Find Admin by ID
+ */
+async function findById(id) {
+  try {
+    const admin = await prisma.admin.findUnique({
+      where: { idAdmin: id },
+      include: {
+        user: true,
+      },
+    });
+
+    if (admin && admin.user.deletedAt) {
+      return null;
+    }
+
+    return admin;
+  } catch (error) {
+    logger.error('Error finding admin by ID:', error);
+    throw error;
+  }
+}
+
+async function findByUserId(userId, includeSoftDeleted = false) {
+  try {
+    const admin = await prisma.admin.findFirst({
+      where: { idUser: userId },
+      include: {
+        user: true,
+      },
+    });
+
+    if (admin && admin.user.deletedAt && !includeSoftDeleted) {
+      return null;
+    }
+
+    return admin;
+  } catch (error) {
+    logger.error('Error finding admin by User ID:', error);
+    throw error;
+  }
+}
+
+/**
+ * Update Password
+ */
+async function updatePassword(adminId, passwordHash) {
+  try {
+    const admin = await prisma.admin.findUnique({
+      where: { idAdmin: adminId },
+    });
+
+    if (!admin) {
+      throw new Error('Admin not found');
+    }
+
+    await prisma.user.update({
+      where: { idUser: admin.idUser },
+      data: {
+        passwordHash,
+        modifiedAt: new Date(),
+      },
+    });
+
+    return { success: true };
+  } catch (error) {
+    logger.error('Error updating admin password:', error);
     throw error;
   }
 }
 
 module.exports = {
-  findByEmail,
   create,
-  countActive,
+  findByEmail,
+  findById,
+  findByUserId,
+  updatePassword,
 };
