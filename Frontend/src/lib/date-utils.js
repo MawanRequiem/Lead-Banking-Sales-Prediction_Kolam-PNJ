@@ -20,6 +20,25 @@ export function formatDisplay(date) {
   return d.toLocaleDateString()
 }
 
+export function formatDateTime(ts) {
+  if (!ts) return ''
+  try {
+    const d = typeof ts === 'number' ? new Date(ts) : typeof ts === 'string' ? new Date(ts) : ts
+    if (!d || isNaN(d.getTime())) return ''
+    return d.toLocaleString()
+  } catch {
+    return ''
+  }
+}
+
+export function formatDurationSec(s) {
+  if (s == null || isNaN(s)) return ''
+  const sec = Math.max(0, Math.floor(Number(s)))
+  const mm = String(Math.floor(sec / 60)).padStart(2, '0')
+  const ss = String(sec % 60).padStart(2, '0')
+  return `${mm}:${ss}`
+}
+
 // returns { from, to } as ISO strings for common ranges
 export function getQuickRange(kind) {
   const now = new Date()
