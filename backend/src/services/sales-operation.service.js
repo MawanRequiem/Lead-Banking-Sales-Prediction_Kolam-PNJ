@@ -1,6 +1,7 @@
 const salesOpRepo = require('../repositories/sales-operation.repository');
 const { NotFoundError } = require('../middlewares/errorHandler.middleware');
 const { Parser } = require('json2csv');
+const { prisma } = require('../config/prisma');
 
 /**
  * Get Sales Dashboard (List Nasabah)
@@ -137,10 +138,48 @@ async function getLeadDetail(salesId, nasabahId) {
   };
 }
 
+async function getMyAssignments(user, query) {
+  const salesData = await prisma.sales.findFirst({ where: { idUser: user.id } });
+
+  if (!salesData) {
+    throw new Error('Sales profile not found');
+  }
+
+  const { page, limit, search } = query;
+
+  const { count, assignments } = await salesOpRepo.getAssignedLeads(
+    salesData.idSales,
+    { page: parseInt(page), limit: parseInt(limit), search },
+  );
+
+  const mappedData = assignments.map((item) => ({
+    id: item.nasabah.idNasabah,
+    nama: item.nasabah.nama,
+    pekerjaan: item.nasabah.pekerjaan || '-',
+    nomorTelepon: item.nasabah.nomorTelepon || '-',
+    jenisKelamin: item.nasabah.jenisKelamin === 'L' ? 'Laki-laki' : 'Perempuan',
+    umur: item.nasabah.umur,
+    statusPernikahan: item.nasabah.statusPernikahanRef?.namaStatus || 'Unknown',
+    assignmentId: item.idAssignment,
+    skorPrediksi: item.nasabah.skorPrediksi,
+  }));
+
+  return {
+    data: mappedData,
+    meta: {
+      page: parseInt(page),
+      limit: parseInt(limit),
+      total: count,
+      totalPages: Math.ceil(count / limit),
+    },
+  };
+}
+
 module.exports = {
   getMyDashboard,
   logActivity,
   exportWorkReport,
   updateLeadStatus,
   getLeadDetail,
+  getMyAssignments,
 };

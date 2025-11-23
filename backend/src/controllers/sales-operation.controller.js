@@ -61,10 +61,20 @@ const getLeadDetail = asyncHandler(async (req, res) => {
   return successResponse(res, result, 'Lead details retrieved successfully');
 });
 
+/**
+ * Get Assigned Leads
+ * GET /api/sales/assignments
+ */
+const getAssignments = asyncHandler(async (req, res) => {
+  const result = await salesOpService.getMyAssignments(req.user, req.query);
+  return successResponse(res, result, 'Assigned leads retrieved successfully');
+});
+
 module.exports = {
   getDashboard,
   logCall,
   exportData,
   updateStatus,
   getLeadDetail,
+  getAssignments,
 };

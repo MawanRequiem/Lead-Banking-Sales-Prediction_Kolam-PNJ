@@ -2,6 +2,8 @@ import React, { useState } from 'react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Eye, EyeOff } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'; // Untuk redirect
+import axios from '@/lib/axios';
 
 export default function LoginForm({ onSignIn }) {
   const [email, setEmail] = useState('')
@@ -9,24 +11,34 @@ export default function LoginForm({ onSignIn }) {
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
 
+  const navigate = useNavigate();
+
   const handleSubmit = async (e) => {
-    e.preventDefault()
-    setLoading(true)
+    e.preventDefault();
+    setLoading(true);
+
     try {
-      // Simple client-side validation (caller may replace with real auth)
-      if (!email || !password) {
-        alert('Masukkan email dan password')
-        setLoading(false)
-        return
-      }
+      // Panggil API Login Backend
+      const response = await axios.post('/auth/login', {
+        email: email,
+        password: password
+      });
 
-      // Simulate async sign-in
-      await new Promise((r) => setTimeout(r, 500))
+      // Ambil token dari response backend
+      const { accessToken, refreshToken } = response.data.data;
 
-      if (typeof onSignIn === 'function') onSignIn({ email })
-      else alert(`Signed in as ${email}`)
+      // PENTING: Simpan token agar bisa dipakai request selanjutnya
+      localStorage.setItem('accessToken', accessToken);
+      localStorage.setItem('refreshToken', refreshToken);
+
+      // Redirect ke halaman Assignments
+      navigate('/assignments');
+
+    } catch (error) {
+      console.error("Login failed:", error);
+      alert(error.response?.data?.message || "Login Gagal");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 

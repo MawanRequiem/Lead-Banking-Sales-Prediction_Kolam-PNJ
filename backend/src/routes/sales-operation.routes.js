@@ -80,4 +80,11 @@ router.get(
   controller.getLeadDetail,
 );
 
+router.get(
+  '/assignments',
+  searchLimiter,
+  validateGetAllQuery,
+  controller.getAssignments,
+);
+
 module.exports = router;

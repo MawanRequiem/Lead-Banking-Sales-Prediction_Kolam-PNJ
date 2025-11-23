@@ -178,9 +178,45 @@ async function updateDepositoStatus(salesId, nasabahId, newStatus) {
   });
 }
 
+async function getAssignedLeads(salesId, { page = 1, limit = 10, search = '' }) {
+  const offset = (page - 1) * limit;
+
+  const whereCondition = {
+    idSales: salesId,
+    isActive: true, // Hanya ambil assignment yang aktif
+    nasabah: {
+      deletedAt: null,
+      nama: {
+        contains: search,
+        mode: 'insensitive',
+      },
+    },
+  };
+
+  const [count, assignments] = await prisma.$transaction([
+    prisma.salesNasabahAssignment.count({ where: whereCondition }),
+    prisma.salesNasabahAssignment.findMany({
+      where: whereCondition,
+      skip: offset,
+      take: limit,
+      orderBy: { tanggalAssignment: 'desc' },
+      include: {
+        nasabah: {
+          include: {
+            statusPernikahanRef: true, // Join ke tabel Status Pernikahan
+          },
+        },
+      },
+    }),
+  ]);
+
+  return { count, assignments };
+}
+
 module.exports = {
   getMyLeads,
   getLeadDetail,
   createCallLog,
   updateDepositoStatus,
+  getAssignedLeads,
 };
