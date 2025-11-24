@@ -1,9 +1,9 @@
 import React, { useMemo } from 'react'
 import DataTable from '@/components/ui/tables/data-table'
-import { columns } from '@/components/ui/tables/assignment-column'
+import { columns, mockData as data } from '@/components/ui/tables/assignment-column'
 import ActionCell from '@/components/ui/tables/detail-customer'
 
-export default function AssignmentTable() {
+export default function AssignmentTable({ loading }) {
   const cols = useMemo(() => columns, [])
 
   return (

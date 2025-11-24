@@ -11,7 +11,7 @@ import { Sidebar } from "./components/ui/sidebar/app-sidebar"
 import { Header } from "./components/ui/header/header"
 
 // Pages
-import AssignmentsPage from './pages/sales/AssignmentsPage'
+import AssignmentsPage from './pages/AssigmentPage'
 import NotFound from './pages/NotFound' // Pastikan file ini ada, atau hapus route-nya
 
 // Components untuk Halaman Dashboard (Home)
