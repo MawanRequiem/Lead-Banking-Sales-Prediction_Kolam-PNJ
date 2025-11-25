@@ -29,10 +29,21 @@ axiosInstance.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response && error.response.status === 401) {
-      // Jika token hangus, paksa logout atau redirect ke login
       console.error("Session expired, please login again.");
-      // Opsional: localStorage.removeItem('accessToken');
-      // Opsional: window.location.href = '/';
+      try {
+        // clear local tokens to avoid repeated 401 loops
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
+      } catch {
+        // ignore
+      }
+
+      // dispatch a DOM event the app can listen to
+      try {
+        window.dispatchEvent(new CustomEvent('auth:expired'));
+      } catch {
+        // ignore if CustomEvent fails
+      }
     }
     return Promise.reject(error);
   }

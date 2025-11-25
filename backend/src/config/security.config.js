@@ -78,9 +78,10 @@ const helmetConfig = helmet({
 /**
  * CORS Configuration (Cross-Origin Resource Sharing)
  */
-const allowedOrigins = process.env.ALLOWED_ORIGINS
-  ? process.env.ALLOWED_ORIGINS.split(',')
-  : ['http://localhost:3000', 'http://localhost:3001'];
+const rawOrigins = process.env.ALLOWED_ORIGINS || process.env.CORS_ORIGIN || '';
+const allowedOrigins = rawOrigins
+  ? rawOrigins.split(',').map((s) => s.trim()).filter(Boolean)
+  : ['http://localhost:3000', 'http://localhost:5173'];
 
 const corsConfig = cors({
   origin: (origin, callback) => {
@@ -88,10 +89,19 @@ const corsConfig = cors({
     if (!origin) {return callback(null, true);}
 
     if (allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
+      return callback(null, true);
     }
+
+    // Log rejected origin for debugging
+    try {
+      const _logger = require('../config/logger');
+      _logger.warn('CORS origin rejected', { origin, allowedOrigins });
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.warn('[CORS] Origin rejected:', origin, 'Allowed:', allowedOrigins.join(','));
+    }
+
+    return callback(new Error('Not allowed by CORS'));
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],

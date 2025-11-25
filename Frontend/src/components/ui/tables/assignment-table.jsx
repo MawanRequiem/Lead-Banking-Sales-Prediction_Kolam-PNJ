@@ -1,10 +1,10 @@
-import React, { useMemo } from 'react'
-import DataTable from '@/components/ui/tables/data-table'
-import { columns } from '@/components/ui/tables/assignment-column'
-import ActionCell from '@/components/ui/tables/detail-customer'
+import React, { useMemo } from "react";
+import DataTable from "@/components/ui/tables/data-table";
+import { columns } from "@/components/ui/tables/assignment-column";
+import ActionCell from "@/components/ui/tables/detail-customer";
 
-export default function AssignmentTable() {
-  const cols = useMemo(() => columns, [])
+export default function AssignmentTable({ data, loading }) {
+  const cols = useMemo(() => columns, []);
 
   return (
     <DataTable
@@ -15,5 +15,5 @@ export default function AssignmentTable() {
       toolbarLeft={<div className="text-lg font-semibold">Customer List</div>}
       renderRowActions={(row) => <ActionCell karyawan={row.original} />}
     />
-  )
+  );
 }

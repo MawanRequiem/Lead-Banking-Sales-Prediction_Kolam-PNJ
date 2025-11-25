@@ -69,13 +69,17 @@ async function getSalesById(id) {
  * Get All Sales
  */
 async function getAllSales(filters) {
-  const { isActive } = filters;
+  // Ensure pagination params are interpreted
+  const page = parseInt(filters.page, 10) || 1;
+  const limit = parseInt(filters.limit, 10) || 50;
+  const skip = (page - 1) * limit;
 
-  if (isActive !== undefined) {
-    filters.isActive = isActive === 'true'; // Convert to boolean if "true" then true else false
+  // pass normalized pagination options to repository
+  const result = await salesRepository.findAll({ ...filters, skip, take: limit });
+
+  if (!result.sales || result.sales.length === 0) {
+    throw new NotFoundError('Sales not found', 'SALES_NOT_FOUND');
   }
-
-  const result = await salesRepository.findAll(filters);
 
   const decryptedSales = result.sales.map(sales => {
     const decrypted = decryptSensitiveFields(sales);
@@ -85,9 +89,16 @@ async function getAllSales(filters) {
     return decrypted;
   });
 
+  // repository returns total count as `total`
+  const total = typeof result.total === 'number' ? result.total : 0;
+
   return {
     sales: decryptedSales,
-    pagination: result.pagination,
+    pagination: {
+      page,
+      limit,
+      total,
+    },
   };
 }
 

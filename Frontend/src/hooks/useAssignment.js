@@ -10,7 +10,7 @@ export function useAssignments() {
     setLoading(true)
     try {
       // Panggil endpoint yang baru kita buat
-      const response = await axios.get('/sales-operation/assignments')
+      const response = await axios.get('/sales/assignments')
       setData(response.data.data.data)
     } catch (err) {
       console.error("Gagal mengambil data assignment:", err)

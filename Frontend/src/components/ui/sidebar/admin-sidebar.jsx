@@ -1,12 +1,19 @@
-import React from 'react';
-import { useSidebar } from '@/hooks/useSidebar';
-import { adminNavItems, footerItem } from '@/components/ui/sidebar/sidebar-consts';
-import { cn } from '@/lib/utils';
+import React from "react";
+import { useNavigate } from "react-router-dom";
+import { useSidebar } from "@/hooks/useSidebar";
+import useProfile from "@/hooks/useProfile";
+import {
+  adminNavItems,
+  footerItem,
+} from "@/components/ui/sidebar/sidebar-consts";
+import { cn } from "@/lib/utils";
 
 export function Sidebar() {
   const { activeItem, setActiveItem } = useSidebar();
+  const navigate = useNavigate();
+  const { logout } = useProfile();
 
-  const verticalMargin = '0.5rem'
+  const verticalMargin = "0.5rem";
 
   return (
     <div
@@ -16,10 +23,9 @@ export function Sidebar() {
       )}
       style={{
         top: `calc(var(--app-header-height, 4rem) + ${verticalMargin})`,
-        height: `calc(100vh - var(--app-header-height, 4rem) - 2 * ${verticalMargin})`
+        height: `calc(100vh - var(--app-header-height, 4rem) - 2 * ${verticalMargin})`,
       }}
     >
-      
       {/* Header/Logo */}
       {/* <div className="mb-8 mt-2 text-2xl font-bold">
         <LayoutGrid className="h-8 w-8 text-primary" />
@@ -32,7 +38,12 @@ export function Sidebar() {
             key={item.id}
             item={item}
             isActive={activeItem === item.id}
-            onClick={() => setActiveItem(item.id)}
+            onClick={() => {
+              setActiveItem(item.id);
+              try {
+                if (item.path) navigate(item.path);
+              } catch (e) {}
+            }}
           />
         ))}
       </nav>
@@ -44,7 +55,11 @@ export function Sidebar() {
           isActive={activeItem === footerItem.id}
           onClick={() => {
             setActiveItem(footerItem.id);
-            console.log("User logged out.");
+            try {
+              logout();
+            } catch (e) {
+              console.log("Logout error", e);
+            }
           }}
         />
       </div>
@@ -60,8 +75,10 @@ function SidebarItem({ item, isActive, onClick }) {
       onClick={onClick}
       className={cn(
         "h-12 w-full cursor-pointer relative transition-all duration-300 group mb-1",
-        "flex items-center pl-2", 
-        isActive ? "text-primary sidebar-item-active" : "text-card-foreground/70 hover:text-primary"
+        "flex items-center pl-2",
+        isActive
+          ? "text-primary sidebar-item-active"
+          : "text-card-foreground/70 hover:text-primary"
       )}
     >
       <div
@@ -72,9 +89,14 @@ function SidebarItem({ item, isActive, onClick }) {
       >
         <div className="sidebar-active-line" />
       </div>
-      
+
       {/* Ikon */}
-      <Icon className={cn("h-6 w-6 z-20 transition-colors duration-300 mr-auto", !isActive && "group-hover:text-primary")} />
+      <Icon
+        className={cn(
+          "h-6 w-6 z-20 transition-colors duration-300 mr-auto",
+          !isActive && "group-hover:text-primary"
+        )}
+      />
       <span className="sr-only">{item.tooltip}</span>
     </div>
   );

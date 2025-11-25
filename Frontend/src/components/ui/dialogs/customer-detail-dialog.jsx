@@ -7,6 +7,7 @@ import {
   DialogFooter,
   DialogClose,
 } from "@/components/ui/dialog";
+import { MarriageBadge } from "@/components/ui/badges";
 import { Button } from "@/components/ui/button";
 import { DepositStatusBadge, DepositTypeBadge } from "@/components/ui/badges";
 import { ScrollArea } from "@/components/ui/scroll-area";
