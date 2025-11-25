@@ -1,8 +1,7 @@
 import React, { useMemo } from "react";
 import AssignmentTable from "@/components/ui/tables/assignment-table";
 import CustomerOverviewCard from "@/components/ui/cards/customer-overview-card";
-import { useAssignments } from "@/hooks/useAssignments";
-import { Users, UserCheck, PhoneIncoming } from "lucide-react";
+import { useAssignments } from "@/hooks/useAssignment";
 
 export default function AssignmentsPage() {
   // Kita panggil hook di level Page untuk mendapatkan data
