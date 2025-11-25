@@ -1,18 +1,13 @@
 import React from "react";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { Toaster } from "sonner";
-import { useEffect, useState } from "react";
-import useAuth from "./hooks/useAuth";
-import AuthExpiredDialog from "./components/ui/dialogs/auth-expired-dialog";
 
 // Contexts & Providers
 import { ThemeProvider } from "./contexts/theme-context";
 import { SidebarProvider } from "./components/ui/sidebar/sidebar";
-import useProfile from "./hooks/useProfile";
 
 // Layout Components
-import SidebarSelector from "./components/ui/sidebar/sidebar-selector";
-import HeaderSelector from "./components/ui/header/header-selector";
+import MainLayout from "./components/ui/layout/main-layout";
 
 // Pages
 import AssignmentsPage from "./pages/AssigmentPage";
@@ -110,23 +105,6 @@ function Dashboard() {
 function App() {
   const location = useLocation();
   const isLogin = location && location.pathname === "/login";
-  // read profile for role so SidebarSelector can be driven by role claim
-  const { user } = useProfile();
-  const { logout } = useAuth();
-  const [showReauth, setShowReauth] = useState(false);
-
-  useEffect(() => {
-    function onExpired() {
-      // Clear client state and open re-auth dialog
-      try {
-        logout();
-      } catch (e) {}
-      setShowReauth(true);
-    }
-
-    window.addEventListener("auth:expired", onExpired);
-    return () => window.removeEventListener("auth:expired", onExpired);
-  }, [logout]);
 
   return (
     <ThemeProvider defaultTheme="system" storageKey="app-theme-shadcn-v2">
@@ -144,28 +122,17 @@ function App() {
             <Toaster />
           </div>
         ) : (
-          <div className="min-h-screen flex w-full bg-background text-foreground font-[Inter]">
-            <SidebarSelector role={user?.role} />
-
-            <div className="flex-1 flex flex-col">
-              <HeaderSelector />
-
-              <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
-                <Routes>
-                  <Route path="/" element={<Navigate to="/login" replace />} />
-                  <Route path="/login" element={<LoginPage />} />
+              <Routes>
+                <Route path="/" element={<Navigate to="/login" replace />} />
+                <Route path="/login" element={<LoginPage />} />
+                <Route element={<MainLayout />} >
                   <Route path="/admin" element={<AdminPage />} />
                   <Route path="/add-user" element={<AddUserPage />} />
                   <Route path="/dashboard" element={<Dashboard />} />
                   <Route path="/assignments" element={<AssignmentsPage />} />
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </main>
-            </div>
-
-            <Toaster />
-            <AuthExpiredDialog open={showReauth} onOpenChange={setShowReauth} />
-          </div>
+                </Route>
+                <Route path="*" element={<NotFound />} />
+              </Routes>
         )}
       </SidebarProvider>
     </ThemeProvider>
