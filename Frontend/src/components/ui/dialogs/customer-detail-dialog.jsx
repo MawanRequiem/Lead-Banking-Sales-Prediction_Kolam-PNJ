@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { MarriageBadge } from "@/components/ui/badges";
 import { Button } from "@/components/ui/button";
-import { DepositStatusBadge, DepositTypeBadge } from "@/components/ui/badges";
+import { MarriageBadge, DepositStatusBadge, DepositTypeBadge } from "@/components/ui/badges";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Phone } from "lucide-react";
 

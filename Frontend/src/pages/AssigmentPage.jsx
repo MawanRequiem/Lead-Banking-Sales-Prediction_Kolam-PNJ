@@ -1,7 +1,7 @@
 import React, { useMemo } from "react";
 import AssignmentTable from "@/components/ui/tables/assignment-table";
 import CustomerOverviewCard from "@/components/ui/cards/customer-overview-card";
-import { useAssignments } from "@/hooks/useAssignment";
+import { useAssignments } from "@/hooks/useAssignments";
 import { Users, UserCheck, PhoneIncoming } from "lucide-react";
 
 export default function AssignmentsPage() {
@@ -52,7 +52,7 @@ export default function AssignmentsPage() {
 
       {/* 3. Main Table Section */}
       <div className="bg-background rounded-xl border shadow-sm p-1 overflow-hidden">
-        <AssignmentTable data={data} loading={loading} />
+        <AssignmentTable />
       </div>
     </div>
   );
