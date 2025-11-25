@@ -1,5 +1,6 @@
 import React from "react";
 import { Header } from "./header";
+import { Header as HeaderAdmin } from "./header-admin";
 import useProfile from "@/hooks/useProfile";
 
 export default function HeaderSelector(props) {
@@ -18,7 +19,11 @@ export default function HeaderSelector(props) {
       ? window.localStorage.getItem("userName")
       : null) ??
     "User";
-  const displayName = role === "admin" ? `${baseName} (Admin)` : baseName;
+  const displayName = baseName;
+
+  if (role === "admin") {
+    return <HeaderAdmin userName={displayName} role={role} {...props} />;
+  }
 
   return <Header userName={displayName} {...props} />;
 }

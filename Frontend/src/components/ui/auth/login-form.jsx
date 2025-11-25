@@ -24,7 +24,7 @@ export default function LoginForm({ onSignIn }) {
       if (result.success) {
         const userRole = result.user.role;
         if (userRole === "admin") navigate("/admin");
-        else navigate("/assignments");
+        else navigate("/dashboard");
       } else {
         console.error("Login failed", result.error);
         alert(result.error?.response?.data?.message || "Login Gagal");

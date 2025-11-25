@@ -18,6 +18,7 @@ const {
   searchLimiter,
   passwordResetLimiter,
 } = require('../middlewares/rateLimiter.middleware');
+const { uploadSingle } = require('../middlewares/upload.middleware');
 
 router.use(authenticateToken);
 router.use(requireAdmin);
@@ -84,6 +85,14 @@ router.post(
   '/assignments/distribute',
   writeLimiter, // Rate limit operasi berat
   assignmentController.triggerDistribution,
+);
+
+// Import sales from Excel
+router.post(
+  '/sales/import',
+  writeLimiter,
+  uploadSingle('file'), // file in req.file
+  adminController.importSales,
 );
 
 module.exports = router;

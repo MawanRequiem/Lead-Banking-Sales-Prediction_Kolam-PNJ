@@ -9,6 +9,7 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 import AdminImportDialog from "@/components/ui/dialogs/admin-import-dialog";
+import AdminImportResultsDialog from "@/components/ui/dialogs/admin-import-results-dialog";
 import axios from "@/lib/axios";
 import useProfile from "@/hooks/useProfile";
 import { Import, Plus } from "lucide-react";
@@ -22,6 +23,8 @@ export default function AdminBulkAddTable() {
   const [rows, setRows] = useState([emptyRow()]);
   const [countInput, setCountInput] = useState(1);
   const [importOpen, setImportOpen] = useState(false);
+  const [importResultOpen, setImportResultOpen] = useState(false);
+  const [importResult, setImportResult] = useState(null);
   const [errors, setErrors] = useState([]);
   const [submitting, setSubmitting] = useState(false);
   const { user } = useProfile();
@@ -29,7 +32,14 @@ export default function AdminBulkAddTable() {
   function setCell(i, key, value) {
     setRows((r) => {
       const copy = [...r];
-      copy[i] = { ...copy[i], [key]: value };
+      // sanitize phone input on change
+      if (key === "nomorTelepon") {
+        // remove spaces, parentheses, dots, dashes
+        const sanitized = String(value || "").replace(/[\s().-]/g, "");
+        copy[i] = { ...copy[i], [key]: sanitized };
+      } else {
+        copy[i] = { ...copy[i], [key]: value };
+      }
       // clear error for this cell when user types
       setErrors((prev) => {
         if (!prev || !prev.length) return prev;
@@ -40,6 +50,27 @@ export default function AdminBulkAddTable() {
       });
       return copy;
     });
+  }
+
+  // Validate phone locally: returns error message or null
+  function validatePhoneLocal(phone) {
+    if (!phone) return null;
+    const s = String(phone);
+    if (s.startsWith("+")) {
+      if (!/^\+\d+$/.test(s)) return 'Hanya angka diperbolehkan setelah "+"';
+      if (s.length > 14) return "Nomor internasional maksimal 14 karakter";
+      return null;
+    }
+    if (s.startsWith("0")) {
+      if (!/^0\d+$/.test(s)) return "Format tidak valid; setelah 0 hanya angka";
+      if (s.length > 12) return "Nomor lokal maksimal 12 digit jika diawali 0";
+      return null;
+    }
+    // other: digits allowed, max 14
+    if (!/^\+?\d+$/.test(s))
+      return 'Hanya angka atau "+" di depan diperbolehkan';
+    if (s.length > 14) return "Nomor maksimal 14 karakter";
+    return null;
   }
 
   // keep rows length in sync with countInput
@@ -87,6 +118,27 @@ export default function AdminBulkAddTable() {
     (async () => {
       setSubmitting(true);
       try {
+        // Validate phone numbers before sending
+        const phoneErrs = rows
+          .map((row, idx) => {
+            const err = validatePhoneLocal(row.nomorTelepon || "");
+            return err ? { idx, message: err } : null;
+          })
+          .filter(Boolean);
+
+        if (phoneErrs.length) {
+          const nextErrors = rows.map(() => ({}));
+          phoneErrs.forEach((pe) => {
+            nextErrors[pe.idx] = {
+              ...(nextErrors[pe.idx] || {}),
+              nomorTelepon: true,
+            };
+          });
+          setErrors(nextErrors);
+          toast.error(`Terdapat ${phoneErrs.length} nomor telepon tidak valid`);
+          setSubmitting(false);
+          return;
+        }
         // Use a temporary password for created users (dev behavior)
         const tempPassword = "Temporary123!";
 
@@ -132,20 +184,68 @@ export default function AdminBulkAddTable() {
   }
 
   function handleImport(file) {
-    // Mock: parse file client-side would happen here. For now, just log and close.
-    console.log("Importing file", file);
-    toast.success("Imported file: " + file.name);
-    // Example: append a dummy row to show result
-    setRows((r) => [
-      ...r,
-      {
-        nama: "Imported User",
-        email: "import@example.com",
-        role: "sales",
-        domisili: "Jakarta",
-        nomorTelepon: "081234567890",
-      },
-    ]);
+    (async () => {
+      if (!file) {
+        toast.error("No file selected");
+        return;
+      }
+
+      // Only allow admins to call import
+      if (!user || user.role !== "admin") {
+        toast.error("Hanya admin yang dapat melakukan import");
+        return;
+      }
+
+      setSubmitting(true);
+      try {
+        const form = new FormData();
+        form.append("file", file);
+
+        const res = await axios.post("/admin/sales/import", form, {
+          headers: { "Content-Type": "multipart/form-data" },
+          onUploadProgress: (e) => {
+            if (e.total) {
+              const pct = Math.round((e.loaded * 100) / e.total);
+              // optionally show progress
+              // console.log('upload', pct);
+            }
+          },
+        });
+
+        const result = res?.data?.data || res?.data;
+
+        // store and show results dialog for detailed failures
+        setImportResult(result);
+        setImportResultOpen(true);
+
+        // result expected: { total, created: [...], failed: [...] }
+        const createdCount = (result.created && result.created.length) || 0;
+        const failedCount = (result.failed && result.failed.length) || 0;
+
+        if (createdCount > 0) {
+          toast.success(
+            `Import selesai: ${createdCount} berhasil, ${failedCount} gagal`
+          );
+          // Reset local rows if import created users
+          setRows([emptyRow()]);
+          setErrors([]);
+        } else if (failedCount > 0) {
+          toast.error(
+            `Import selesai: ${createdCount} berhasil, ${failedCount} gagal`
+          );
+        } else {
+          toast.success("Import selesai");
+        }
+      } catch (err) {
+        console.error("Import error", err);
+        const msg =
+          err?.response?.data?.message || err.message || "Import failed";
+        toast.error(msg);
+      } finally {
+        setSubmitting(false);
+        setImportOpen(false);
+      }
+    })();
   }
 
   return (
@@ -266,6 +366,11 @@ export default function AdminBulkAddTable() {
         open={importOpen}
         onOpenChange={setImportOpen}
         onImport={handleImport}
+      />
+      <AdminImportResultsDialog
+        open={importResultOpen}
+        onOpenChange={setImportResultOpen}
+        result={importResult}
       />
     </div>
   );

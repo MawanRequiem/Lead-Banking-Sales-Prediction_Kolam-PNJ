@@ -1,5 +1,6 @@
 const adminService = require('../services/admin.service');
 const salesService = require('../services/sales.service');
+const { parseXlsxData, parseCsvData } = require('../utils/normalizeCellValue');
 const {
   successResponse,
   createdResponse,
@@ -133,6 +134,53 @@ const deleteSales = asyncHandler(async (req, res) => {
   );
 });
 
+/**
+ * Import Sales from Excel
+ */
+const importSales = asyncHandler(async (req, res) => {
+  if (!req.file || !req.file.buffer) {
+    return res.status(400).json({ success: false, message: 'File is required' });
+  }
+
+  const fileExtension = req.file.originalname.split('.').pop().toLowerCase();
+  let rawRows;
+
+  // --- Validator Tipe File & Parsing ---
+  try {
+    if (fileExtension === 'xlsx' || fileExtension === 'xls') {
+      rawRows = await parseXlsxData(req.file.buffer);
+    } else if (fileExtension === 'csv') {
+      rawRows = await parseCsvData(req.file.buffer);
+    } else {
+      return res.status(400).json({ success: false, message: 'Unsupported file type. Please use .xlsx, .xls, or .csv.' });
+    }
+  } catch (error) {
+    console.error('File parsing error:', error);
+    return res.status(400).json({ success: false, message: `Error processing file: ${error.message}` });
+  }
+
+  if (!rawRows || rawRows.length === 0) {
+    return res.status(400).json({ success: false, message: 'File processed successfully but no data rows were found.' });
+  }
+
+  // --- Logika Normalisasi Data Akhir ---
+  // Logika pemetaan nama kolom fleksibel (flexible column mapping)
+  const normalized = rawRows.map(r => ({
+    rowNumber: r.__rowNumber,
+    // Contoh: Mencari key yang mungkin (nama, Nama, full_name, name)
+    nama: r['nama'] || r['Nama'] || r['full_name'] || r['name'] || '',
+    email: r['email'] || r['Email'] || '',
+    nomorTelepon: r['nomorTelepon'] || r['nomor_telepon'] || r['phone'] || '',
+    domisili: r['domisili'] || r['Domisili'] || r['city'] || '',
+    password: r['password'] || null, // Mungkin ini tidak ada di Excel
+  }));
+
+  // --- Logika Bisnis (Simpan ke DB) ---
+  const result = await salesService.importFromExcel(normalized, { importedBy: req.user?.userId });
+
+  return successResponse(res, result, 'Import processed', 200);
+});
+
 module.exports = {
   createAdmin,
   createSales,
@@ -143,4 +191,5 @@ module.exports = {
   deactivateSales,
   activateSales,
   deleteSales,
+  importSales,
 };

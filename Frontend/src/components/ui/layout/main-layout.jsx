@@ -9,29 +9,29 @@ import { Toaster } from "sonner";
 
 export default function MainLayout() {
   // read profile for role so SidebarSelector can be driven by role claim
-    const { user } = useProfile();
-    const { logout } = useAuth();
-    const [showReauth, setShowReauth] = useState(false);
+  const { user } = useProfile();
+  const { logout } = useAuth();
+  const [showReauth, setShowReauth] = useState(false);
 
-    useEffect(() => {
-      function onExpired() {
-        // Clear client state and open re-auth dialog
-        try {
-          logout();
-        } catch (e) {}
-        setShowReauth(true);
-      }
+  useEffect(() => {
+    function onExpired() {
+      // Clear client state and open re-auth dialog
+      try {
+        logout();
+      } catch (e) {}
+      setShowReauth(true);
+    }
 
-      window.addEventListener("auth:expired", onExpired);
-      return () => window.removeEventListener("auth:expired", onExpired);
-    }, [logout]);
+    window.addEventListener("auth:expired", onExpired);
+    return () => window.removeEventListener("auth:expired", onExpired);
+  }, [logout]);
 
   return (
     <div className="min-h-screen flex w-full bg-background text-foreground font-[Inter]">
       <SidebarSelector role={user?.role} />
 
       <div className="flex-1 flex flex-col">
-        <HeaderSelector />
+        <HeaderSelector role={user?.role} />
 
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
           <Outlet />

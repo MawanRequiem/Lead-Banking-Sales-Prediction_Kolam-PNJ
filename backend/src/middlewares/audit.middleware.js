@@ -35,6 +35,7 @@ const AUDITABLE_ACTIONS = {
 
   // User Management
   'POST:/api/admin/sales': 'CREATE_USER',
+  'POST:/api/admin/sales/import': 'IMPORT_USERS',
   'PUT:/api/admin/sales/:id': 'UPDATE_USER',
   'DELETE:/api/admin/sales/:id': 'DELETE_USER',
   'POST:/api/admin/sales/:id/reset-password': 'RESET_PASSWORD',
