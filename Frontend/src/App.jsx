@@ -1,6 +1,5 @@
 import React from "react";
-import { Routes, Route, Navigate, useLocation } from "react-router-dom";
-import { Toaster } from "sonner";
+import { Routes, Route, Navigate } from "react-router-dom";
 
 // Contexts & Providers
 import { ThemeProvider } from "./contexts/theme-context";
@@ -11,10 +10,11 @@ import MainLayout from "./components/ui/layout/main-layout";
 
 // Pages
 import AssignmentsPage from "./pages/AssigmentPage";
-import NotFound from "./pages/NotFound"; // Pastikan file ini ada, atau hapus route-nya
+import NotFound from "./pages/NotFound";
 import LoginPage from "./pages/LoginPage";
 import AdminPage from "./pages/AdminPage";
 import AddUserPage from "./pages/AddUserPager";
+import CustomerOverviewPage from "./pages/CustomerOverviewPage";
 
 // Components untuk Halaman Dashboard (Home)
 import AssignmentTable from "./components/ui/tables/assignment-table";
@@ -103,37 +103,27 @@ function Dashboard() {
 }
 
 function App() {
-  const location = useLocation();
-  const isLogin = location && location.pathname === "/login";
-
   return (
     <ThemeProvider defaultTheme="system" storageKey="app-theme-shadcn-v2">
       <SidebarProvider>
         {/* Dev debug badge: shows current pathname and login branch (only in dev) */}
         {process.env.NODE_ENV !== "production" ? (
           <div className="fixed top-3 right-3 z-50 text-xs px-2 py-1 rounded bg-white/80 text-black shadow">
-            {location.pathname} — isLogin: {String(isLogin)}
+            {location.pathname}
           </div>
         ) : null}
-
-        {isLogin ? (
-          <div className="min-h-screen flex w-full bg-background text-foreground">
-            <LoginPage />
-            <Toaster />
-          </div>
-        ) : (
-              <Routes>
-                <Route path="/" element={<Navigate to="/login" replace />} />
-                <Route path="/login" element={<LoginPage />} />
-                <Route element={<MainLayout />} >
-                  <Route path="/admin" element={<AdminPage />} />
-                  <Route path="/add-user" element={<AddUserPage />} />
-                  <Route path="/dashboard" element={<Dashboard />} />
-                  <Route path="/assignments" element={<AssignmentsPage />} />
-                </Route>
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-        )}
+        <Routes>
+          <Route path="/" element={<Navigate to="/login" replace />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route element={<MainLayout />} >
+            <Route path="/admin" element={<AdminPage />} />
+            <Route path="/add-user" element={<AddUserPage />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/customers" element={<CustomerOverviewPage />} />
+            <Route path="/assignments" element={<AssignmentsPage />} />
+          </Route>
+          <Route path="*" element={<NotFound />} />
+        </Routes>
       </SidebarProvider>
     </ThemeProvider>
   );
