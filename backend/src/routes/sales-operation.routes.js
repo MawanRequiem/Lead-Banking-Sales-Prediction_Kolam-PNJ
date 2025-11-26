@@ -70,6 +70,12 @@ router.patch(
   controller.updateStatus,
 );
 
+router.get(
+  '/leads',
+  validateGetAllQuery,
+  controller.getAllLeads,
+);
+
 /**
  * Get Detail Nasabah
  * GET /api/sales/leads/:id
