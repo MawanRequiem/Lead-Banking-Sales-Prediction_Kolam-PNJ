@@ -16,6 +16,11 @@ async function getMyDashboard(salesId, query) {
     nasabah: {
       id: item.nasabah.idNasabah,
       nama: item.nasabah.nama,
+      nomorTelepon: item.nomorTelepon,
+      umur: item.umur,
+      pekerjaan: item.pekerjaan || '-',
+      jenisKelamin: item.jenisKelaminRel?.namaJenisKelamin || '-',
+      statusPernikahan: item.statusPernikahan?.namaStatus || '-',
       skor: parseFloat(item.nasabah.skorPrediksi || 0),
       statusTerakhir: item.nasabah.deposito[0]?.statusDeposito || 'PROSPEK',
       lastCall: item.nasabah.historiTelepon[0]?.createdAt || null,
@@ -41,6 +46,7 @@ async function getAllLeads(query) {
   const transformedData = result.data.map(item => ({
     id: item.idNasabah,
     nama: item.nama,
+    nomorTelepon: item.nomorTelepon,
     umur: item.umur,
     pekerjaan: item.pekerjaan || '-',
     jenisKelamin: item.jenisKelaminRel?.namaJenisKelamin || '-',
@@ -55,6 +61,18 @@ async function getAllLeads(query) {
 
   return {
     leads: transformedData,
+    pagination: result.meta,
+  };
+}
+
+/**
+ * Get History (Telepon)
+ */
+async function getCallHistory(query) {
+  const result = await salesOpRepo.getCallHistory(query);
+
+  return {
+    history: result.data,
     pagination: result.meta,
   };
 }
@@ -206,6 +224,7 @@ async function getMyAssignments(user, query) {
 module.exports = {
   getMyDashboard,
   getAllLeads,
+  getCallHistory,
   logActivity,
   exportWorkReport,
   updateLeadStatus,

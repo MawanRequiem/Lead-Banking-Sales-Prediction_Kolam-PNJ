@@ -166,7 +166,6 @@ function createCallLog(data) {
       data: {
         idNasabah: data.idNasabah,
         idSales: data.idSales,
-        nomorTelepon: data.nomorTelepon,
         lamaTelepon: data.lamaTelepon,
         hasilTelepon: data.hasilTelepon,
         catatan: data.catatan,
@@ -205,6 +204,70 @@ function createCallLog(data) {
 
     return log;
   });
+}
+
+function getCallHistory(filters = {}) {
+  const {
+    search,
+    nasabahId,
+    sortBy = 'tanggalTelepon',
+    sortOrder = 'desc',
+    page = 1, // default is for call-history page but for peeks request should give smaller limits.
+    limit = 20,
+  } = filters;
+
+  const skip = (page - 1) * limit;
+  const take = parseInt(limit);
+
+  const where = {};
+  if (nasabahId) {
+    where.idNasabah = nasabahId;
+  }
+  if (search) {
+    where.OR = [
+      { hasilTelepon: { contains: search, mode: 'sensitive' } },
+      { catatan: { contains: search, mode: 'insensitive' } },
+      { sales:
+        { nama: { contains: search, mode: 'insensitive' } },
+      },
+      { nasabah:
+        { nama: { contains: search, mode: 'insensitive' } },
+      },
+    ];
+  }
+
+  return Promise.all([
+    prisma.historiTelepon.findMany({
+      where,
+      skip,
+      take,
+      include: {
+        nasabah: {
+          select: {
+            nama: true,
+            nomorTelepon: true,
+          },
+        },
+        sales: {
+          select: {
+            nama: true,
+          },
+        },
+      },
+      orderBy: {
+        [sortBy]: sortOrder,
+      },
+    }),
+    // Count for pagination 'total' meta data.
+    prisma.historiTelepon.count({ where }),
+  ]).then(([data, total]) => ({
+    data,
+    meta: {
+      total,
+      page: parseInt(page),
+      lastPage: Math.ceil(total / take),
+    },
+  }));
 }
 
 async function updateDepositoStatus(salesId, nasabahId, newStatus) {
@@ -276,6 +339,7 @@ module.exports = {
   getAllLeads,
   getLeadDetail,
   createCallLog,
+  getCallHistory,
   updateDepositoStatus,
   getAssignedLeads,
 };

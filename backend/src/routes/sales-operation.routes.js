@@ -11,6 +11,7 @@ const {
 } = require('../middlewares/rateLimiter.middleware');
 const {
   validateGetAllQuery,
+  validateCallHistoryQuery,
   validateLogCall,
   validateUpdateStatus,
   validateUUIDParam,
@@ -74,6 +75,12 @@ router.get(
   '/leads',
   validateGetAllQuery,
   controller.getAllLeads,
+);
+
+router.get(
+  '/call-history',
+  validateCallHistoryQuery,
+  controller.getCallHistory,
 );
 
 /**

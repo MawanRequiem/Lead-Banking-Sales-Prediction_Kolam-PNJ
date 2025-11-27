@@ -40,8 +40,11 @@ model StatusDeposito {
 model Admin {
   idAdmin       String   @id @default(dbgenerated("uuid_generate_v4()")) @map("id_admin") @db.Uuid
   emailRecovery String?  @map("email_recovery")
+  emailRecovery String?  @map("email_recovery")
   createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  idUser        String   @map("id_user") @db.Uuid
+  user          user     @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
   idUser        String   @map("id_user") @db.Uuid
   user          user     @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
 
@@ -49,6 +52,13 @@ model Admin {
 }
 
 model Sales {
+  idSales        String                   @id @default(dbgenerated("uuid_generate_v4()")) @map("id_sales") @db.Uuid
+  nama           String                   @db.VarChar(255)
+  nomorTelepon   String?                  @map("nomor_telepon")
+  domisili       String?
+  createdAt      DateTime                 @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime                 @updatedAt @map("updated_at") @db.Timestamptz(6)
+  idUser         String                   @map("id_user") @db.Uuid
   idSales        String                   @id @default(dbgenerated("uuid_generate_v4()")) @map("id_sales") @db.Uuid
   nama           String                   @db.VarChar(255)
   nomorTelepon   String?                  @map("nomor_telepon")
@@ -98,6 +108,16 @@ model Deposito {
   deletedAt      DateTime?      @map("deleted_at") @db.Timestamptz(6)
   nasabah        Nasabah        @relation(fields: [idNasabah], references: [idNasabah], onDelete: Cascade, map: "fk_deposito_nasabah")
   status         StatusDeposito @relation(fields: [statusDeposito], references: [idStatusDeposito], map: "fk_deposito_status")
+  idDeposito     String         @id @default(dbgenerated("uuid_generate_v4()")) @map("id_deposito") @db.Uuid
+  idNasabah      String         @map("id_nasabah") @db.Uuid
+  jenisDeposito  String         @map("jenis_deposito") @db.VarChar(50)
+  statusDeposito String         @map("status_deposito") @db.VarChar(20)
+  idNasabahRef   String?        @map("id_nasabah_ref") @db.VarChar(255)
+  createdAt      DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime       @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt      DateTime?      @map("deleted_at") @db.Timestamptz(6)
+  nasabah        Nasabah        @relation(fields: [idNasabah], references: [idNasabah], onDelete: Cascade, map: "fk_deposito_nasabah")
+  status         StatusDeposito @relation(fields: [statusDeposito], references: [idStatusDeposito], map: "fk_deposito_status")
 
   @@map("deposito")
 }
@@ -114,6 +134,8 @@ model HistoriTelepon {
   nextFollowupDate DateTime? @map("next_followup_date") @db.Date
   createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt        DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  nasabah          Nasabah   @relation(fields: [idNasabah], references: [idNasabah], onDelete: Cascade, map: "fk_histori_nasabah")
+  sales            Sales     @relation(fields: [idSales], references: [idSales], map: "fk_histori_sales")
   nasabah          Nasabah   @relation(fields: [idNasabah], references: [idNasabah], onDelete: Cascade, map: "fk_histori_nasabah")
   sales            Sales     @relation(fields: [idSales], references: [idSales], map: "fk_histori_sales")
 
@@ -135,6 +157,8 @@ model SalesNasabahAssignment {
   updatedAt         DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
   nasabah           Nasabah  @relation(fields: [idNasabah], references: [idNasabah], onDelete: Cascade, map: "fk_assignment_nasabah")
   sales             Sales    @relation(fields: [idSales], references: [idSales], onDelete: Cascade, map: "fk_assignment_sales")
+  nasabah           Nasabah  @relation(fields: [idNasabah], references: [idNasabah], onDelete: Cascade, map: "fk_assignment_nasabah")
+  sales             Sales    @relation(fields: [idSales], references: [idSales], onDelete: Cascade, map: "fk_assignment_sales")
 
   @@unique([idSales, idNasabah, isActive], map: "uq_sales_nasabah_active")
   @@index([isActive, tanggalAssignment(sort: Desc)], map: "idx_assignment_active")
@@ -150,6 +174,13 @@ model RefreshToken {
   modifiedAt        DateTime?      @default(now()) @map("modified_at") @db.Timestamp(6)
   replacedBy        String?        @map("replaced_by") @db.Uuid
   idUser            String         @map("id_user") @db.Uuid
+  token             String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  expiresAt         DateTime       @map("expires_at") @db.Timestamp(6)
+  revokedAt         DateTime?      @map("revoked_at") @db.Timestamp(6)
+  createdAt         DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  modifiedAt        DateTime?      @default(now()) @map("modified_at") @db.Timestamp(6)
+  replacedBy        String?        @map("replaced_by") @db.Uuid
+  idUser            String         @map("id_user") @db.Uuid
   user              user           @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
   parentToken       RefreshToken?  @relation("TokenReplacement", fields: [replacedBy], references: [token], onDelete: NoAction, onUpdate: NoAction)
   replacementTokens RefreshToken[] @relation("TokenReplacement")
@@ -158,6 +189,14 @@ model RefreshToken {
 }
 
 model user {
+  idUser        String         @id @default(dbgenerated("gen_random_uuid()")) @map("id_user") @db.Uuid
+  email         String         @unique
+  passwordHash  String         @map("password_hash")
+  isActive      Boolean        @default(true) @map("is_active")
+  lastLogin     DateTime?      @map("last_login") @db.Timestamp(6)
+  createdAt     DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  modifiedAt    DateTime?      @default(now()) @map("modified_at") @db.Timestamp(6)
+  deletedAt     DateTime?      @map("deleted_at") @db.Timestamp(6)
   idUser        String         @id @default(dbgenerated("gen_random_uuid()")) @map("id_user") @db.Uuid
   email         String         @unique
   passwordHash  String         @map("password_hash")
@@ -188,10 +227,30 @@ model AuditLog {
   statusCode    Int?      @map("status_code")
   requestBody   Json?     @map("request_body")
   responseBody  Json?     @map("response_body")
+  id            String    @id @db.VarChar(100)
+  timestamp     DateTime  @default(now()) @db.Timestamptz(6)
+  userId        String?   @map("user_id") @db.Uuid
+  userRole      String?   @map("user_role") @db.VarChar(50)
+  actionType    String    @map("action_type") @db.VarChar(100)
+  resourceType  String?   @map("resource_type") @db.VarChar(100)
+  resourceId    String?   @map("resource_id") @db.VarChar(100)
+  ipAddress     String?   @map("ip_address") @db.VarChar(45)
+  userAgent     String?   @map("user_agent")
+  requestMethod String?   @map("request_method") @db.VarChar(10)
+  requestPath   String?   @map("request_path")
+  statusCode    Int?      @map("status_code")
+  requestBody   Json?     @map("request_body")
+  responseBody  Json?     @map("response_body")
   changes       Json?
   metadata      Json?
   createdAt     DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  createdAt     DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
 
+  @@index([actionType], map: "idx_audit_logs_action_type")
+  @@index([ipAddress], map: "idx_audit_logs_ip_address")
+  @@index([resourceId], map: "idx_audit_logs_resource_id")
+  @@index([timestamp(sort: Desc)], map: "idx_audit_logs_timestamp")
+  @@index([userId], map: "idx_audit_logs_user_id")
   @@index([actionType], map: "idx_audit_logs_action_type")
   @@index([ipAddress], map: "idx_audit_logs_ip_address")
   @@index([resourceId], map: "idx_audit_logs_resource_id")
@@ -208,9 +267,21 @@ model SecurityLog {
   userId    String?   @map("user_id") @db.Uuid
   ipAddress String?   @map("ip_address") @db.VarChar(45)
   userAgent String?   @map("user_agent")
+  id        String    @id @db.VarChar(100)
+  timestamp DateTime  @default(now()) @db.Timestamptz(6)
+  eventType String    @map("event_type") @db.VarChar(100)
+  severity  String    @db.VarChar(20)
+  userId    String?   @map("user_id") @db.Uuid
+  ipAddress String?   @map("ip_address") @db.VarChar(45)
+  userAgent String?   @map("user_agent")
   details   Json?
   createdAt DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
 
+  @@index([eventType], map: "idx_security_logs_event_type")
+  @@index([severity], map: "idx_security_logs_severity")
+  @@index([timestamp(sort: Desc)], map: "idx_security_logs_timestamp")
+  @@index([userId], map: "idx_security_logs_user_id")
   @@index([eventType], map: "idx_security_logs_event_type")
   @@index([severity], map: "idx_security_logs_severity")
   @@index([timestamp(sort: Desc)], map: "idx_security_logs_timestamp")

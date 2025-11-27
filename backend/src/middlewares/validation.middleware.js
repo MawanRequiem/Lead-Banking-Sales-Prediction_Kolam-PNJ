@@ -18,6 +18,7 @@ const {
   updateSalesSchema,
   resetPasswordSchema,
   salesQuerySchema,
+  callsQuerySchema,
   logCallSchema,
   updateStatusSchema,
 } = require('../validation/schemas/sales.schema');
@@ -402,6 +403,38 @@ function validateGetAllQuery(req, res, next) {
   next();
 }
 
+function validateCallHistoryQuery(req, res, next) {
+  // Security scan
+  const threats = deepSecurityScan(req.query, 'query');
+  if (threats.length > 0) {
+    logSecurityThreat(req, res, threats);
+    if (threats.some(t => t.severity === 'CRITICAL')) {
+      return validationErrorResponse(res, [{
+        field: 'query',
+        message: 'Invalid query parameters',
+        code: 'INVALID_QUERY',
+      }]);
+    }
+  }
+
+  // Joi validation
+  const joiValidation = validateWithJoi(callsQuerySchema, req.query);
+  if (joiValidation.hasError) {
+    return validationErrorResponse(res, joiValidation.errors);
+  }
+
+  // Sanitize search
+  if (joiValidation.value.search) {
+    joiValidation.value.search = sanitizeInput(joiValidation.value.search, {
+      maxLength: 100,
+      stripHtml: true,
+    });
+  }
+
+  req.query = joiValidation.value;
+  next();
+}
+
 /**
  * Validate Log Call (Sales Operation)
  */
@@ -528,6 +561,7 @@ module.exports = {
   validateResetPassword,
   validateUUIDParam,
   validateGetAllQuery,
+  validateCallHistoryQuery,
   validateLogCall,
   validateUpdateStatus,
 
