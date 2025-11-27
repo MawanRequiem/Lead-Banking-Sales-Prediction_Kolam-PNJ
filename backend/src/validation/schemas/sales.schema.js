@@ -199,16 +199,6 @@ const logCallSchema = Joi.object({
       'any.required': 'Nasabah ID is required',
     }),
 
-  nomorTelepon: Joi.string()
-    .trim()
-    .pattern(/^(\+62|62|0)[0-9]{8,12}$/)
-    .max(20)
-    .required()
-    .messages({
-      'string.pattern.base': 'Phone number format is invalid',
-      'any.required': 'Phone number is required',
-    }),
-
   lamaTelepon: Joi.number()
     .integer()
     .min(0)
