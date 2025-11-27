@@ -15,6 +15,7 @@ import NotFound from "./pages/NotFound"; // Pastikan file ini ada, atau hapus ro
 import LoginPage from "./pages/LoginPage";
 import AdminPage from "./pages/AdminPage";
 import AddUserPage from "./pages/AddUserPager";
+import ChangePassword from "./pages/ChangePassword";
 
 // Components untuk Halaman Dashboard (Home)
 import AssignmentTable from "./components/ui/tables/assignment-table";
@@ -122,17 +123,18 @@ function App() {
             <Toaster />
           </div>
         ) : (
-              <Routes>
-                <Route path="/" element={<Navigate to="/login" replace />} />
-                <Route path="/login" element={<LoginPage />} />
-                <Route element={<MainLayout />} >
-                  <Route path="/admin" element={<AdminPage />} />
-                  <Route path="/add-user" element={<AddUserPage />} />
-                  <Route path="/dashboard" element={<Dashboard />} />
-                  <Route path="/assignments" element={<AssignmentsPage />} />
-                </Route>
-                <Route path="*" element={<NotFound />} />
-              </Routes>
+          <Routes>
+            <Route path="/" element={<Navigate to="/login" replace />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route element={<MainLayout />}>
+              <Route path="/admin" element={<AdminPage />} />
+              <Route path="/add-user" element={<AddUserPage />} />
+              <Route path="/change-password" element={<ChangePassword />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/assignments" element={<AssignmentsPage />} />
+            </Route>
+            <Route path="*" element={<NotFound />} />
+          </Routes>
         )}
       </SidebarProvider>
     </ThemeProvider>
