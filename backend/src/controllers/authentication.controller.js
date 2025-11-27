@@ -3,17 +3,24 @@
  * OAuth 2.0 Structure with camelCase naming
  */
 
-const { asyncHandler } = require('../middlewares/errorHandler.middleware');
+const { asyncHandler, BadRequestError, UnauthorizedError } = require('../middlewares/errorHandler.middleware');
 const { successResponse } = require('../utils/response.util');
-const { UnauthorizedError } = require('../middlewares/errorHandler.middleware');
 const logger = require('../config/logger');
 const jwt = require('jsonwebtoken');
+const { prisma } = require('../config/prisma');
 
 // Import repositories
 const salesRepository = require('../repositories/sales.repository');
 const adminRepository = require('../repositories/admin.repository');
 const tokenRepository = require('../repositories/token.repository');
-const { comparePassword } = require('../utils/password.util');
+const salesService = require('../services/sales.service');
+const adminService = require('../services/admin.service');
+const pwdVerificationService = require('../services/passwordVerification.service');
+const { comparePassword, hashPassword } = require('../utils/password.util');
+
+// In-memory failed password attempts counter (per-user). Note: resetting on process restart.
+const failedPasswordAttempts = new Map();
+const MAX_FAILED_ATTEMPTS = 3;
 
 /**
  * Generate Access Token (JWT)
@@ -107,6 +114,8 @@ async function authenticateSales(email, password) {
     userId: sales.user.idUser,
     email: sales.user.email,
     nama: sales.nama,
+    nomorTelepon: sales.nomorTelepon || null,
+    domisili: sales.domisili || null,
     role: 'sales',
   };
 }
@@ -257,8 +266,275 @@ const refresh = asyncHandler(async (req, res) => {
   }, 'Token refreshed successfully');
 });
 
+/**
+ * Verify current password (for change-password flow)
+ * POST /api/verify-current
+ */
+const verifyCurrentPassword = asyncHandler(async (req, res) => {
+  const userId = res.locals.userId;
+  const role = res.locals.userRole;
+  const { currentPassword } = req.body;
+
+  if (!currentPassword) {
+    throw new BadRequestError('Current password is required', 'CURRENT_PASSWORD_REQUIRED');
+  }
+
+  let record;
+  if (role === 'admin') {
+    record = await adminRepository.findByUserId(userId);
+  } else {
+    record = await salesRepository.findByUserId(userId);
+  }
+
+  if (!record || !record.user) {
+    logger.security('Password verification failed - user not found', {
+      userId,
+      role,
+      ip: res.locals.clientIp,
+      requestId: res.locals.requestId,
+    });
+    throw new UnauthorizedError('User not found', 'USER_NOT_FOUND');
+  }
+
+  const match = await comparePassword(currentPassword, record.user.passwordHash);
+  // If client supplied a verificationToken (rare here), do not validate password this way
+  if (!match) {
+    // increment failed attempts
+    const prev = failedPasswordAttempts.get(userId) || 0;
+    const next = prev + 1;
+    failedPasswordAttempts.set(userId, next);
+
+    logger.security('Password verification failed - incorrect password', {
+      userId,
+      role,
+      ip: res.locals.clientIp,
+      requestId: res.locals.requestId,
+      attempts: next,
+    });
+
+    // If exceeded threshold, revoke refresh tokens for this user (force logout)
+    if (next >= MAX_FAILED_ATTEMPTS) {
+      try {
+        await prisma.refreshToken.updateMany({
+          where: { idUser: userId, revokedAt: null },
+          data: { revokedAt: new Date(), modifiedAt: new Date() },
+        });
+        logger.audit('User refresh tokens revoked due to repeated failed password verification', {
+          userId,
+          attempts: next,
+          requestId: res.locals.requestId,
+          ip: res.locals.clientIp,
+        });
+      } catch (e) {
+        logger.error('Failed to revoke refresh tokens after repeated failures', e);
+      } finally {
+        // reset counter after revocation
+        failedPasswordAttempts.delete(userId);
+      }
+
+      // Return 400 so client sees a non-logout-causing error, but message explains forced logout
+      throw new BadRequestError('Current password is incorrect. Too many failed attempts — your session has been revoked.', 'TOO_MANY_ATTEMPTS');
+    }
+
+    // For normal incorrect password attempts, return 400 (do not force immediate logout)
+    throw new BadRequestError('Current password is incorrect', 'INVALID_CURRENT_PASSWORD');
+  }
+
+  // success -> reset counter
+  failedPasswordAttempts.delete(userId);
+
+  // Generate one-time verification token (short-lived)
+  const verification = await pwdVerificationService.generateVerificationTokenForUser(userId, 5);
+
+  logger.audit('Password verification successful (verification token issued)', {
+    userId,
+    role,
+    ip: res.locals.clientIp,
+    requestId: res.locals.requestId,
+    tokenId: verification.id,
+  });
+
+  return successResponse(res, { verificationToken: verification.token }, 'Verification token issued');
+});
+
+/**
+ * Change password for authenticated user
+ * POST /api/change-password
+ */
+const changePassword = asyncHandler(async (req, res) => {
+  const userId = res.locals.userId;
+  const role = res.locals.userRole;
+  const { currentPassword, newPassword, verificationToken } = req.body;
+
+  // newPassword is always required (validation middleware also enforces this)
+  if (!newPassword) {
+    throw new BadRequestError('New password is required', 'NEW_PASSWORD_REQUIRED');
+  }
+
+  // Require either currentPassword OR verificationToken (validation middleware uses xor)
+  if (!currentPassword && !verificationToken) {
+    throw new BadRequestError('Either currentPassword or verificationToken is required', 'PASSWORD_OR_TOKEN_REQUIRED');
+  }
+
+  let record;
+  if (role === 'admin') {
+    record = await adminRepository.findByUserId(userId);
+  } else {
+    record = await salesRepository.findByUserId(userId);
+  }
+
+  if (!record || !record.user) {
+    logger.security('Password change failed - user not found', {
+      userId,
+      role,
+      ip: res.locals.clientIp,
+      requestId: res.locals.requestId,
+    });
+    throw new UnauthorizedError('User not found', 'USER_NOT_FOUND');
+  }
+
+  // If verificationToken provided, validate and consume it
+  let tokenValidated = false;
+  if (verificationToken) {
+    const rec = await pwdVerificationService.validateAndConsumeToken(verificationToken, userId);
+    if (!rec) {
+      throw new BadRequestError('Invalid or expired verification token', 'INVALID_VERIFICATION_TOKEN');
+    }
+    tokenValidated = true;
+  }
+
+  if (!tokenValidated) {
+    // fallback to currentPassword validation
+    const match = await comparePassword(currentPassword, record.user.passwordHash);
+    if (!match) {
+      // increment failed attempts
+      const prev = failedPasswordAttempts.get(userId) || 0;
+      const next = prev + 1;
+      failedPasswordAttempts.set(userId, next);
+
+      logger.security('Password change failed - invalid current password', {
+        userId,
+        role,
+        ip: res.locals.clientIp,
+        requestId: res.locals.requestId,
+        attempts: next,
+      });
+
+      if (next >= MAX_FAILED_ATTEMPTS) {
+        try {
+          await prisma.refreshToken.updateMany({
+            where: { idUser: userId, revokedAt: null },
+            data: { revokedAt: new Date(), modifiedAt: new Date() },
+          });
+          logger.audit('User refresh tokens revoked due to repeated failed password change attempts', {
+            userId,
+            attempts: next,
+            requestId: res.locals.requestId,
+            ip: res.locals.clientIp,
+          });
+        } catch (e) {
+          logger.error('Failed to revoke refresh tokens after repeated failures', e);
+        } finally {
+          failedPasswordAttempts.delete(userId);
+        }
+
+        throw new BadRequestError('Current password is incorrect. Too many failed attempts — your session has been revoked.', 'TOO_MANY_ATTEMPTS');
+      }
+
+      throw new BadRequestError('Current password is incorrect', 'INVALID_CURRENT_PASSWORD');
+    }
+
+    // success -> reset counter
+    failedPasswordAttempts.delete(userId);
+  }
+
+  const passwordHash = await hashPassword(newPassword);
+
+  // Update via repository
+  if (role === 'admin') {
+    await adminRepository.updatePassword(record.idAdmin, passwordHash);
+  } else {
+    await salesRepository.updatePassword(record.idSales, passwordHash);
+  }
+
+  // Audit (do NOT log passwords)
+  logger.audit('Password changed', {
+    userId,
+    role,
+    ip: res.locals.clientIp,
+    requestId: res.locals.requestId,
+    userAgent: res.locals.userAgent,
+  });
+
+  // Revoke existing refresh tokens for the user (security) and issue a new one
+  try {
+    await tokenRepository.revokeTokensByUserId(userId);
+  } catch (e) {
+    logger.error('Failed to revoke prior refresh tokens after password change', e);
+  }
+
+  // Issue new tokens for the current session so user remains logged in
+  const newRefreshToken = await createRefreshToken(userId);
+  const userPayload = {
+    id: record.idSales || record.idAdmin,
+    userId: record.user.idUser,
+    email: record.user.email,
+    role: role,
+  };
+  const newAccessToken = generateAccessToken(userPayload);
+
+  return successResponse(res, {
+    message: 'Password changed successfully',
+    accessToken: newAccessToken,
+    refreshToken: newRefreshToken,
+  });
+});
+
+/**
+ * Get authenticated user's profile
+ * GET /api/me
+ */
+const getProfile = asyncHandler(async (req, res) => {
+  const userId = res.locals.userId;
+  const role = res.locals.userRole;
+
+  // Admin: use adminService to fetch sanitized admin record
+  if (role === 'admin') {
+    const admin = await adminService.getAdminByUserId(userId);
+    if (!admin) { throw new UnauthorizedError('User not found', 'USER_NOT_FOUND'); }
+
+    const user = {
+      id: admin.idAdmin,
+      userId: admin.user?.idUser || admin.idUser,
+      email: admin.user?.email || null,
+      nama: admin.email ? admin.email.split('@')[0] : (admin.nama || null),
+      role: 'admin',
+    };
+
+    return successResponse(res, { user }, 'Profile fetched');
+  }
+
+  // sales: use service to fetch + decrypt sensitive fields
+  const sales = await salesService.getSalesByUserId(userId);
+
+  const user = {
+    id: sales.idSales,
+    userId: sales.idUser || sales.userId,
+    email: sales.user?.email || sales.email,
+    nama: sales.nama,
+    nomorTelepon: sales.nomorTelepon || null,
+    domisili: sales.domisili || null,
+    role: 'sales',
+  };
+
+  return successResponse(res, { user }, 'Profile fetched');
+});
+
 module.exports = {
   login,
   logout,
   refresh,
+  getProfile,
+  verifyCurrentPassword,
+  changePassword,
 };

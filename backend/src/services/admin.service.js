@@ -48,6 +48,27 @@ async function createAdmin(data) {
   }
 }
 
+/**
+ * Get Admin by User ID (returns safe admin object)
+ */
+async function getAdminByUserId(userId) {
+  try {
+    const admin = await adminRepository.findByUserId(userId);
+    if (!admin) {return null;}
+
+    // Remove sensitive fields
+    if (admin.user) {
+      delete admin.user.passwordHash;
+    }
+
+    return admin;
+  } catch (error) {
+    logger.error('Error in getAdminByUserId service:', error);
+    throw error;
+  }
+}
+
 module.exports = {
   createAdmin,
+  getAdminByUserId,
 };

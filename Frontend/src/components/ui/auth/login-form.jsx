@@ -23,8 +23,17 @@ export default function LoginForm({ onSignIn }) {
       const result = await login(email, password);
       if (result.success) {
         const userRole = result.user.role;
-        if (userRole === "admin") navigate("/admin");
-        else navigate("/dashboard");
+        if (userRole === "admin") {
+          navigate("/admin");
+        } else if (userRole === "sales") {
+          navigate("/dashboard");
+        } else {
+          // Unknown or unauthorized role — do not navigate, remain on login
+          console.warn("Login succeeded but role is not authorized:", userRole);
+          alert("Anda tidak memiliki otorisasi untuk mengakses aplikasi ini.");
+          setLoading(false);
+          return;
+        }
       } else {
         console.error("Login failed", result.error);
         alert(result.error?.response?.data?.message || "Login Gagal");

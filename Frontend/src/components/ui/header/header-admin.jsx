@@ -2,6 +2,7 @@ import React from "react";
 import { cn } from "@/lib/utils";
 import logoUrl from "@/assets/Logo Sales.svg";
 import useHeaderHeight from "@/hooks/useHeaderHeight";
+import ProfileDropdown from "@/components/ui/header/profile-dropdown";
 
 export function Header({ userName = "John Doe", className, role = null }) {
   const headerRef = useHeaderHeight();
@@ -38,7 +39,11 @@ export function Header({ userName = "John Doe", className, role = null }) {
             </span>
           </div>
         ) : null}
-        <div className="text-sm font-medium text-foreground">{userName}</div>
+        <ProfileDropdown
+          className="cursor-pointer"
+          userName={userName}
+          userRole={role}
+        />
       </div>
     </header>
   );

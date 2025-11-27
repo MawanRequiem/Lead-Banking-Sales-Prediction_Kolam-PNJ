@@ -338,7 +338,6 @@ export default function AdminBulkAddTable() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="sales">Sales</SelectItem>
-                      <SelectItem value="admin">Admin</SelectItem>
                     </SelectContent>
                   </Select>
                 </td>

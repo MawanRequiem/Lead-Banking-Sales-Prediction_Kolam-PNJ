@@ -14,6 +14,7 @@ import NotFound from "./pages/NotFound";
 import LoginPage from "./pages/LoginPage";
 import AdminPage from "./pages/AdminPage";
 import AddUserPage from "./pages/AddUserPager";
+import ChangePasswordPage from "./pages/ChangePassword";
 import CustomerOverviewPage from "./pages/CustomerOverviewPage";
 
 // Components untuk Halaman Dashboard (Home)
@@ -46,8 +47,6 @@ function Dashboard() {
         <SalesBarChartCard />
         <DepositPieChartCard />
       </div>
-
-      <AdminsTable />
 
       <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-2 gap-6">
         <CustomerStatusCard
@@ -115,6 +114,7 @@ function App() {
         <Routes>
           <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/change-password" element={<ChangePasswordPage />} />
           <Route element={<MainLayout />}>
             <Route path="/admin" element={<AdminPage />} />
             <Route path="/add-user" element={<AddUserPage />} />

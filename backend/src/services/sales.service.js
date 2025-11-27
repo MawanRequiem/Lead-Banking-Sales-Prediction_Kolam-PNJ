@@ -324,6 +324,21 @@ async function importFromExcel(rows = [], opts = {}) {
   return summary;
 }
 
+/**
+ * Get Sales by User ID (decrypts sensitive fields)
+ */
+async function getSalesByUserId(userId) {
+  const sales = await salesRepository.findByUserId(userId);
+
+  if (!sales) {
+    throw new NotFoundError('Sales profile not found');
+  }
+
+  const decrypted = decryptSensitiveFields(sales);
+  if (decrypted.user) {delete decrypted.user.passwordHash;}
+  return decrypted;
+}
+
 module.exports = {
   createSales,
   getAllSales,
@@ -334,4 +349,5 @@ module.exports = {
   activateSales,
   deleteSales,
   importFromExcel,
+  getSalesByUserId,
 };

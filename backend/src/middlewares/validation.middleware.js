@@ -27,6 +27,7 @@ const {
   refreshTokenSchema,
   logoutSchema,
   changePasswordSchema,
+  verifyCurrentSchema,
 } = require('../validation/schemas/auth.schema');
 
 const {
@@ -502,6 +503,19 @@ function validateChangePassword(req, res, next) {
 }
 
 /**
+ * Validate Verify Current Password
+ */
+function validateVerifyCurrent(req, res, next) {
+  const joiValidation = validateWithJoi(verifyCurrentSchema, req.body);
+  if (joiValidation.hasError) {
+    return validationErrorResponse(res, joiValidation.errors);
+  }
+
+  req.body = joiValidation.value;
+  next();
+}
+
+/**
  * ========================================
  * EXPORTS
  * ========================================
@@ -522,4 +536,5 @@ module.exports = {
   validateRefreshToken,
   validateLogout,
   validateChangePassword,
+  validateVerifyCurrent,
 };

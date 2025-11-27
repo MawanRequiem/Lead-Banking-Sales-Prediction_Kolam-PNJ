@@ -21,8 +21,16 @@ export default function useProfile(initial = null) {
       const name = localStorage.getItem("userName");
       const email = localStorage.getItem("userEmail");
       const role = localStorage.getItem("userRole");
-      if (name || email || role) {
-        return { name: name || null, email: email || null, role: role || null };
+      const phone = localStorage.getItem("userPhone");
+      const domisili = localStorage.getItem("userDomisili");
+      if (name || email || role || phone) {
+        return {
+          name: name || null,
+          email: email || null,
+          role: role || null,
+          phone: phone || null,
+          domisili: domisili || null,
+        };
       }
     } catch (e) {}
 
@@ -47,13 +55,19 @@ export default function useProfile(initial = null) {
   }, []);
 
   const changePassword = useCallback(() => {
-    // stub: open change-password modal or route
-    console.log("Open change password");
+    try {
+      window.dispatchEvent(new CustomEvent("open-verify-current"));
+    } catch (e) {
+      console.error("Failed to dispatch open-verify-current", e);
+    }
   }, []);
 
   const openPersonalInfo = useCallback(() => {
-    // stub: navigate to profile page or open modal
-    console.log("Open personal info");
+    try {
+      window.dispatchEvent(new CustomEvent("open-profile-dialog"));
+    } catch (e) {
+      console.error("Failed to dispatch open-profile-dialog", e);
+    }
   }, []);
 
   const openNotifications = useCallback(() => {

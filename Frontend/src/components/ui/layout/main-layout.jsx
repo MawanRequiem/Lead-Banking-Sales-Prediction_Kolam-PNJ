@@ -5,6 +5,8 @@ import useAuth from "@/hooks/useAuth";
 import SidebarSelector from "../sidebar/sidebar-selector";
 import HeaderSelector from "../header/header-selector";
 import AuthExpiredDialog from "../dialogs/auth-expired-dialog";
+import ProfileDialog from "../dialogs/profile-dialog";
+import VerifyCurrentDialog from "../dialogs/verify-current-dialog";
 import { Toaster } from "sonner";
 
 export default function MainLayout() {
@@ -40,6 +42,8 @@ export default function MainLayout() {
 
       <Toaster />
       <AuthExpiredDialog open={showReauth} onOpenChange={setShowReauth} />
+      <ProfileDialog />
+      <VerifyCurrentDialog />
     </div>
   );
 }

@@ -29,17 +29,27 @@ export default function useAuth() {
         const userRole = user.role || "";
         const userName = user.nama || user.email || "";
         const userEmail = user.email || "";
+        const userPhone = user.nomorTelepon || user.phone || "";
+        const userDomisili = user.domisili || user.city || "";
 
         try {
           localStorage.setItem("userRole", userRole);
           localStorage.setItem("userName", userName);
           localStorage.setItem("userEmail", userEmail);
+          if (userPhone) localStorage.setItem("userPhone", userPhone);
+          if (userDomisili) localStorage.setItem("userDomisili", userDomisili);
         } catch (e) {
           // ignore storage errors
         }
 
         if (typeof setUser === "function") {
-          setUser({ name: userName, email: userEmail, role: userRole });
+          setUser({
+            name: userName,
+            email: userEmail,
+            role: userRole,
+            phone: userPhone,
+            domisili: userDomisili,
+          });
         }
 
         setLoading(false);
