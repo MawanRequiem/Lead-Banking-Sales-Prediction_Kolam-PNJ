@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import axios from '@/lib/axios'
 
 // Dummy data moved here so table definitions remain clean.
 export const mockData = [
@@ -30,28 +31,24 @@ export const mockData = [
 // Hook to manage table data. By default returns mockData and a fetch helper.
 // Usage:
 // const { data, setData, fetchData } = useTable({ apiUrl: '/api/customers', initial: mockData })
-export function useTable({ apiUrl = null, initial = mockData } = {}) {
-  const [data, setData] = useState(initial)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null)
+export function useTable({ apiUrl = '/sales/leads', initial = mockData } = {}) {
+  const [data, setData] = useState(initial);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   async function fetchData(params = {}) {
-    if (!apiUrl) return
-    setLoading(true)
-    setError(null)
+    if (!apiUrl) return;
+    setLoading(true);
+    setError(null);
     try {
-      const query = new URLSearchParams(params).toString()
-      const url = query ? `${apiUrl}?${query}` : apiUrl
-      const res = await fetch(url)
-      if (!res.ok) throw new Error('Network response was not ok')
-      const json = await res.json()
-      setData(json)
-      setLoading(false)
-      return json
+      const response = await axios.get(apiUrl, { params });
+      setData(response.data.data);
+      setLoading(false);
+      return response.data;
     } catch (err) {
-      setError(err)
-      setLoading(false)
-      return null
+      setError(err);
+      setLoading(false);
+      return null;
     }
   }
 

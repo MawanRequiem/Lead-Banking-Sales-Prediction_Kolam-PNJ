@@ -71,6 +71,64 @@ function getMyLeads(salesId, filters = {}) {
 }
 
 /**
+ * Get all leads.
+*/
+function getAllLeads(filters = {}) {
+  const {
+    search,
+    sortBy = 'skorPrediksi',
+    sortOrder = 'desc',
+    page = 1,
+    limit = 20,
+  } = filters;
+
+  const skip = (page - 1) * limit;
+  const take = parseInt(limit);
+
+  const where = {
+    deletedAt: null,
+    ...(search && {
+      OR: [
+        { nama: { contains: search, mode: 'insensitive' } },
+        { pekerjaan: { contains: search, mode: 'insensitive' } },
+      ],
+    }),
+  };
+
+  return Promise.all([
+    prisma.nasabah.findMany({
+      where,
+      skip,
+      take,
+      include: {
+        jenisKelaminRel: true,
+        statusPernikahan: true,
+        deposito: {
+          orderBy: { createdAt: 'desc' },
+          take: 1,
+        },
+        historiTelepon: {
+          orderBy: { createdAt: 'desc' },
+          take: 1,
+        },
+      },
+      orderBy: {
+        [sortBy]: sortOrder,
+      },
+    }),
+    // Count total leads
+    prisma.nasabah.count({ where }),
+  ]).then(([data, total]) => ({
+    data,
+    meta: {
+      total,
+      page: parseInt(page),
+      lastPage: Math.ceil(total / take),
+    },
+  }));
+}
+
+/**
  * Get Full Detail of a Lead
  */
 function getLeadDetail(salesId, nasabahId) {
@@ -215,6 +273,7 @@ async function getAssignedLeads(salesId, { page = 1, limit = 10, search = '' }) 
 
 module.exports = {
   getMyLeads,
+  getAllLeads,
   getLeadDetail,
   createCallLog,
   updateDepositoStatus,

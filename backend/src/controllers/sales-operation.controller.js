@@ -20,6 +20,21 @@ const getDashboard = asyncHandler(async (req, res) => {
 });
 
 /**
+ * Get leads (list nasabah) for sales
+ * GET /api/sales/leads
+ */
+const getAllLeads = asyncHandler(async (req, res) => {
+  const { leads, pagination } = await salesOpService.getAllLeads(req.query);
+
+  return successResponse(
+    res,
+    leads,
+    'Leads data retrieved succesfully',
+    { pagination },
+  );
+});
+
+/**
  * Log Call Activity
  * POST /api/sales/log-call
  */
@@ -72,6 +87,7 @@ const getAssignments = asyncHandler(async (req, res) => {
 
 module.exports = {
   getDashboard,
+  getAllLeads,
   logCall,
   exportData,
   updateStatus,

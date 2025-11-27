@@ -32,6 +32,34 @@ async function getMyDashboard(salesId, query) {
 }
 
 /**
+ * Get List Nasabah
+ * Returns paginated data + metadata
+ */
+async function getAllLeads(query) {
+  const result = await salesOpRepo.getAllLeads(query);
+
+  const transformedData = result.data.map(item => ({
+    id: item.idNasabah,
+    nama: item.nama,
+    umur: item.umur,
+    pekerjaan: item.pekerjaan || '-',
+    jenisKelamin: item.jenisKelaminRel?.namaJenisKelamin || '-',
+    statusPernikahan: item.statusPernikahan?.namaStatus || '-',
+    skor: parseFloat(item.skorPrediksi || 0),
+    statusTerakhir: item.deposito[0]?.statusDeposito || 'PROSPEK',
+    lastCall: item.historiTelepon[0]?.createdAt || null,
+    needFollowUp: item.historiTelepon[0]?.nextFollowupDate
+      ? new Date(item.historiTelepon[0].nextFollowupDate) <= new Date()
+      : false,
+  }));
+
+  return {
+    leads: transformedData,
+    pagination: result.meta,
+  };
+}
+
+/**
  * Log Activity (Telepon)
  */
 async function logActivity(salesId, data) {
@@ -177,6 +205,7 @@ async function getMyAssignments(user, query) {
 
 module.exports = {
   getMyDashboard,
+  getAllLeads,
   logActivity,
   exportWorkReport,
   updateLeadStatus,
