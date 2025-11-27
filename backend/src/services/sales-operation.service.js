@@ -66,6 +66,18 @@ async function getAllLeads(query) {
 }
 
 /**
+ * Get History (Telepon)
+ */
+async function getCallHistory(query) {
+  const result = await salesOpRepo.getCallHistory(query);
+
+  return {
+    history: result.data,
+    pagination: result.meta,
+  };
+}
+
+/**
  * Log Activity (Telepon)
  */
 async function logActivity(salesId, data) {
@@ -212,6 +224,7 @@ async function getMyAssignments(user, query) {
 module.exports = {
   getMyDashboard,
   getAllLeads,
+  getCallHistory,
   logActivity,
   exportWorkReport,
   updateLeadStatus,

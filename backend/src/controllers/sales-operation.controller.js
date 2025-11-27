@@ -35,6 +35,21 @@ const getAllLeads = asyncHandler(async (req, res) => {
 });
 
 /**
+ * Get Call History
+ * GET /api/sales/call-history
+ */
+const getCallHistory = asyncHandler(async (req, res) => {
+  const { history, pagination } = await salesOpService.getCallHistory(req.query);
+
+  return successResponse(
+    res,
+    history,
+    'Call history retrieved successfully',
+    { pagination },
+  );
+});
+
+/**
  * Log Call Activity
  * POST /api/sales/log-call
  */
@@ -88,6 +103,7 @@ const getAssignments = asyncHandler(async (req, res) => {
 module.exports = {
   getDashboard,
   getAllLeads,
+  getCallHistory,
   logCall,
   exportData,
   updateStatus,

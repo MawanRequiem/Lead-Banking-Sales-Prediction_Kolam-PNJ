@@ -190,6 +190,60 @@ const salesQuerySchema = Joi.object({
   stripUnknown: true,
 });
 
+const callsQuerySchema = Joi.object({
+  nasabahId: Joi.string()
+    .uuid({ version: 'uuidv4' })
+    .messages({
+      'string.guid': 'Invalid Nasabah ID format',
+    }),
+
+  page: Joi.number()
+    .integer()
+    .min(1)
+    .max(10000)
+    .default(1)
+    .messages({
+      'number.base': 'Page must be a number',
+      'number.integer': 'Page must be an integer',
+      'number.min': 'Page must be at least 1',
+      'number.max': 'Page must not exceed 10000',
+    }),
+
+  limit: Joi.number()
+    .integer()
+    .min(1)
+    .max(100)
+    .default(10)
+    .messages({
+      'number.base': 'Limit must be a number',
+      'number.integer': 'Limit must be an integer',
+      'number.min': 'Limit must be at least 1',
+      'number.max': 'Limit must not exceed 100',
+    }),
+
+  search: Joi.string()
+    .trim()
+    .max(100)
+    .allow('')
+    .messages({
+      'string.max': 'Search query must not exceed 100 characters',
+    }),
+
+  sortBy: Joi.string()
+    .valid('nama', 'email', 'createdAt', 'updatedAt')
+    .default('createdAt')
+    .messages({
+      'any.only': 'sortBy must be one of: nama, email, createdAt, updatedAt',
+    }),
+
+  sortOrder: Joi.string()
+    .valid('asc', 'desc')
+    .default('desc')
+    .messages({
+      'any.only': 'sortOrder must be either asc or desc',
+    }),
+});
+
 const logCallSchema = Joi.object({
   nasabahId: Joi.string()
     .uuid({ version: 'uuidv4' })
@@ -255,6 +309,7 @@ module.exports = {
   updateSalesSchema,
   resetPasswordSchema,
   salesQuerySchema,
+  callsQuerySchema,
   logCallSchema,
   updateStatusSchema,
 };
