@@ -1,4 +1,5 @@
 const salesOpRepo = require('../repositories/sales-operation.repository');
+const { decryptSensitiveFields } = require('../utils/prismaEncryption.util');
 const { NotFoundError } = require('../middlewares/errorHandler.middleware');
 const { Parser } = require('json2csv');
 const { prisma } = require('../config/prisma');
@@ -11,24 +12,27 @@ async function getMyDashboard(salesId, query) {
   // 1. Panggil Repo yang sudah Scalable
   const result = await salesOpRepo.getMyLeads(salesId, query);
 
-  const transformedData = result.data.map(item => ({
-    assignmentId: item.idAssignment,
-    nasabah: {
-      id: item.nasabah.idNasabah,
-      nama: item.nasabah.nama,
-      nomorTelepon: item.nomorTelepon,
-      umur: item.umur,
-      pekerjaan: item.pekerjaan || '-',
-      jenisKelamin: item.jenisKelaminRel?.namaJenisKelamin || '-',
-      statusPernikahan: item.statusPernikahan?.namaStatus || '-',
-      skor: parseFloat(item.nasabah.skorPrediksi || 0),
-      statusTerakhir: item.nasabah.deposito[0]?.statusDeposito || 'PROSPEK',
-      lastCall: item.nasabah.historiTelepon[0]?.createdAt || null,
-      needFollowUp: item.nasabah.historiTelepon[0]?.nextFollowupDate
-        ? new Date(item.nasabah.historiTelepon[0].nextFollowupDate) <= new Date()
-        : false,
-    },
-  }));
+  const transformedData = result.data.map(item => {
+    const nasabah = decryptSensitiveFields(item.nasabah);
+    return {
+      assignmentId: item.idAssignment,
+      nasabah: {
+        id: nasabah.idNasabah,
+        nama: nasabah.nama,
+        nomorTelepon: nasabah.nomorTelepon,
+        umur: nasabah.umur,
+        pekerjaan: nasabah.pekerjaan || '-',
+        jenisKelamin: nasabah.jenisKelaminRel?.namaJenisKelamin || '-',
+        statusPernikahan: nasabah.statusPernikahan?.namaStatus || '-',
+        skor: parseFloat(nasabah.skorPrediksi || 0),
+        statusTerakhir: nasabah.deposito[0]?.statusDeposito || 'PROSPEK',
+        lastCall: nasabah.historiTelepon[0]?.createdAt || null,
+        needFollowUp: nasabah.historiTelepon[0]?.nextFollowupDate
+          ? new Date(nasabah.historiTelepon[0].nextFollowupDate) <= new Date()
+          : false,
+      },
+    };
+  });
 
   return {
     leads: transformedData,
@@ -43,21 +47,24 @@ async function getMyDashboard(salesId, query) {
 async function getAllLeads(query) {
   const result = await salesOpRepo.getAllLeads(query);
 
-  const transformedData = result.data.map(item => ({
-    id: item.idNasabah,
-    nama: item.nama,
-    nomorTelepon: item.nomorTelepon,
-    umur: item.umur,
-    pekerjaan: item.pekerjaan || '-',
-    jenisKelamin: item.jenisKelaminRel?.namaJenisKelamin || '-',
-    statusPernikahan: item.statusPernikahan?.namaStatus || '-',
-    skor: parseFloat(item.skorPrediksi || 0),
-    statusTerakhir: item.deposito[0]?.statusDeposito || 'PROSPEK',
-    lastCall: item.historiTelepon[0]?.createdAt || null,
-    needFollowUp: item.historiTelepon[0]?.nextFollowupDate
-      ? new Date(item.historiTelepon[0].nextFollowupDate) <= new Date()
-      : false,
-  }));
+  const transformedData = result.data.map(item => {
+    const nasabah = decryptSensitiveFields(item);
+    return {
+      id: nasabah.idNasabah,
+      nama: nasabah.nama,
+      nomorTelepon: nasabah.nomorTelepon,
+      umur: nasabah.umur,
+      pekerjaan: nasabah.pekerjaan || '-',
+      jenisKelamin: nasabah.jenisKelaminRel?.namaJenisKelamin || '-',
+      statusPernikahan: nasabah.statusPernikahan?.namaStatus || '-',
+      skor: parseFloat(nasabah.skorPrediksi || 0),
+      statusTerakhir: nasabah.deposito[0]?.statusDeposito || 'PROSPEK',
+      lastCall: nasabah.historiTelepon[0]?.createdAt || null,
+      needFollowUp: nasabah.historiTelepon[0]?.nextFollowupDate
+        ? new Date(nasabah.historiTelepon[0].nextFollowupDate) <= new Date()
+        : false,
+    };
+  });
 
   return {
     leads: transformedData,
@@ -149,31 +156,33 @@ async function getLeadDetail(salesId, nasabahId) {
     throw new NotFoundError('Nasabah not found or not assigned to you');
   }
 
-  // Formatting response agar lebih bersih
+  // Formatting response agar lebih bersih (decrypt sensitive fields)
+  const decryptedLead = decryptSensitiveFields(lead);
+
   return {
-    id: lead.idNasabah,
+    id: decryptedLead.idNasabah,
     profil: {
-      nama: lead.nama,
-      nomorTelepon: lead.nomorTelepon, // Pastikan ini sudah didecrypt oleh repo/middleware jika pakai enkripsi
-      pekerjaan: lead.pekerjaan,
-      domisili: lead.domisili,
-      umur: lead.umur,
-      gaji: parseFloat(lead.gaji || 0),
-      statusPernikahan: lead.statusPernikahan?.namaStatus || '-',
-      jenisKelamin: lead.jenisKelaminRel?.namaJenisKelamin || '-',
+      nama: decryptedLead.nama,
+      nomorTelepon: decryptedLead.nomorTelepon,
+      pekerjaan: decryptedLead.pekerjaan,
+      domisili: decryptedLead.domisili,
+      umur: decryptedLead.umur,
+      gaji: parseFloat(decryptedLead.gaji || 0),
+      statusPernikahan: decryptedLead.statusPernikahan?.namaStatus || '-',
+      jenisKelamin: decryptedLead.jenisKelaminRel?.namaJenisKelamin || '-',
     },
     metrik: {
-      skorAI: parseFloat(lead.skorPrediksi || 0),
-      totalTelepon: lead.historiTelepon.length,
+      skorAI: parseFloat(decryptedLead.skorPrediksi || 0),
+      totalTelepon: decryptedLead.historiTelepon.length,
     },
     history: {
-      deposito: lead.deposito.map(d => ({
+      deposito: decryptedLead.deposito.map(d => ({
         id: d.idDeposito,
         status: d.statusDeposito,
         jenis: d.jenisDeposito,
         tanggal: d.createdAt,
       })),
-      telepon: lead.historiTelepon.map(h => ({
+      telepon: decryptedLead.historiTelepon.map(h => ({
         id: h.idHistori,
         tanggal: h.tanggalTelepon,
         durasi: h.lamaTelepon,
@@ -198,17 +207,20 @@ async function getMyAssignments(user, query) {
     { page: parseInt(page), limit: parseInt(limit), search },
   );
 
-  const mappedData = assignments.map((item) => ({
-    id: item.nasabah.idNasabah,
-    nama: item.nasabah.nama,
-    pekerjaan: item.nasabah.pekerjaan || '-',
-    nomorTelepon: item.nasabah.nomorTelepon || '-',
-    jenisKelamin: item.nasabah.jenisKelamin === 'L' ? 'Laki-laki' : 'Perempuan',
-    umur: item.nasabah.umur,
-    statusPernikahan: item.nasabah.statusPernikahanRef?.namaStatus || 'Unknown',
-    assignmentId: item.idAssignment,
-    skorPrediksi: item.nasabah.skorPrediksi,
-  }));
+  const mappedData = assignments.map((item) => {
+    const nasabah = decryptSensitiveFields(item.nasabah);
+    return {
+      id: nasabah.idNasabah,
+      nama: nasabah.nama,
+      pekerjaan: nasabah.pekerjaan || '-',
+      nomorTelepon: nasabah.nomorTelepon || '-',
+      jenisKelamin: nasabah.jenisKelamin === 'L' ? 'Laki-laki' : 'Perempuan',
+      umur: nasabah.umur,
+      statusPernikahan: nasabah.statusPernikahanRef?.namaStatus || 'Unknown',
+      assignmentId: item.idAssignment,
+      skorPrediksi: nasabah.skorPrediksi,
+    };
+  });
 
   return {
     data: mappedData,

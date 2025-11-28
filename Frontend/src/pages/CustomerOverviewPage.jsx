@@ -1,18 +1,22 @@
-import React, { useMemo } from 'react';
-import CustomerOverviewCard from '@/components/ui/cards/customer-overview-card';
-import CustomersOverviewTable from '@/components/ui/tables/customers-overview-table';
-import { useTable } from '@/hooks/useTable';
+import React, { useMemo } from "react";
+import CustomerOverviewCard from "@/components/ui/cards/customer-overview-card";
+import CustomersOverviewTable from "@/components/ui/tables/customers-overview-table";
+import { useTable } from "@/hooks/useTable";
 
 export default function CustomerOverviewPage() {
-  const { data, loading } = useTable({ apiUrl: '/sales/leads' });
-  const memberStatuses = ['AKTIF', 'JATUH_TEMPO', 'DICAIRKAN'];
+  const { data, loading } = useTable({ apiUrl: "/sales/leads" });
+  const memberStatuses = ["AKTIF", "JATUH_TEMPO", "DICAIRKAN"];
 
   const stats = useMemo(() => {
     if (!data) return null;
 
     const total = data.length;
-    const members  = data.filter((d) => memberStatuses.includes(d.statusTerakhir)).length;
-    const activeDeposits = data.filter((d) => d.statusTerakhir === 'AKTIF').length;
+    const members = data.filter((d) =>
+      memberStatuses.includes(d.statusTerakhir)
+    ).length;
+    const activeDeposits = data.filter(
+      (d) => d.statusTerakhir === "AKTIF"
+    ).length;
 
     return {
       totalCustomers: total,
@@ -44,7 +48,7 @@ export default function CustomerOverviewPage() {
 
       {/* 3. Main Table Section */}
       <div className="bg-background rounded-xl border shadow-sm p-1 overflow-hidden">
-        <CustomersOverviewTable />
+        <CustomersOverviewTable data={data} loading={loading} />
       </div>
     </div>
   );

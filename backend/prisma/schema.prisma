@@ -66,6 +66,7 @@ model Sales {
 model Nasabah {
   idNasabah          String    @id @default(dbgenerated("uuid_generate_v4()")) @map("id_nasabah") @db.Uuid
   nama               String    @db.VarChar(255)
+  nomorTelepon       String?   @map("nomor_telepon")
   umur               Int?      @db.SmallInt
   pekerjaan          String?   @db.VarChar(255)
   domisili           String?   @db.Text
