@@ -16,6 +16,7 @@ import AdminPage from "./pages/AdminPage";
 import AddUserPage from "./pages/AddUserPager";
 import ChangePasswordPage from "./pages/ChangePassword";
 import CustomerOverviewPage from "./pages/CustomerOverviewPage";
+import CallHistoryPage from "./pages/CallHistoryPage";
 
 // Components untuk Halaman Dashboard (Home)
 import AssignmentTable from "./components/ui/tables/assignment-table";
@@ -120,6 +121,7 @@ function App() {
             <Route path="/add-user" element={<AddUserPage />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/customers" element={<CustomerOverviewPage />} />
+            <Route path="/history" element={<CallHistoryPage />} />
             <Route path="/assignments" element={<AssignmentsPage />} />
           </Route>
           <Route path="*" element={<NotFound />} />
