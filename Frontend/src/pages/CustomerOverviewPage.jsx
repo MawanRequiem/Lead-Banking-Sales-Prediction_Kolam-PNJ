@@ -48,7 +48,7 @@ export default function CustomerOverviewPage() {
 
       {/* 3. Main Table Section */}
       <div className="bg-background rounded-xl border shadow-sm p-1 overflow-hidden">
-        <CustomersOverviewTable data={data} loading={loading} />
+        <CustomersOverviewTable />
       </div>
     </div>
   );

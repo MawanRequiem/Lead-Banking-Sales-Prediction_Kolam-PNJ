@@ -40,14 +40,37 @@ export const columns = [
         row.original.lastCall ||
         (row.original.historiTelepon && row.original.historiTelepon[0]) ||
         null;
-      const needFollowUp = row.original.needFollowUp || false;
 
+      // derive needFollowUp from backend field if present, otherwise from lastCall.nextFollowupDate
+      let needFollowUp = false;
+      if (typeof row.original.needFollowUp === "boolean") {
+        needFollowUp = row.original.needFollowUp;
+      } else if (lastCall && lastCall.nextFollowupDate) {
+        try {
+          needFollowUp = new Date(lastCall.nextFollowupDate) <= new Date();
+        } catch (e) {
+          needFollowUp = false;
+        }
+      }
+
+      // If no call ever, show available
       if (!lastCall)
-        return <div className="text-sm text-muted-foreground">Available</div>;
+        return <div className="text-sm text-muted-foreground">Tersedia</div>;
 
-      // If needFollowUp flagged, show 'Follow Up'
+      // Detect in-call / active call states (support multiple shapes)
+      const isInCall =
+        typeof lastCall === "object" &&
+        (lastCall.status === "in_call" ||
+          lastCall.status === "in-progress" ||
+          lastCall.active === true ||
+          lastCall.isActive === true);
+
+      if (isInCall)
+        return <div className="text-sm text-rose-600">Dalam Panggilan</div>;
+
+      // If needFollowUp flagged, show 'Tindak Lanjut'
       if (needFollowUp)
-        return <div className="text-sm text-amber-600">Follow Up</div>;
+        return <div className="text-sm text-amber-600">Tindak Lanjut</div>;
 
       // If there's a last call and no follow up due, consider 'Aman'
       return <div className="text-sm text-green-600">Aman</div>;

@@ -166,6 +166,7 @@ function createCallLog(data) {
       data: {
         idNasabah: data.idNasabah,
         idSales: data.idSales,
+        nomorTelepon: data.nomorTelepon,
         lamaTelepon: data.lamaTelepon,
         hasilTelepon: data.hasilTelepon,
         catatan: data.catatan,

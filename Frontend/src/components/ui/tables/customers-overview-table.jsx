@@ -9,18 +9,9 @@ import { useTable } from "@/hooks/useTable";
 
 // Accept `data` and `loading` as props (page can pass API results). If not
 // provided, fall back to internal hook with mockData (useful for isolated storybook/tests).
-export default function CustomersOverviewTable({
-  data: externalData = null,
-  loading: externalLoading = null,
-}) {
+export default function CustomersOverviewTable() {
   // If parent didn't pass data, use local hook to fetch `/sales/leads` (fallback)
-  const { data: fetchedData, loading: fetchedLoading } = useTable({
-    apiUrl: "/sales/leads",
-    initial: mockData,
-  });
-
-  const data = externalData ?? fetchedData;
-  const loading = externalLoading ?? fetchedLoading;
+  const { data, loading } = useTable({ initial: mockData });
 
   const cols = useMemo(() => columns, []);
 

@@ -263,7 +263,8 @@ const logCallSchema = Joi.object({
     }),
 
   hasilTelepon: Joi.string()
-    .max(255)
+    .trim()
+    .uppercase()
     .required()
     .messages({
       'any.required': 'Call result is required',

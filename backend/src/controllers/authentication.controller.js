@@ -114,8 +114,6 @@ async function authenticateSales(email, password) {
     userId: sales.user.idUser,
     email: sales.user.email,
     nama: sales.nama,
-    nomorTelepon: sales.nomorTelepon || null,
-    domisili: sales.domisili || null,
     role: 'sales',
   };
 }
