@@ -8,7 +8,7 @@ const { asyncHandler } = require('../middlewares/errorHandler.middleware');
  */
 const getDashboard = asyncHandler(async (req, res) => {
   // req.user.userId didapat dari auth.middleware
-  const { leads, pagination } = await salesOpService.getMyDashboard(req.user.userId, req.query);
+  const { leads, pagination } = await salesOpService.getMyDashboard(req.user.id, req.query);
 
   // Response standar dengan metadata pagination
   return successResponse(
@@ -96,8 +96,8 @@ const getLeadDetail = asyncHandler(async (req, res) => {
  * GET /api/sales/assignments
  */
 const getAssignments = asyncHandler(async (req, res) => {
-  const result = await salesOpService.getMyAssignments(req.user, req.query);
-  return successResponse(res, result, 'Assigned leads retrieved successfully');
+  const { assignments, pagination } = await salesOpService.getMyAssignments(req.user.userId, req.query);
+  return successResponse(res, assignments, 'Assigned leads retrieved successfully', { pagination });
 });
 
 module.exports = {

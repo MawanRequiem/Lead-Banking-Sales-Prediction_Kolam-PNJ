@@ -16,11 +16,11 @@ async function getMyDashboard(salesId, query) {
     nasabah: {
       id: item.nasabah.idNasabah,
       nama: item.nasabah.nama,
-      nomorTelepon: item.nomorTelepon,
-      umur: item.umur,
-      pekerjaan: item.pekerjaan || '-',
-      jenisKelamin: item.jenisKelaminRel?.namaJenisKelamin || '-',
-      statusPernikahan: item.statusPernikahan?.namaStatus || '-',
+      nomorTelepon: item.nasabah.nomorTelepon,
+      umur: item.nasabah.umur,
+      pekerjaan: item.nasabah.pekerjaan || '-',
+      jenisKelamin: item.nasabah.jenisKelaminRel?.namaJenisKelamin || '-',
+      statusPernikahan: item.nasabah.statusPernikahan?.namaStatus || '-',
       skor: parseFloat(item.nasabah.skorPrediksi || 0),
       statusTerakhir: item.nasabah.deposito[0]?.statusDeposito || 'PROSPEK',
       lastCall: item.nasabah.historiTelepon[0]?.createdAt || null,
@@ -185,19 +185,14 @@ async function getLeadDetail(salesId, nasabahId) {
   };
 }
 
-async function getMyAssignments(user, query) {
-  const salesData = await prisma.sales.findFirst({ where: { idUser: user.id } });
+async function getMyAssignments(userId, query) {
+  const salesData = await prisma.sales.findFirst({ where: { idUser: userId } });
 
   if (!salesData) {
-    throw new Error('Sales profile not found');
+    throw new NotFoundError('Sales profile not found');
   }
 
-  const { page, limit, search } = query;
-
-  const { count, assignments } = await salesOpRepo.getAssignedLeads(
-    salesData.idSales,
-    { page: parseInt(page), limit: parseInt(limit), search },
-  );
+  const { assignments, pagination } = await salesOpRepo.getAssignedLeads(salesData.idSales, query);
 
   const mappedData = assignments.map((item) => ({
     id: item.nasabah.idNasabah,
@@ -206,19 +201,14 @@ async function getMyAssignments(user, query) {
     nomorTelepon: item.nasabah.nomorTelepon || '-',
     jenisKelamin: item.nasabah.jenisKelamin === 'L' ? 'Laki-laki' : 'Perempuan',
     umur: item.nasabah.umur,
-    statusPernikahan: item.nasabah.statusPernikahanRef?.namaStatus || 'Unknown',
+    statusPernikahan: item.nasabah.statusPernikahan?.namaStatus || 'Unknown',
     assignmentId: item.idAssignment,
     skorPrediksi: item.nasabah.skorPrediksi,
   }));
 
   return {
-    data: mappedData,
-    meta: {
-      page: parseInt(page),
-      limit: parseInt(limit),
-      total: count,
-      totalPages: Math.ceil(count / limit),
-    },
+    assignments: mappedData,
+    pagination,
   };
 }
 
