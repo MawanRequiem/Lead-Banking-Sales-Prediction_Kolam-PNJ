@@ -72,7 +72,7 @@ model Deposito {
   createdAt      DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt      DateTime       @updatedAt @map("updated_at") @db.Timestamptz(6)
   deletedAt      DateTime?      @map("deleted_at") @db.Timestamptz(6)
-  nasabah        Nasabah        @relation(fields: [idNasabah], references: [id_nasabah], onDelete: Cascade, map: "fk_deposito_nasabah")
+  nasabah        Nasabah        @relation(fields: [idNasabah], references: [idNasabah], onDelete: Cascade, map: "fk_deposito_nasabah")
   status         StatusDeposito @relation(fields: [statusDeposito], references: [idStatusDeposito], map: "fk_deposito_status")
 
   @@map("deposito")
@@ -90,7 +90,7 @@ model HistoriTelepon {
   nextFollowupDate DateTime? @map("next_followup_date") @db.Date
   createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt        DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
-  nasabah          Nasabah   @relation(fields: [idNasabah], references: [id_nasabah], onDelete: Cascade, map: "fk_histori_nasabah")
+  nasabah          Nasabah   @relation(fields: [idNasabah], references: [idNasabah], onDelete: Cascade, map: "fk_histori_nasabah")
   sales            Sales     @relation(fields: [idSales], references: [idSales], map: "fk_histori_sales")
 
   @@index([idNasabah], map: "idx_histori_nasabah")
@@ -109,7 +109,7 @@ model SalesNasabahAssignment {
   isActive          Boolean  @default(true) @map("is_active")
   createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt         DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
-  nasabah           Nasabah  @relation(fields: [idNasabah], references: [id_nasabah], onDelete: Cascade, map: "fk_assignment_nasabah")
+  nasabah           Nasabah  @relation(fields: [idNasabah], references: [idNasabah], onDelete: Cascade, map: "fk_assignment_nasabah")
   sales             Sales    @relation(fields: [idSales], references: [idSales], onDelete: Cascade, map: "fk_assignment_sales")
 
   @@unique([idSales, idNasabah, isActive], map: "uq_sales_nasabah_active")
@@ -211,25 +211,26 @@ model PasswordVerification {
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model Nasabah {
-  id_nasabah                                         String                   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  nama                                               String                   @db.VarChar(255)
-  umur                                               Int?                     @db.SmallInt
-  pekerjaan                                          String?                  @db.VarChar(255)
-  domisili                                           String?
-  gaji                                               Decimal?                 @db.Decimal(15, 2)
-  id_status_pernikahan                               String?                  @db.VarChar(20)
-  jenis_kelamin                                      String?                  @db.VarChar(10)
-  skor_prediksi                                      Decimal?                 @db.Decimal(5, 4)
-  last_scored_at                                     DateTime?                @db.Timestamptz(6)
-  created_at                                         DateTime                 @default(now()) @db.Timestamptz(6)
-  updated_at                                         DateTime                 @db.Timestamptz(6)
-  deleted_at                                         DateTime?                @db.Timestamptz(6)
-  nomor_telepon                                      String?
-  deposito                                           Deposito[]
-  historiTelepon                                     HistoriTelepon[]
-  jenisKelaminRel                                    JenisKelamin?            @relation("nasabah_jenis_kelaminTojenis_kelamin", fields: [jenis_kelamin], references: [idJenisKelamin], map: "fk_nasabah_jenis_kelamin")
-  status_pernikahan                                  StatusPernikahan?        @relation(fields: [id_status_pernikahan], references: [idStatusPernikahan], map: "fk_nasabah_status_pernikahan")
-  assignments                                        SalesNasabahAssignment[]
+  idNasabah          String              @id @default(dbgenerated("uuid_generate_v4()")) @map("id_nasabah") @db.Uuid
+  nama               String              @db.VarChar(255)
+  umur               Int?                @db.SmallInt
+  pekerjaan          String?             @db.VarChar(255)
+  domisili           String?
+  gaji               Decimal?            @db.Decimal(15, 2)
+  idStatusPernikahan String?             @map("id_status_pernikahan") @db.VarChar(20)
+  jenisKelamin       String?             @map("jenis_kelamin") @db.VarChar(10)
+  skorPrediksi       Decimal?            @map("skor_prediksi") @db.Decimal(5, 4)
+  lastScoredAt       DateTime?           @map("last_scored_at") @db.Timestamptz(6)
+  createdAt          DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime            @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt          DateTime?           @map("deleted_at") @db.Timestamptz(6)
+  nomorTelepon       String?             @map("nomor_telepon")
+
+  deposito           Deposito[]
+  historiTelepon     HistoriTelepon[]
+  jenisKelaminRel    JenisKelamin?       @relation("nasabah_jenis_kelaminTojenis_kelamin", fields: [jenisKelamin], references: [idJenisKelamin], map: "fk_nasabah_jenis_kelamin")
+  statusPernikahan   StatusPernikahan?   @relation(fields: [idStatusPernikahan], references: [idStatusPernikahan], map: "fk_nasabah_status_pernikahan")
+  assignments        SalesNasabahAssignment[]
 
   @@map("nasabah")
 }
