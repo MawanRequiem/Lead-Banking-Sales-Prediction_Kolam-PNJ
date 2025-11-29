@@ -8,7 +8,7 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Edit, UserX, Key } from "lucide-react";
+import { MoreHorizontal, Edit, UserX, Key, UserCheck } from "lucide-react";
 import AdminEditDialog from "@/components/ui/dialogs/admin-edit-dialog";
 import AdminConfirmDeactivateDialog from "@/components/ui/dialogs/admin-confirm-deactivate-dialog";
 import AdminConfirmDeleteDialog from "@/components/ui/dialogs/admin-confirm-delete-dialog";
@@ -19,6 +19,26 @@ export default function AdminActions({ user, refresh }) {
   const [isDeactivateOpen, setIsDeactivateOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isResetOpen, setIsResetOpen] = useState(false);
+  const [pendingAction, setPendingAction] = useState(null);
+
+  // Normalize id and isActive because backend sometimes nests user info
+  const normalizedId =
+    user?.id ||
+    user?.idSales ||
+    user?.idUser ||
+    user?.idAdmin ||
+    user?.id_admin ||
+    user?.user?.idUser ||
+    user?.user?.idSales ||
+    user?.user?.idAdmin ||
+    null;
+
+  const normalizedIsActive =
+    typeof user?.isActive !== "undefined"
+      ? user.isActive
+      : typeof user?.user?.isActive !== "undefined"
+      ? user.user.isActive
+      : null;
 
   function handleSave(updated) {
     // Call backend to save updates for sales/admin
@@ -48,13 +68,27 @@ export default function AdminActions({ user, refresh }) {
     // Call deactivate endpoint
     (async () => {
       try {
-        const id = user.id;
+        const id = normalizedId;
         await axios.post(`/admin/sales/${id}/deactivate`);
         if (typeof refresh === "function") refresh();
         else window.dispatchEvent(new CustomEvent("data:changed"));
       } catch (err) {
         console.error("Failed to deactivate:", err);
         alert(err?.response?.data?.message || "Gagal menonaktifkan akun");
+      }
+    })();
+  }
+
+  function handleActivate() {
+    (async () => {
+      try {
+        const id = normalizedId;
+        await axios.post(`/admin/sales/${id}/activate`);
+        if (typeof refresh === "function") refresh();
+        else window.dispatchEvent(new CustomEvent("data:changed"));
+      } catch (err) {
+        console.error("Failed to activate:", err);
+        alert(err?.response?.data?.message || "Gagal mengaktifkan akun");
       }
     })();
   }
@@ -103,8 +137,23 @@ export default function AdminActions({ user, refresh }) {
             <Edit className="h-4 w-4 mr-2" /> Edit
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={() => setIsDeactivateOpen(true)}>
-            <UserX className="h-4 w-4 mr-2" /> Nonaktifkan
+          <DropdownMenuItem
+            onClick={() => {
+              const action =
+                normalizedIsActive === false ? "activate" : "deactivate";
+              setPendingAction(action);
+              setIsDeactivateOpen(true);
+            }}
+          >
+            {normalizedIsActive === false ? (
+              <>
+                <UserCheck className="h-4 w-4 mr-2" /> Aktifkan
+              </>
+            ) : (
+              <>
+                <UserX className="h-4 w-4 mr-2" /> Nonaktifkan
+              </>
+            )}
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => setIsDeleteOpen(true)}>
             <UserX className="h-4 w-4 mr-2" /> Hapus
@@ -129,8 +178,11 @@ export default function AdminActions({ user, refresh }) {
         open={isDeactivateOpen}
         onOpenChange={setIsDeactivateOpen}
         user={user}
+        mode={normalizedIsActive === false ? "activate" : "deactivate"}
         onConfirm={() => {
-          handleDeactivate();
+          if (pendingAction === "activate") handleActivate();
+          else handleDeactivate();
+          setPendingAction(null);
           setIsDeactivateOpen(false);
         }}
       />
