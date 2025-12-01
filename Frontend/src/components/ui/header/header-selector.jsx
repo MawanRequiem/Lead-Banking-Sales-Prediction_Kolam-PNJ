@@ -5,25 +5,26 @@ import useProfile from "@/hooks/useProfile";
 
 export default function HeaderSelector(props) {
   const { user } = useProfile();
+  const { role } = props;
 
-  // Prefer role from user object; fallback to localStorage if present
-  const role =
-    user?.role ??
-    (typeof window !== "undefined"
-      ? window.localStorage.getItem("userRole")
-      : null);
+  let baseName = "unknown";
+  let email = "anonymous@example.com";
 
-  const baseName =
-    user?.name ??
-    (typeof window !== "undefined"
-      ? window.localStorage.getItem("userName")
-      : null) ??
-    "User";
-  const displayName = baseName;
-
-  if (role === "admin") {
-    return <HeaderAdmin userName={displayName} role={role} {...props} />;
+  if (user) {
+    baseName = user.name ?? baseName;
+    email = user.email ?? email;
   }
 
-  return <Header userName={displayName} {...props} />;
+  if (role === "admin") {
+    return (
+      <HeaderAdmin
+        userName={baseName}
+        userEmail={email}
+        role={role}
+        {...props}
+      />
+    );
+  }
+
+  return <Header userName={baseName} userEmail={email} {...props} />;
 }

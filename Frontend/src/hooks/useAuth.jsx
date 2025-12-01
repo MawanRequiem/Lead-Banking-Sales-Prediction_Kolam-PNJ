@@ -14,33 +14,15 @@ export default function useAuth() {
       try {
         const res = await axios.post("/login", { email, password });
         const data = res.data.data || {};
-
-        const accessToken = data.accessToken;
-        const refreshToken = data.refreshToken;
         const user = data.user || {};
 
-        if (accessToken) {
-          localStorage.setItem("accessToken", accessToken);
-        }
-        if (refreshToken) {
-          localStorage.setItem("refreshToken", refreshToken);
-        }
-
+        // Expect backend to set httpOnly cookies for tokens. Still capture user fields for
+        // in-memory profile state.
         const userRole = user.role || "";
         const userName = user.nama || user.email || "";
         const userEmail = user.email || "";
         const userPhone = user.nomorTelepon || user.phone || "";
         const userDomisili = user.domisili || user.city || "";
-
-        try {
-          localStorage.setItem("userRole", userRole);
-          localStorage.setItem("userName", userName);
-          localStorage.setItem("userEmail", userEmail);
-          if (userPhone) localStorage.setItem("userPhone", userPhone);
-          if (userDomisili) localStorage.setItem("userDomisili", userDomisili);
-        } catch (e) {
-          // ignore storage errors
-        }
 
         if (typeof setUser === "function") {
           setUser({
@@ -67,23 +49,13 @@ export default function useAuth() {
   );
 
   const logout = useCallback(async () => {
-    // best-effort: call backend logout endpoint if available
+    // Call backend logout (server should clear httpOnly cookies). Also
+    // clear any legacy localStorage tokens for migration safety.
     try {
-      const rt = localStorage.getItem("refreshToken");
-      if (rt) {
-        await axios.post("/logout", { refreshToken: rt });
-      }
+      await axios.post("/logout");
     } catch (e) {
-      // ignore
+      // ignore network/logout errors; still proceed to clear client state
     }
-
-    try {
-      localStorage.removeItem("accessToken");
-      localStorage.removeItem("refreshToken");
-      localStorage.removeItem("userRole");
-      localStorage.removeItem("userName");
-      localStorage.removeItem("userEmail");
-    } catch (e) {}
 
     if (typeof setUser === "function") setUser(null);
   }, [setUser]);

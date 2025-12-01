@@ -9,6 +9,7 @@ import { SidebarProvider } from "./components/ui/sidebar/sidebar";
 import MainLayout from "./components/ui/layout/main-layout";
 
 // Pages
+import DashboardPage from "./pages/Dashboard";
 import AssignmentsPage from "./pages/AssigmentPage";
 import NotFound from "./pages/NotFound";
 import LoginPage from "./pages/LoginPage";
@@ -118,7 +119,7 @@ function App() {
           <Route element={<MainLayout />}>
             <Route path="/admin" element={<AdminPage />} />
             <Route path="/add-user" element={<AddUserPage />} />
-            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/customers" element={<CustomerOverviewPage />} />
             <Route path="/assignments" element={<AssignmentsPage />} />
           </Route>
