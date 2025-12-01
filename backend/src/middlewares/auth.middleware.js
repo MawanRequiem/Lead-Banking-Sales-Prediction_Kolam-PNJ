@@ -127,8 +127,8 @@ async function handleRefreshFlow(oldToken, req, res, next){
 
   const verified = { ...decoded, userId: decoded.userId, user: stillValidUser };
 
-  res.setHeader('x-new-access-Token', accessToken);
-  res.setHeader('x-new-refresh-Token', newRefreshToken);
+  res.setHeader('x-new-access-token', accessToken);
+  res.setHeader('x-new-refresh-token', newRefreshToken);
 
   req.user = verified;
   res.locals.userId = verified.userId;
