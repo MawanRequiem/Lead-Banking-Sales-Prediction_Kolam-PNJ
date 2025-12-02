@@ -24,7 +24,7 @@ export default function CustomersOverviewTable() {
       toolbarLeft={
         <div className="text-lg font-semibold">Customers Overview</div>
       }
-      renderRowActions={(row) => <ActionCell karyawan={row.original} />}
+      renderRowActions={(row) => <ActionCell nasabah={row.original} />}
     />
   );
 }

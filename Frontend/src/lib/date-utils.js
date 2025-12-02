@@ -39,6 +39,34 @@ export function formatDurationSec(s) {
   return `${mm}:${ss}`
 }
 
+export function parseDurationToSeconds(str) {
+  if (!str) return 0;
+
+  const parts = str.split(":");
+
+  // Only HH:MM:SS allowed
+  if (parts.length !== 3) return 0;
+
+  const [h, m, s] = parts.map(Number);
+
+  if (isNaN(h) || isNaN(m) || isNaN(s)) return 0;
+
+  return h * 3600 + m * 60 + s;
+}
+
+export function formatSecondsToHHMMSS(totalSeconds) {
+  if (!totalSeconds || isNaN(totalSeconds)) return "00:00:00";
+
+  const h = Math.floor(totalSeconds / 3600);
+  const m = Math.floor((totalSeconds % 3600) / 60);
+  const s = totalSeconds % 60;
+
+  const pad = (n) => String(n).padStart(2, "0");
+
+  return `${pad(h)}:${pad(m)}:${pad(s)}`;
+}
+
+
 // returns { from, to } as ISO strings for common ranges
 export function getQuickRange(kind) {
   const now = new Date()
