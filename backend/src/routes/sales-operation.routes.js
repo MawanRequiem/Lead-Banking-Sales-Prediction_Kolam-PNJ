@@ -15,6 +15,7 @@ const {
   validateLogCall,
   validateUpdateStatus,
   validateUUIDParam,
+  validateDashboardQuery,
 } = require('../middlewares/validation.middleware');
 
 // Global Middleware untuk router ini
@@ -28,9 +29,13 @@ router.use(requireSales);
 router.get(
   '/dashboard',
   searchLimiter,
-  validateGetAllQuery, // Validasi page, limit, search, sortBy
-  controller.getDashboard,
+  validateDashboardQuery, // Validate dashboard params (year/month/summary/etc.)
+  controller.getDashboardSummary,
 );
+
+// Dashboard-specific peek endpoints removed. Use GET /dashboard with params instead.
+
+// Note: combined summary is now served by GET /dashboard when summary params are present
 
 /**
  * Log Call Route

@@ -21,6 +21,7 @@ const {
   callsQuerySchema,
   logCallSchema,
   updateStatusSchema,
+  dashboardQuerySchema,
 } = require('../validation/schemas/sales.schema');
 
 const {
@@ -403,6 +404,32 @@ function validateGetAllQuery(req, res, next) {
   next();
 }
 
+/**
+ * Validate Dashboard Query
+ */
+function validateDashboardQuery(req, res, next) {
+  const threats = deepSecurityScan(req.query, 'query');
+  if (threats.length > 0) {
+    logSecurityThreat(req, res, threats);
+    if (threats.some(t => t.severity === 'CRITICAL')) {
+      return validationErrorResponse(res, [{ field: 'query', message: 'Invalid query parameters', code: 'INVALID_QUERY' }]);
+    }
+  }
+
+  const joiValidation = validateWithJoi(dashboardQuerySchema, req.query);
+  if (joiValidation.hasError) {
+    return validationErrorResponse(res, joiValidation.errors);
+  }
+
+  // Sanitize search if present
+  if (joiValidation.value.search) {
+    joiValidation.value.search = sanitizeInput(joiValidation.value.search, { maxLength: 100, stripHtml: true });
+  }
+
+  req.query = joiValidation.value;
+  next();
+}
+
 function validateCallHistoryQuery(req, res, next) {
   // Security scan
   const threats = deepSecurityScan(req.query, 'query');
@@ -500,7 +527,13 @@ function validateLogin(req, res, next) {
  * Validate Refresh Token
  */
 function validateRefreshToken(req, res, next) {
-  const joiValidation = validateWithJoi(refreshTokenSchema, req.body);
+  // Allow refreshToken to be provided in body or cookie for cookie-based flows
+  const payload = Object.assign({}, req.body);
+  if (!payload.refreshToken && req.cookies) {
+    payload.refreshToken = req.cookies.refreshToken || req.cookies.refresh_token || req.cookies.refresh;
+  }
+
+  const joiValidation = validateWithJoi(refreshTokenSchema, payload);
   if (joiValidation.hasError) {
     return validationErrorResponse(res, joiValidation.errors);
   }
@@ -513,7 +546,13 @@ function validateRefreshToken(req, res, next) {
  * Validate Logout
  */
 function validateLogout(req, res, next) {
-  const joiValidation = validateWithJoi(logoutSchema, req.body);
+  // Accept refresh token from cookie if not present in body
+  const payload = Object.assign({}, req.body);
+  if (!payload.refreshToken && req.cookies) {
+    payload.refreshToken = req.cookies.refreshToken || req.cookies.refresh_token || req.cookies.refresh;
+  }
+
+  const joiValidation = validateWithJoi(logoutSchema, payload);
   if (joiValidation.hasError) {
     return validationErrorResponse(res, joiValidation.errors);
   }
@@ -564,6 +603,7 @@ module.exports = {
   validateCallHistoryQuery,
   validateLogCall,
   validateUpdateStatus,
+  validateDashboardQuery,
 
   // Auth validation
   validateLogin,

@@ -4,6 +4,7 @@
 
 const express = require('express');
 const { helmetConfig, corsConfig } = require('./config/security.config');
+const cookieParser = require('cookie-parser');
 const { errorHandler, notFoundHandler } = require('./middlewares/errorHandler.middleware');
 const { apiLimiter } = require('./middlewares/rateLimiter.middleware');
 const { auditMiddleware } = require('./middlewares/audit.middleware');
@@ -28,6 +29,8 @@ app.use(corsConfig);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+// Cookie parsing (required for httpOnly cookie auth)
+app.use(cookieParser());
 // Request tracking
 app.use((req, res, next) => {
   const crypto = require('crypto');
