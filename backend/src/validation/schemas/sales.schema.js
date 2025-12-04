@@ -292,6 +292,30 @@ const logCallSchema = Joi.object({
   stripUnknown: true,
 });
 
+/**
+ * Dashboard Query Schema
+ * Supports either paginated leads or dashboard summary params
+ */
+const dashboardQuerySchema = Joi.object({
+  // Summary selectors
+  year: Joi.number().integer().min(1970).max(2100),
+  month: Joi.number().integer().min(1).max(12),
+  // Summary controlled by server: frontend may only pass `year` and optional `month`.
+  // Do NOT accept free-form startDate/endDate or summary flag from client anymore.
+  interval: Joi.string().valid('day', 'week', 'month', 'year').default('month'),
+  successSet: Joi.string().trim().allow('', null), // comma-separated list
+
+  // Limits for summary sub-queries
+  callsLimit: Joi.number().integer().min(1).max(100).default(10),
+  assignmentsLimit: Joi.number().integer().min(1).max(100).default(5),
+  typesLimit: Joi.number().integer().min(1).max(100).default(10),
+
+  // Pagination/search for leads should use GET /api/sales/leads instead.
+  page: Joi.forbidden(),
+  limit: Joi.forbidden(),
+  search: Joi.forbidden(),
+}).options({ abortEarly: false, stripUnknown: true });
+
 const updateStatusSchema = Joi.object({
   nasabahId: Joi.string()
     .uuid({ version: 'uuidv4' })
@@ -313,4 +337,5 @@ module.exports = {
   callsQuerySchema,
   logCallSchema,
   updateStatusSchema,
+  dashboardQuerySchema,
 };

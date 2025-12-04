@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const authController = require('../controllers/authentication.controller');
-const { authenticateToken } = require('../middlewares/auth.middleware');
+const { authenticateToken, optionalAuth } = require('../middlewares/auth.middleware');
 const { validateLogin, validateRefreshToken, validateLogout, validateVerifyCurrent, validateChangePassword } = require('../middlewares/validation.middleware');
 const { authLimiter } = require('../middlewares/rateLimiter.middleware');
 
@@ -9,7 +9,9 @@ const { authLimiter } = require('../middlewares/rateLimiter.middleware');
 router.post('/login', authLimiter, validateLogin, authController.login);
 
 // Logout
-router.post('/logout', authenticateToken, validateLogout, authController.logout);
+// Use optionalAuth so logout still succeeds when access token expired; refresh token
+// will be read from body or cookie by validation/controller.
+router.post('/logout', optionalAuth, validateLogout, authController.logout);
 
 // Refresh token
 router.post('/refresh', validateRefreshToken, authController.refresh);

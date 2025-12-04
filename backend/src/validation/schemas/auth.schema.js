@@ -54,14 +54,14 @@ const refreshTokenSchema = Joi.object({
 
 /**
  * Logout Schema
+ * Allow empty/missing refreshToken so logout is tolerant when tokens are absent
  */
 const logoutSchema = Joi.object({
   refreshToken: Joi.string()
     .min(1)
-    .required()
+    .optional()
     .messages({
       'string.empty': 'Refresh token is required',
-      'any.required': 'Refresh token is required',
     }),
 }).options({
   abortEarly: false,

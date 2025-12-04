@@ -16,17 +16,29 @@ function getMyLeads(salesId, filters = {}) {
   const skip = (page - 1) * limit;
   const take = parseInt(limit);
 
+  let actualSalesId = salesId;
+  if (typeof salesId === 'object' && salesId !== null) {
+    actualSalesId = salesId.id || salesId.salesId || salesId.userId;
+    console.log('Extracted actualSalesId:', actualSalesId);
+  }
+
+  if (!actualSalesId || typeof actualSalesId !== 'string') {
+    throw new Error('Valid salesId string is required');
+  }
+
   const where = {
-    idSales: salesId,
+    idSales: actualSalesId,
     isActive: true,
     nasabah: {
-      deletedAt: null,
-      ...(search && {
-        OR: [
-          { nama: { contains: search, mode: 'insensitive' } },
-          { pekerjaan: { contains: search, mode: 'insensitive' } },
-        ],
-      }),
+      is: {
+        deletedAt: null,
+        ...(search && {
+          OR: [
+            { nama: { contains: search, mode: 'insensitive' } },
+            { pekerjaan: { contains: search, mode: 'insensitive' } },
+          ],
+        }),
+      },
     },
   };
 
@@ -200,6 +212,78 @@ function createCallLog(data) {
   });
 }
 
+function getCallHistoryBySales(filter = {}) {
+  const {
+    search,
+    page = 1,
+    limit = 10,
+    salesId,
+    sortBy = 'tanggalTelepon',
+    sortOrder = 'desc',
+  } = filter;
+
+  const skip = (page - 1) * limit;
+  const take = parseInt(limit, 10);
+
+  let actualSalesId = salesId;
+  if (typeof salesId === 'object' && salesId !== null) {
+    actualSalesId = salesId.id || salesId.salesId || salesId.userId;
+    console.log('Extracted actualSalesId:', actualSalesId);
+  }
+
+  if (!actualSalesId || typeof actualSalesId !== 'string') {
+    throw new Error('Valid salesId string is required');
+  }
+
+  const where = {};
+  if (actualSalesId) { where.idSales = actualSalesId; }
+
+  if (search) {
+    where.OR = [
+      { nasabah: { nama: { contains: search, mode: 'insensitive' } } },
+      { hasilTelepon: { contains: search, mode: 'insensitive' } },
+      { catatan: { contains: search, mode: 'insensitive' } },
+    ];
+  }
+
+  return Promise.all([
+    prisma.historiTelepon.findMany({
+      where,
+      skip,
+      take,
+      include: {
+        // gunakan select (bersarang) untuk memilih field nasabah dan relasi deposito
+        nasabah: {
+          select: {
+            nama: true,
+            nomorTelepon: true,
+            deposito: {
+              take: 1,
+              orderBy: { createdAt: 'desc' },
+              select: {
+                idDeposito: true,
+                statusDeposito: true,
+                createdAt: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: {
+        [sortBy]: sortOrder,
+      },
+    }),
+    prisma.historiTelepon.count({ where }),
+  ]).then(([data, total]) => ({
+    data,
+    meta: {
+      total,
+      page: parseInt(page, 10),
+      lastPage: Math.ceil(total / take),
+    },
+  }));
+}
+
 function getCallHistory(filters = {}) {
   const {
     search,
@@ -302,10 +386,12 @@ async function getAssignedLeads(salesId, query) {
     idSales: salesId,
     isActive: true, // Hanya ambil assignment yang aktif
     nasabah: {
-      deletedAt: null,
-      nama: {
-        contains: search,
-        mode: 'insensitive',
+      is: {
+        deletedAt: null,
+        nama: {
+          contains: search,
+          mode: 'insensitive',
+        },
       },
     },
   };
@@ -337,11 +423,171 @@ async function getAssignedLeads(salesId, query) {
   return { assignments, pagination };
 }
 
+/**
+ * Get conversion (successful calls) aggregated by time bucket from histori_telepon
+ * successSet: array of strings (e.g. ['SUKSES','DEPOSIT'])
+ */
+async function getCallConversionByBucket({ startDate, endDate, interval = 'month', successSet = ['SUKSES','DEPOSIT'], salesId } = {}) {
+  // Use Prisma to fetch matching historiTelepon rows, then aggregate into buckets
+  // Supported intervals: 'day' | 'week' | 'month' | 'year'
+  const allowed = { day: 'day', week: 'week', month: 'month', year: 'year' };
+  const trunc = allowed[interval] || 'month';
+
+  const start = startDate ? new Date(startDate) : new Date(Date.now() - 1000 * 60 * 60 * 24 * 30);
+  const end = endDate ? new Date(endDate) : new Date();
+
+  let actualSalesId = salesId;
+  if (typeof salesId === 'object' && salesId !== null) {
+    actualSalesId = salesId.id || salesId.salesId || salesId.userId;
+    console.log('Extracted actualSalesId:', actualSalesId);
+  }
+
+  if (!actualSalesId || typeof actualSalesId !== 'string') {
+    throw new Error('Valid salesId string is required');
+  }
+
+  const where = {
+    tanggalTelepon: { gte: start, lte: end },
+  };
+  if (actualSalesId) {where.idSales = actualSalesId;}
+  // Fetch minimal fields required for aggregation
+  const rows = await prisma.historiTelepon.findMany({
+    where,
+    select: {
+      tanggalTelepon: true,
+      hasilTelepon: true,
+    },
+    orderBy: { tanggalTelepon: 'asc' },
+  });
+
+  const successLookup = new Set((successSet || []).map((s) => String(s).toUpperCase()));
+
+  // Helper: compute bucket start (as ISO string) for a given Date
+  function bucketKeyForDate(d) {
+    const date = new Date(d);
+    switch (trunc) {
+      case 'day': {
+        const b = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+        return b.toISOString();
+      }
+      case 'week': {
+        // Week starting Monday
+        const day = date.getDay(); // 0 (Sun) .. 6 (Sat)
+        const diff = (day + 6) % 7; // days since Monday
+        const b = new Date(date.getFullYear(), date.getMonth(), date.getDate() - diff);
+        b.setHours(0, 0, 0, 0);
+        return b.toISOString();
+      }
+      case 'month': {
+        const b = new Date(date.getFullYear(), date.getMonth(), 1);
+        return b.toISOString();
+      }
+      case 'year': {
+        const b = new Date(date.getFullYear(), 0, 1);
+        return b.toISOString();
+      }
+      default: {
+        const b = new Date(date.getFullYear(), date.getMonth(), 1);
+        return b.toISOString();
+      }
+    }
+  }
+
+  const buckets = new Map();
+
+  for (const r of rows) {
+    if (!r || !r.tanggalTelepon) {continue;}
+    const key = bucketKeyForDate(r.tanggalTelepon);
+    const cur = buckets.get(key) || { success_count: 0, total_calls: 0 };
+    cur.total_calls += 1;
+    if (r.hasilTelepon && successLookup.has(String(r.hasilTelepon).toUpperCase())) {cur.success_count += 1;}
+    buckets.set(key, cur);
+  }
+
+  // Convert map -> sorted array
+  const result = Array.from(buckets.entries())
+    .map(([period, { success_count, total_calls }]) => ({
+      bucket: period,
+      count: success_count,
+      total: total_calls,
+      raw: { period, success_count, total_calls },
+    }))
+    .sort((a, b) => new Date(a.bucket) - new Date(b.bucket));
+
+  return result;
+}
+
+/**
+ * Get deposit types counts and percent within range
+ */
+async function getDepositTypesAggregate({ startDate, endDate, status } = {}) {
+  const where = {};
+
+  // Filter tanggal
+  if (startDate || endDate) {
+    where.createdAt = {};
+    if (startDate) {where.createdAt.gte = new Date(startDate);}
+    if (endDate) {where.createdAt.lte = new Date(endDate);}
+  }
+
+  // Default ke status AKTIF
+  where.statusDeposito = status || 'AKTIF';
+
+  // Prefer doing aggregation in DB via parameterized raw SQL for performance
+  const finalStatus = status || 'AKTIF';
+  let rows;
+
+  if (startDate && endDate) {
+    rows = await prisma.$queryRaw`
+      SELECT "jenis_deposito" AS "jenisDeposito", COUNT(*)::int AS "count"
+      FROM "deposito"
+      WHERE "status_deposito" = ${finalStatus}
+        AND "created_at" >= ${new Date(startDate)}
+        AND "created_at" <= ${new Date(endDate)}
+      GROUP BY "jenisDeposito"
+      ORDER BY "count" DESC`;
+  } else if (startDate) {
+    rows = await prisma.$queryRaw`
+      SELECT "jenis_deposito" AS "jenisDeposito", COUNT(*)::int AS "count"
+      FROM "deposito"
+      WHERE "status_deposito" = ${finalStatus}
+        AND "created_at" >= ${new Date(startDate)}
+      GROUP BY "jenisDeposito"
+      ORDER BY "count" DESC`;
+  } else if (endDate) {
+    rows = await prisma.$queryRaw`
+      SELECT "jenis_deposito" AS "jenisDeposito", COUNT(*)::int AS "count"
+      FROM "deposito"
+      WHERE "status_deposito" = ${finalStatus}
+        AND "created_at" <= ${new Date(endDate)}
+      GROUP BY "jenisDeposito"
+      ORDER BY "count" DESC`;
+  } else {
+    rows = await prisma.$queryRaw`
+      SELECT "jenis_deposito" AS "jenisDeposito", COUNT(*)::int AS "count"
+      FROM "deposito"
+      WHERE "status_deposito" = ${finalStatus}
+      GROUP BY "jenisDeposito"
+      ORDER BY "count" DESC`;
+  }
+
+  const total = rows.reduce((s, r) => s + (Number(r.count) || 0), 0) || 0;
+
+  return rows.map((r) => ({
+    jenisDeposito: r.jenisDeposito,
+    count: Number(r.count) || 0,
+    percent: total > 0 ? +(Number(r.count) / total * 100).toFixed(2) : 0,
+  }));
+}
+
 module.exports = {
   getMyLeads,
   getAllLeads,
   getLeadDetail,
   createCallLog,
+  getCallHistoryBySales,
+  getCallConversionByBucket,
+  getDepositTypesAggregate,
   getCallHistory,
   updateDepositoStatus,
   getAssignedLeads,

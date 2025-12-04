@@ -1,40 +1,127 @@
 const salesOpRepo = require('../repositories/sales-operation.repository');
+const salesRepo = require('../repositories/sales.repository');
 const { NotFoundError } = require('../middlewares/errorHandler.middleware');
 const { Parser } = require('json2csv');
-const { prisma } = require('../config/prisma');
 
 /**
- * Get Sales Dashboard (List Nasabah)
- * Scalable: Returns paginated data + metadata
+ * Dashboard helper: recent call history (default 10)
  */
-async function getMyDashboard(salesId, query) {
-  // 1. Panggil Repo yang sudah Scalable
-  const result = await salesOpRepo.getMyLeads(salesId, query);
+async function getCallHistoryForDash({ limit = 10, user, search } = {}) {
+  // Use getCallLog (perubahan dari getCallHistory) — cukup berdasarkan idSales
 
-  const transformedData = result.data.map(item => ({
+  let salesId;
+  if (typeof user === 'string') {
+    salesId = user;
+  } else if (user && typeof user === 'object') {
+    salesId = user.id || user.salesId || user.userId;
+  }
+
+  if (!salesId) {
+    console.warn('No valid salesId found');
+    return [];
+  }
+
+  const res = await salesOpRepo.getCallHistoryBySales({ search, page: 1, limit, salesId });
+
+  if (!res || !res.data) {return [];}
+
+  return res.data.map(h => ({
+    id: h.idHistori || h.id || null,
+    namaNasabah: h.idNasabah?.nama || h.namaNasabah || '-',
+    tanggal: h.tanggalTelepon || h.createdAt || null,
+    durasi: h.lamaTelepon || h.durasi || null,
+    hasil: h.hasilTelepon || h.hasil || null,
+    catatan: h.catatan || null,
+  }));
+}
+
+/**
+ * Dashboard helper: assignment suggestions (default 5)
+ */
+async function getAssignmentsForDash(user, limit = 5) {
+  // Accept either user object (from req.user) or direct salesId
+
+  let salesId;
+  if (typeof user === 'string') {
+    salesId = user;
+  } else if (user && typeof user === 'object') {
+    salesId = user. id || user.salesId || user.userId;
+  }
+
+  if (!salesId) {
+    console.warn('No valid salesId found');
+    return [];
+  }
+  const salesData = await salesOpRepo.getMyLeads(salesId, { page: 1, limit, search: '' });
+
+  if (! salesData || ! salesData.data || ! Array.isArray(salesData.data)) {
+    return [];
+  }
+
+  return salesData.data.map(item => ({
+    id: item.nasabah.idNasabah,
+    nama: item.nasabah.nama,
+    nomorTelepon: item.nasabah.nomorTelepon,
+    lastCall: item.historiTelepon.historiTelepon[0]?.createdAt || null,
     assignmentId: item.idAssignment,
-    nasabah: {
-      id: item.nasabah.idNasabah,
-      nama: item.nasabah.nama,
-      nomorTelepon: item.nasabah.nomorTelepon,
-      umur: item.nasabah.umur,
-      pekerjaan: item.nasabah.pekerjaan || '-',
-      jenisKelamin: item.nasabah.jenisKelaminRel?.namaJenisKelamin || '-',
-      statusPernikahan: item.nasabah.statusPernikahan?.namaStatus || '-',
-      skor: parseFloat(item.nasabah.skorPrediksi || 0),
-      statusTerakhir: item.nasabah.deposito[0]?.statusDeposito || 'PROSPEK',
-      hasilPanggilanTerakhir: item.nasabah.historiTelepon[0]?.hasilTelepon || 'Tidak ada panggilan sebelumnya',
-      lastCall: item.nasabah.historiTelepon[0]?.createdAt || null,
-      needFollowUp: item.nasabah.historiTelepon[0]?.nextFollowupDate
-        ? new Date(item.nasabah.historiTelepon[0].nextFollowupDate) <= new Date()
-        : false,
-    },
+    skorPrediksi: item.nasabah.skorPrediksi,
+  }));
+}
+
+/**
+ * Dashboard helper: deposit conversion aggregates (date_trunc)
+ */
+async function getDepositConversionForDash({ startDate, endDate, interval = 'month', status = 'AKTIF', user } = {}) {
+  // Delegate DB query to repository layer: conversion = successful calls in histori_telepon
+  const defaultSuccessSet = 'TERKONEKSI';
+  const successSet = (typeof status === 'string' && status.trim().length > 0)
+    ? status.trim().toUpperCase()
+    : defaultSuccessSet.toUpperCase();
+
+  let salesId;
+  if (typeof user === 'string') {
+    salesId = user;
+  } else if (user && typeof user === 'object') {
+    salesId = user. id || user.salesId || user.userId;
+  }
+
+  if (!salesId) {
+    console.warn('No valid salesId found');
+    return [];
+  }
+
+  const rows = await salesOpRepo.getCallConversionByBucket({ startDate, endDate, interval, successSet, salesId });
+  if (!rows) {return [];}
+
+  // map hasil agar konsisten dan memungkinkan penggunaan async
+  return rows.map(r => ({
+    bucket: r.bucket ?? r.interval ?? r.tanggal ?? r.date ?? null,
+    count: Number(r.count ?? r.jumlah ?? 0),
+    totalDeposits: Number(r.totalDeposits ?? r.total ?? 0),
+    value: r.value !== undefined ? Number(r.value) : undefined,
+    raw: r, // simpan raw jika butuh referensi asli
+  }));
+}
+
+/**
+ * Dashboard helper: deposit types counts within range
+ */
+async function getDepositTypesForDash({ startDate, endDate, status } = {}) {
+  // Delegate deposit-type aggregation to repository
+  const rows = await salesOpRepo.getDepositTypesAggregate({ startDate, endDate, status });
+
+  if (!rows || rows.length === 0) {
+    return [];
+  }
+
+  const mapped = rows.map((t) => ({
+    type: t. jenisDeposito,
+    count: Number(t.count || 0),
+    percent: Number(t.percent || 0),
+    raw: t,
   }));
 
-  return {
-    leads: transformedData,
-    pagination: result.meta,
-  };
+  return mapped;
 }
 
 /**
@@ -187,8 +274,8 @@ async function getLeadDetail(nasabahId) {
   };
 }
 
-async function getMyAssignments(userId, query) {
-  const salesData = await prisma.sales.findFirst({ where: { idUser: userId } });
+async function getMyAssignments(user, query) {
+  const salesData = await salesRepo.findByUserId(user.id);
 
   if (!salesData) {
     throw new NotFoundError('Sales profile not found');
@@ -216,7 +303,6 @@ async function getMyAssignments(userId, query) {
 }
 
 module.exports = {
-  getMyDashboard,
   getAllLeads,
   getCallHistory,
   logActivity,
@@ -224,4 +310,11 @@ module.exports = {
   updateLeadStatus,
   getLeadDetail,
   getMyAssignments,
+  // Dashboard helpers
+  getCallHistoryForDash,
+  getAssignmentsForDash,
+  getDepositConversionForDash,
+  getDepositTypesForDash,
 };
+
+
