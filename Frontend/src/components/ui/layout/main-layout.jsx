@@ -20,13 +20,14 @@ export default function MainLayout() {
 
 function LayoutInner() {
   // Consumers run inside provider
-  const { user } = useProfile();
+  const { user, setUser } = useProfile();
   const { logout } = useAuth();
   const [showReauth, setShowReauth] = useState(false);
 
   useEffect(() => {
     function onExpired() {
       try {
+        setUser(null);
         logout();
       } catch (e) {}
       setShowReauth(true);
@@ -43,7 +44,7 @@ function LayoutInner() {
       <div className="flex-1 flex flex-col">
         <HeaderSelector role={user?.role} />
 
-        <main className="flex-1 overflow-y-auto ml-15 p-4 sm:p-6 lg:p-8">
+        <main className="flex-1 overflow-y-auto p-4 ml-15 sm:p-6 lg:p-8">
           <Outlet />
         </main>
       </div>
