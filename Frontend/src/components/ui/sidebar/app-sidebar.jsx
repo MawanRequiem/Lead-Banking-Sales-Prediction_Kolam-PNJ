@@ -57,6 +57,7 @@ export function Sidebar() {
             try {
               setUser(null);
               logout();
+              navigate("/login");
             } catch (e) {
               console.log("Logout error", e);
             }

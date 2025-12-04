@@ -44,11 +44,6 @@ export default function useAuth() {
     } catch (e) {
       // ignore errors
     }
-    try {
-      navigate("/login", { replace: true });
-    } catch (e) {
-      // ignore navigation errors
-    }
   }, []);
 
   return {
