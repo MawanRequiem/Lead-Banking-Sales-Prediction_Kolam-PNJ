@@ -46,6 +46,17 @@ export default function CustomerDetailDialog({
     if (typeof onCall === "function") onCall();
   }
 
+  React.useEffect(() => {
+    if (process.env.NODE_ENV === "development") {
+      console.debug(
+        "[debug] CustomerDetailDialog open=",
+        open,
+        "id=",
+        karyawan?.id
+      );
+    }
+  }, [open, karyawan?.id]);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[70vw] max-w-[95vw]">

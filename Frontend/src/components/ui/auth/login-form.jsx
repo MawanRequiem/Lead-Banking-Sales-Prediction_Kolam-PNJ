@@ -3,8 +3,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Eye, EyeOff } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import axios from "@/lib/axios";
 import useAuth from "@/hooks/useAuth";
+import useProfile from "@/hooks/useProfile";
 
 export default function LoginForm({ onSignIn }) {
   const [email, setEmail] = useState("");
@@ -14,6 +14,7 @@ export default function LoginForm({ onSignIn }) {
 
   const navigate = useNavigate();
   const { login, loading: authLoading } = useAuth();
+  const { setUser } = useProfile();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -23,6 +24,12 @@ export default function LoginForm({ onSignIn }) {
       const result = await login(email, password);
       if (result.success) {
         const userRole = result.user.role;
+        // Set profile context immediately for instant UI update
+        try {
+          setUser && setUser(result.user);
+        } catch (e) {
+          console.debug("Failed to set profile after login", e);
+        }
         if (userRole === "admin") {
           navigate("/admin");
         } else if (userRole === "sales") {

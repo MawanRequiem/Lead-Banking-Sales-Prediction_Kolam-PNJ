@@ -1,6 +1,7 @@
 import { Outlet } from "react-router-dom";
 import { useEffect, useState } from "react";
 import useProfile from "@/hooks/useProfile";
+import { ProfileProvider } from "@/contexts/profile-context";
 import useAuth from "@/hooks/useAuth";
 import SidebarSelector from "../sidebar/sidebar-selector";
 import HeaderSelector from "../header/header-selector";
@@ -10,14 +11,21 @@ import VerifyCurrentDialog from "../dialogs/verify-current-dialog";
 import { Toaster } from "sonner";
 
 export default function MainLayout() {
-  // read profile for role so SidebarSelector can be driven by role claim
+  return (
+    <ProfileProvider>
+      <LayoutInner />
+    </ProfileProvider>
+  );
+}
+
+function LayoutInner() {
+  // Consumers run inside provider
   const { user } = useProfile();
   const { logout } = useAuth();
   const [showReauth, setShowReauth] = useState(false);
 
   useEffect(() => {
     function onExpired() {
-      // Clear client state and open re-auth dialog
       try {
         logout();
       } catch (e) {}

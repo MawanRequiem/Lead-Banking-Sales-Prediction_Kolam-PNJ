@@ -1,64 +1,55 @@
 import { useCallback, useState } from "react";
 import axios from "@/lib/axios";
-import useProfile from "./useProfile";
+import { useNavigate } from "react-router-dom";
 
 export default function useAuth() {
-  const { setUser } = useProfile();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const navigate = useNavigate();
 
-  const login = useCallback(
-    async (email, password) => {
-      setLoading(true);
-      setError(null);
-      try {
-        const res = await axios.post("/login", { email, password });
-        const data = res.data.data || {};
-        const user = data.user || {};
+  const login = useCallback(async (email, password) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await axios.post("/login", { email, password });
+      const data = res.data.data || {};
 
-        // Expect backend to set httpOnly cookies for tokens. Still capture user fields for
-        // in-memory profile state.
-        const userRole = user.role || "";
-        const userName = user.nama || user.email || "";
-        const userEmail = user.email || "";
-        const userPhone = user.nomorTelepon || user.phone || "";
-        const userDomisili = user.domisili || user.city || "";
+      const user = data.user || {};
 
-        if (typeof setUser === "function") {
-          setUser({
-            name: userName,
-            email: userEmail,
-            role: userRole,
-            phone: userPhone,
-            domisili: userDomisili,
-          });
-        }
+      const userRole = user.role || "";
+      const userName = user.nama || user.email || "";
+      const userEmail = user.email || "";
+      const userPhone = user.nomorTelepon || user.phone || "";
+      const userDomisili = user.domisili || user.city || "";
 
-        setLoading(false);
-        return {
-          success: true,
-          user: { name: userName, role: userRole, email: userEmail },
-        };
-      } catch (err) {
-        setError(err);
-        setLoading(false);
-        return { success: false, error: err };
-      }
-    },
-    [setUser]
-  );
+      // Do not modify global profile here; return user to caller to let
+      // the caller decide whether to persist it in context/local state.
+
+      setLoading(false);
+      return {
+        success: true,
+        user: { name: userName, role: userRole, email: userEmail },
+      };
+    } catch (err) {
+      setError(err);
+      setLoading(false);
+      return { success: false, error: err };
+    }
+  }, []);
 
   const logout = useCallback(async () => {
-    // Call backend logout (server should clear httpOnly cookies). Also
-    // clear any legacy localStorage tokens for migration safety.
+    // best-effort: call backend logout endpoint
     try {
       await axios.post("/logout");
     } catch (e) {
-      // ignore network/logout errors; still proceed to clear client state
+      // ignore errors
     }
-
-    if (typeof setUser === "function") setUser(null);
-  }, [setUser]);
+    try {
+      navigate("/login", { replace: true });
+    } catch (e) {
+      // ignore navigation errors
+    }
+  }, []);
 
   return {
     login,

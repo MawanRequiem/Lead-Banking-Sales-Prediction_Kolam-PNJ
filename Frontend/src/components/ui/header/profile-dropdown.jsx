@@ -4,17 +4,28 @@ import { cn } from "@/lib/utils";
 import useProfile from "@/hooks/useProfile";
 import { Switch } from "../switch";
 import { useTheme } from "@/hooks/useTheme";
+import useAuth from "@/hooks/useAuth";
 
 export default function ProfileDropdown(props) {
   const {
     user,
+    setUser,
     changeLanguage,
     changePassword,
     openPersonalInfo,
     openNotifications,
-    logout,
   } = useProfile();
+  const { logout } = useAuth();
   const { theme, setTheme } = useTheme();
+
+  function logoutHandler() {
+    try {
+      setUser(null);
+      logout();
+    } catch (e) {
+      console.error("Logout failed", e);
+    }
+  }
 
   const displayUser = {
     name: props.userName ?? user.name,
@@ -99,7 +110,7 @@ export default function ProfileDropdown(props) {
           <li>
             <button
               className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-muted"
-              onClick={logout}
+              onClick={logoutHandler}
             >
               <LogOut className="h-4 w-4" />
               Logout
