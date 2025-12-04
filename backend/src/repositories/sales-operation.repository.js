@@ -131,16 +131,10 @@ function getAllLeads(filters = {}) {
 /**
  * Get Full Detail of a Lead
  */
-function getLeadDetail(salesId, nasabahId) {
+function getLeadDetail(nasabahId) {
   return prisma.nasabah.findFirst({
     where: {
       idNasabah: nasabahId,
-      assignments: {
-        some: {
-          idSales: salesId,
-          isActive: true,
-        },
-      },
     },
     include: {
       deposito: { orderBy: { createdAt: 'desc' } },
@@ -166,7 +160,6 @@ function createCallLog(data) {
       data: {
         idNasabah: data.idNasabah,
         idSales: data.idSales,
-        nomorTelepon: data.nomorTelepon,
         lamaTelepon: data.lamaTelepon,
         hasilTelepon: data.hasilTelepon,
         catatan: data.catatan,

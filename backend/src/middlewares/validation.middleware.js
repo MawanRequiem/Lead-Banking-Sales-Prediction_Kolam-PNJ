@@ -236,6 +236,8 @@ function deepSanitize(data) {
           stripHtml: true,
         });
       }
+    } else if (value instanceof Date) {
+      sanitized[key] = value;
     } else if (typeof value === 'object') {
       sanitized[key] = deepSanitize(value);
     } else {
@@ -455,12 +457,14 @@ function validateLogCall(req, res, next) {
 
   // Layer 2: Joi Schema Validation
   const joiValidation = validateWithJoi(logCallSchema, req.body);
+  console.log('[DEBUG] Joi Validation Result:', joiValidation.value);
   if (joiValidation.hasError) {
     return validationErrorResponse(res, joiValidation.errors);
   }
 
   // Layer 3: Sanitization (Bersihkan HTML/Script dari catatan)
   req.body = deepSanitize(joiValidation.value);
+  console.log('[DEBUG] After sanitization:', req.body);
 
   next();
 }

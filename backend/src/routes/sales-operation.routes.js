@@ -21,7 +21,10 @@ const {
 router.use(authenticateToken);
 router.use(requireSales);
 
-
+function debug(req, res, next) {
+  console.log('[DEBUG] Raw incoming body:', req.body);
+  next();
+}
 
 /**
  * Dashboard Route
@@ -32,17 +35,6 @@ router.get(
   searchLimiter,
   validateGetAllQuery, // Validasi page, limit, search, sortBy
   controller.getDashboard,
-);
-
-/**
- * Log Call Route
- * Secured with Write Rate Limit (Anti-Spam)
- */
-router.post(
-  '/log-call',
-  writeLimiter,
-  // TODO: Tambahkan 'validateLogCall' di validation.middleware.js untuk validasi body (nasabahId, hasil, dll)
-  controller.logCall,
 );
 
 /**
@@ -61,6 +53,7 @@ router.get(
  */
 router.post(
   '/log-call',
+  debug,
   writeLimiter,     // Mencegah spam klik tombol save
   validateLogCall,  // <--- Validasi aktif di sini!
   controller.logCall,
