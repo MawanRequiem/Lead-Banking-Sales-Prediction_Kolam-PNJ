@@ -13,7 +13,7 @@ export default function AssignmentTable({ data, loading }) {
       loading={loading}
       title="Customer List"
       toolbarLeft={<div className="text-lg font-semibold">Customer List</div>}
-      renderRowActions={(row) => <ActionCell karyawan={row.original} />}
+      renderRowActions={(row) => <ActionCell nasabah={row.original} />}
     />
   );
 }

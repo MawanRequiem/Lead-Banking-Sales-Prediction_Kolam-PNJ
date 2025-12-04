@@ -143,16 +143,10 @@ function getAllLeads(filters = {}) {
 /**
  * Get Full Detail of a Lead
  */
-function getLeadDetail(salesId, nasabahId) {
+function getLeadDetail(nasabahId) {
   return prisma.nasabah.findFirst({
     where: {
       idNasabah: nasabahId,
-      assignments: {
-        some: {
-          idSales: salesId,
-          isActive: true,
-        },
-      },
     },
     include: {
       deposito: { orderBy: { createdAt: 'desc' } },
@@ -178,7 +172,6 @@ function createCallLog(data) {
       data: {
         idNasabah: data.idNasabah,
         idSales: data.idSales,
-        nomorTelepon: data.nomorTelepon,
         lamaTelepon: data.lamaTelepon,
         hasilTelepon: data.hasilTelepon,
         catatan: data.catatan,
@@ -384,8 +377,10 @@ async function updateDepositoStatus(salesId, nasabahId, newStatus) {
   });
 }
 
-async function getAssignedLeads(salesId, { page = 1, limit = 10, search = '' }) {
-  const offset = (page - 1) * limit;
+async function getAssignedLeads(salesId, query) {
+  const { page = 1, limit = 10, search = '' } = query;
+  const skip = (page - 1) * limit;
+  const take = parseInt(limit);
 
   const whereCondition = {
     idSales: salesId,
@@ -405,20 +400,27 @@ async function getAssignedLeads(salesId, { page = 1, limit = 10, search = '' }) 
     prisma.salesNasabahAssignment.count({ where: whereCondition }),
     prisma.salesNasabahAssignment.findMany({
       where: whereCondition,
-      skip: offset,
-      take: limit,
+      skip,
+      take,
       orderBy: { tanggalAssignment: 'desc' },
       include: {
         nasabah: {
           include: {
-            statusPernikahanRef: true, // Join ke tabel Status Pernikahan
+            statusPernikahan: true,
           },
         },
       },
     }),
   ]);
 
-  return { count, assignments };
+  const pagination = {
+    page: parseInt(page),
+    limit: parseInt(limit),
+    total: count,
+    totalPages: Math.ceil(count / limit),
+  };
+
+  return { assignments, pagination };
 }
 
 /**

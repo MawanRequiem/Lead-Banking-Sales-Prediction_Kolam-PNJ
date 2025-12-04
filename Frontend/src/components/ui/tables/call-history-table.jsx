@@ -13,7 +13,7 @@ const historyColumns = (onOpenNote) => [
   { accessorKey: 'time', header: 'Tanggal' },
   { accessorKey: 'namaNasabah', header: 'Nama Nasabah' },
   { accessorKey: 'result', header: 'Hasil Telepon' },
-  { 
+  {
     accessorKey: 'grade', header: 'Kategori',
     cell: ({ row }) => <CategoryBadge category={row.original.grade} />,
   },
@@ -34,7 +34,7 @@ export default function CallHistoryTable() {
   const [selectedCall, setSelectedCall] = useState(null)
   const [openNote, setOpenNote] = useState(false)
 
-  const { data, loading } = useCallHistory()
+  const { data, loading } = useCallHistory({apiUrl: '/sales/call-history'});
 
   const cols = useMemo(() => historyColumns((call) => { setSelectedCall(call); setOpenNote(true) }), [])
 

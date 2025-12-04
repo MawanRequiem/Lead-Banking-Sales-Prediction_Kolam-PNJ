@@ -11,7 +11,7 @@ import { useTable } from "@/hooks/useTable";
 // provided, fall back to internal hook with mockData (useful for isolated storybook/tests).
 export default function CustomersOverviewTable() {
   // If parent didn't pass data, use local hook to fetch `/sales/leads` (fallback)
-  const { data, loading } = useTable({ initial: mockData });
+  const { data, loading } = useTable({apiUrl: '/sales/leads', initial: mockData });
 
   const cols = useMemo(() => columns, []);
 
@@ -24,7 +24,7 @@ export default function CustomersOverviewTable() {
       toolbarLeft={
         <div className="text-lg font-semibold">Customers Overview</div>
       }
-      renderRowActions={(row) => <ActionCell karyawan={row.original} />}
+      renderRowActions={(row) => <ActionCell nasabah={row.original} />}
     />
   );
 }

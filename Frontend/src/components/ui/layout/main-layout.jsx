@@ -35,7 +35,7 @@ export default function MainLayout() {
       <div className="flex-1 flex flex-col">
         <HeaderSelector role={user?.role} />
 
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+        <main className="flex-1 overflow-y-auto ml-15 p-4 sm:p-6 lg:p-8">
           <Outlet />
         </main>
       </div>

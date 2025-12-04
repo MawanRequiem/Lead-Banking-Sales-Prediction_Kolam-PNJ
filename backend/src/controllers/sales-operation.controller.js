@@ -61,7 +61,7 @@ const getCallHistory = asyncHandler(async (req, res) => {
  * POST /api/sales/log-call
  */
 const logCall = asyncHandler(async (req, res) => {
-  const result = await salesOpService.logActivity(req.user?.userId, req.body);
+  const result = await salesOpService.logActivity(req.user.id, req.body);
   return successResponse(res, result, 'Call logged successfully', 201);
 });
 
@@ -94,7 +94,7 @@ const updateStatus = asyncHandler(async (req, res) => {
  * GET /api/sales/leads/:id
  */
 const getLeadDetail = asyncHandler(async (req, res) => {
-  const result = await salesOpService.getLeadDetail(req.user?.userId, req.params.id);
+  const result = await salesOpService.getLeadDetail(req.params.id);
   return successResponse(res, result, 'Lead details retrieved successfully');
 });
 
@@ -103,8 +103,8 @@ const getLeadDetail = asyncHandler(async (req, res) => {
  * GET /api/sales/assignments
  */
 const getAssignments = asyncHandler(async (req, res) => {
-  const result = await salesOpService.getMyAssignments(req.user, req.query);
-  return successResponse(res, result, 'Assigned leads retrieved successfully');
+  const { assignments, pagination } = await salesOpService.getMyAssignments(req.user.userId, req.query);
+  return successResponse(res, assignments, 'Assigned leads retrieved successfully', { pagination });
 });
 
 /**

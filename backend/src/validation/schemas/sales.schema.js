@@ -245,7 +245,7 @@ const callsQuerySchema = Joi.object({
 });
 
 const logCallSchema = Joi.object({
-  nasabahId: Joi.string()
+  nasabahId: Joi.string() // why don't we just expect the table name in camelCase for the payload?
     .uuid({ version: 'uuidv4' })
     .required()
     .messages({
