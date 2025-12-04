@@ -9,14 +9,10 @@ import CallNoteDialog from '@/components/ui/dialogs/call-note-dialog'
 import { CategoryBadge } from '@/components/ui/badges'
 
 const historyColumns = (onOpenNote) => [
-  { accessorKey: 'id', header: 'No Penawaran' },
-  { accessorKey: 'time', header: 'Tanggal' },
-  { accessorKey: 'namaNasabah', header: 'Nama Nasabah' },
-  { accessorKey: 'result', header: 'Hasil Telepon' },
-  {
-    accessorKey: 'grade', header: 'Kategori',
-    cell: ({ row }) => <CategoryBadge category={row.original.grade} />,
-  },
+  { accessorKey: 'idHistori', header: 'No Penawaran' },
+  { accessorKey: 'tanggalTelepon', header: 'Tanggal' },
+  { accessorKey: 'nasabah', header: 'Nama Nasabah', cell: ({ row }) => row.original.nasabah?.nama },
+  { accessorKey: 'hasilTelepon', header: 'Hasil Telepon', cell: ({ row }) => row.original.hasilTelepon ? row.original.hasilTelepon : '—' },
   {
     id: 'keterangan',
     header: 'Keterangan',
@@ -94,7 +90,7 @@ export default function CallHistoryTable() {
         console.log('Export range', from, to)
       }} />
 
-      <CallNoteDialog open={openNote} onOpenChange={(v) => setOpenNote(v)} note={selectedCall?.note} />
+      <CallNoteDialog open={openNote} onOpenChange={(v) => setOpenNote(v)} note={selectedCall?.catatan} />
     </>
   )
 }

@@ -19,6 +19,10 @@ export default function ActionCell({ nasabah }) {
     setIsResultOpen(true);
   }
 
+  const openDialog = () => {
+    setIsDialogOpen(true);
+  }
+
   const hoverCardContent = (
     <div className="space-y-1">
       <p className="text-sm font-semibold">{nasabah.nama}</p>
@@ -66,7 +70,7 @@ export default function ActionCell({ nasabah }) {
           <Button variant="outline" size="sm" onClick={handleCallLog}>
             <Phone className="h-4 w-4 mr-2" />Telepon
           </Button>
-        }
+        )}
       />
 
       <CallResultDialog

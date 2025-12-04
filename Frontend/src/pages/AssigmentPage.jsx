@@ -51,7 +51,7 @@ export default function AssignmentsPage() {
 
       {/* 3. Main Table Section */}
       <div className="bg-background rounded-xl border shadow-sm p-1 overflow-hidden">
-        <AssignmentTable />
+        <AssignmentTable data={data} loading={loading} />
       </div>
     </div>
   );

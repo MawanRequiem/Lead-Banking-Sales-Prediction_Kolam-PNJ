@@ -274,8 +274,8 @@ async function getLeadDetail(nasabahId) {
   };
 }
 
-async function getMyAssignments(user, query) {
-  const salesData = await salesRepo.findByUserId(user.id);
+async function getMyAssignments(userId, query) {
+  const salesData = await salesRepo.findByUserId(userId);
 
   if (!salesData) {
     throw new NotFoundError('Sales profile not found');
