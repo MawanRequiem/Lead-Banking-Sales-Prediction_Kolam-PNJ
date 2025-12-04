@@ -1,4 +1,4 @@
-import React, {useEffect} from "react";
+import React, { useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -40,7 +40,7 @@ export default function CustomerDetailDialog({
     umur: nasabah.umur,
     domisili: nasabah.domisili,
     jenisKelamin: nasabah.jenisKelamin,
-    statusPernikahan: nasabah.statusPernikahan
+    statusPernikahan: nasabah.statusPernikahan,
   };
   //data.history contains deposito[], telepon[]
   const deposito = data?.history?.deposito ?? [];
@@ -49,17 +49,6 @@ export default function CustomerDetailDialog({
   function handleCallClick() {
     if (typeof openLogDialog === "function") openLogDialog();
   }
-
-  React.useEffect(() => {
-    if (process.env.NODE_ENV === "development") {
-      console.debug(
-        "[debug] CustomerDetailDialog open=",
-        open,
-        "id=",
-        karyawan?.id
-      );
-    }
-  }, [open, karyawan?.id]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -176,14 +165,14 @@ export default function CustomerDetailDialog({
                           <div className="flex items-start justify-between">
                             <div className="min-w-0">
                               <div className="text-muted-foreground text-xs">
-                                { formatDisplay(c.tanggal) || "-"}
+                                {formatDisplay(c.tanggal) || "-"}
                               </div>
                               <div className="text-foreground font-medium">
                                 {c.hasil || "Panggilan"}
                               </div>
                             </div>
                             <div className="text-muted-foreground text-xs ml-4">
-                              { formatSecondsToHHMMSS(c.durasi) || "" }
+                              {formatSecondsToHHMMSS(c.durasi) || ""}
                             </div>
                           </div>
                           {c.catatan ? (
@@ -220,24 +209,17 @@ export default function CustomerDetailDialog({
                         >
                           <div className="flex items-start justify-between">
                             <div className="min-w-0">
-
                               <div className="mt-2 text-xs text-muted-foreground">
                                 Jenis Deposito
                               </div>
                               <div className="mt-1">
-                                <DepositTypeBadge
-                                  type={d.jenis}
-                                />
+                                <DepositTypeBadge type={d.jenis} />
                               </div>
                             </div>
 
                             <div className="text-right">
                               <div className="mt-2">
-                                <DepositStatusBadge
-                                  status={
-                                    d.status
-                                  }
-                                />
+                                <DepositStatusBadge status={d.status} />
                               </div>
                             </div>
                           </div>

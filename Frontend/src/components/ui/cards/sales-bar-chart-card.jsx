@@ -109,11 +109,15 @@ export default function SalesBarChartCard({
 
     // normalize backend items into { label, success, total, value, pct }
     const normalized = src.map((it, idx) => {
-      // backend deposit conversion rows typically include: { bucket, count, total, totalDeposits }
-      const success = Number(it.count ?? it.success ?? 0);
-      const total = Number(it.total ?? it.totalCalls ?? 0);
-      // For the bar value we prefer `count` (successful conversions) or `totalDeposits`
-      const value = Number(it.count ?? it.totalDeposits ?? it.value ?? 0);
+      const success = Number(
+        it.count ?? it.success ?? it.success_count ?? it.successCount ?? 0
+      );
+      const total = Number(
+        it.total ?? it.totalCalls ?? it.totalPanggilan ?? it.total_calls ?? 0
+      );
+      const value = Number(
+        it.count ?? it.totalDeposits ?? it.totalPanggilan ?? it.value ?? 0
+      );
       const pct =
         total > 0 ? Math.round((success / total) * 100) : success > 0 ? 100 : 0;
       const label =
@@ -122,6 +126,7 @@ export default function SalesBarChartCard({
         formatLabelFromBucket(
           it.bucket ?? it.date ?? it.tanggal ?? it.interval ?? idx
         );
+
       return { ...it, label, success, total, value, pct };
     });
 
@@ -177,6 +182,7 @@ export default function SalesBarChartCard({
 
   // data passed to Recharts should be plain array with label + value
   const chartData = series.map((it) => ({ ...it }));
+  const isDataEmpty = series.length === 0;
 
   return (
     <Card className={cn("p-3", className)}>
@@ -244,6 +250,13 @@ export default function SalesBarChartCard({
           {loading ? (
             <div className="h-56 flex items-center justify-center">
               <Skeleton className="h-48 w-full" />
+            </div>
+          ) : isDataEmpty ? (
+            <div className="h-56 flex items-center justify-center">
+              {" "}
+              <p className="text-center text-muted-foreground">
+                Tidak ada Riwayat Keberhasilan konversi{" "}
+              </p>{" "}
             </div>
           ) : (
             <ChartContainer

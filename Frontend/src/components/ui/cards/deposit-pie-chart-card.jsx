@@ -125,8 +125,33 @@ export default function DepositPieChartCard({
           className="flex flex-col items-center gap-3 relative"
         >
           {loading ? (
-            <div className="mx-auto w-full max-w-[260px] aspect-square flex items-center justify-center">
-              <Skeleton className="h-48 w-full" />
+            <div className="w-full flex flex-col items-center gap-4">
+              <div className="mx-auto w-full max-w-[260px] aspect-square flex items-center justify-center">
+                <Skeleton className="h-48 w-full" />
+              </div>
+
+              <div className="w-full max-w-[260px]">
+                <div className="flex items-center justify-center">
+                  <Skeleton className="h-5 w-24" />
+                </div>
+              </div>
+
+              <div className="w-full grid grid-cols-1 gap-2 max-w-[320px]">
+                {Array.from({ length: 3 }).map((_, idx) => (
+                  <div
+                    key={idx}
+                    className="flex items-center justify-between gap-2 p-2 border rounded-lg"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Skeleton className="h-3 w-3 rounded-sm" />
+                      <Skeleton className="h-4 w-28" />
+                    </div>
+                    <div>
+                      <Skeleton className="h-4 w-16" />
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           ) : (
             <ChartContainer

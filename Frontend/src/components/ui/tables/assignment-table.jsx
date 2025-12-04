@@ -9,7 +9,7 @@ export default function AssignmentTable({ data, loading }) {
   return (
     <DataTable
       columns={cols}
-      data={data || []}
+      data={data}
       loading={loading}
       title="Customer List"
       toolbarLeft={<div className="text-lg font-semibold">Customer List</div>}

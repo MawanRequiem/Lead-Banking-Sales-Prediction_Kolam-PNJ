@@ -7,7 +7,7 @@ const AdminPage = () => {
 
   return (
     <div className="min-h-screen bg-background text-foreground transition-colors duration-300 font-[Inter]">
-      <main className="p-4 ml-6 sm:ml-12 sm:p-6 lg:p-8 min-h-[calc(100vh-var(--app-header-height,4rem))]">
+      <main className="p-4 sm:p-6 lg:p-8 min-h-[calc(100vh-var(--app-header-height,4rem))]">
         {/* Welcome header for admin */}
         <div className="mb-6">
           <h2 className="text-2xl font-semibold">

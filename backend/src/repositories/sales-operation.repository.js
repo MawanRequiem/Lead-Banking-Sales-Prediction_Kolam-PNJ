@@ -52,6 +52,8 @@ function getMyLeads(salesId, filters = {}) {
       include: {
         nasabah: {
           include: {
+            jenisKelaminRel: true,
+            statusPernikahan: true,
             deposito: {
               orderBy: { createdAt: 'desc' },
               take: 1, // Optimization: Cuma ambil 1 status terakhir
@@ -220,6 +222,8 @@ function getCallHistoryBySales(filter = {}) {
     salesId,
     sortBy = 'tanggalTelepon',
     sortOrder = 'desc',
+    startDate,
+    endDate,
   } = filter;
 
   const skip = (page - 1) * limit;
@@ -237,6 +241,13 @@ function getCallHistoryBySales(filter = {}) {
 
   const where = {};
   if (actualSalesId) { where.idSales = actualSalesId; }
+
+  // Optional date range filter
+  if (startDate || endDate) {
+    where.tanggalTelepon = {};
+    if (startDate) {where.tanggalTelepon.gte = new Date(startDate);}
+    if (endDate) {where.tanggalTelepon.lte = new Date(endDate);}
+  }
 
   if (search) {
     where.OR = [
@@ -427,7 +438,7 @@ async function getAssignedLeads(salesId, query) {
  * Get conversion (successful calls) aggregated by time bucket from histori_telepon
  * successSet: array of strings (e.g. ['SUKSES','DEPOSIT'])
  */
-async function getCallConversionByBucket({ startDate, endDate, interval = 'month', successSet = ['SUKSES','DEPOSIT'], salesId } = {}) {
+async function getCallConversionByBucket({ startDate, endDate, interval = 'month', successSet, salesId } = {}) {
   // Use Prisma to fetch matching historiTelepon rows, then aggregate into buckets
   // Supported intervals: 'day' | 'week' | 'month' | 'year'
   const allowed = { day: 'day', week: 'week', month: 'month', year: 'year' };
@@ -446,8 +457,16 @@ async function getCallConversionByBucket({ startDate, endDate, interval = 'month
     throw new Error('Valid salesId string is required');
   }
 
+  if (!Array.isArray(successSet)) {
+    successSet = typeof successSet === 'string' && successSet.trim().length > 0
+      ? [successSet.trim().toUpperCase()]
+      : ['VOICEMAIL'];
+    console.log('Normalized successSet to array:', successSet);
+  }
+
   const where = {
     tanggalTelepon: { gte: start, lte: end },
+    hasilTelepon: { in: successSet },
   };
   if (actualSalesId) {where.idSales = actualSalesId;}
   // Fetch minimal fields required for aggregation
@@ -471,12 +490,13 @@ async function getCallConversionByBucket({ startDate, endDate, interval = 'month
         return b.toISOString();
       }
       case 'week': {
-        // Week starting Monday
-        const day = date.getDay(); // 0 (Sun) .. 6 (Sat)
-        const diff = (day + 6) % 7; // days since Monday
-        const b = new Date(date.getFullYear(), date.getMonth(), date.getDate() - diff);
-        b.setHours(0, 0, 0, 0);
-        return b.toISOString();
+        const date = new Date(d);
+        // 1. Hitung Nomor Minggu (Week of Month)
+        const dayOfMonth = date.getDate(); // 1 hingga 31
+        const weekNumber = Math.ceil(dayOfMonth / 7);
+        // 2. Buat Kunci: Gabungkan Tahun, Bulan, dan Nomor Minggu
+        const yearMonth = date.toISOString().substring(0, 7); // Ambil YYYY-MM
+        return `${yearMonth}-W${weekNumber}`;
       }
       case 'month': {
         const b = new Date(date.getFullYear(), date.getMonth(), 1);
@@ -503,15 +523,74 @@ async function getCallConversionByBucket({ startDate, endDate, interval = 'month
     if (r.hasilTelepon && successLookup.has(String(r.hasilTelepon).toUpperCase())) {cur.success_count += 1;}
     buckets.set(key, cur);
   }
+  function generateAllBuckets(start, end, trunc) {
+    const keys = [];
+    let currentDate = new Date(start);
+    const endTimeMs = end.getTime();
+    // Helper untuk mendapatkan TANGGAL AWAL BUCKET (Date Object)
+    const getBucketStartDate = (d) => {
+      if (trunc === 'month' || trunc === 'year' || trunc === 'day') {
+        return new Date(bucketKeyForDate(d, trunc)); // Ini masih ISO valid
+      }
+      if (trunc === 'week') {
+        // Jika W1, ambil tanggal 1. Jika W2, ambil tanggal 8, dst.
+        const dayOfMonth = d.getDate();
+        const weekNumber = Math.ceil(dayOfMonth / 7);
+        // Hitung tanggal awal periode 7 hari ini
+        const startDay = (weekNumber - 1) * 7 + 1;
+        return new Date(d.getFullYear(), d.getMonth(), startDay, 0, 0, 0);
+      }
+      return d;
+    };
+    // 1. Inisialisasi: Atur tanggal awal ke awal bucket yang valid
+    currentDate = getBucketStartDate(currentDate);
 
-  // Convert map -> sorted array
-  const result = Array.from(buckets.entries())
+    while (currentDate.getTime() <= endTimeMs) {
+      // 2. Ambil Kunci untuk Output (e.g., '2025-01-W1')
+      const key = bucketKeyForDate(currentDate, trunc);
+      keys.push(key);
+
+      // 3. Pindah ke Tanggal Berikutnya
+      const nextDate = new Date(currentDate);
+      switch (trunc) {
+        case 'day': nextDate.setDate(nextDate.getDate() + 1); break;
+        case 'week': nextDate.setDate(nextDate.getDate() + 7); break; // Pindah 7 hari
+        case 'month': nextDate.setMonth(nextDate.getMonth() + 1); break;
+        case 'year': nextDate.setFullYear(nextDate.getFullYear() + 1); break;
+        default: return keys;
+      }
+      // 4. Set 'currentDate' ke awal bucket berikutnya
+      currentDate = getBucketStartDate(nextDate);
+      if (keys.length > 500) {break;} // Safety net
+    }
+    return keys;
+  }
+
+  // 1. Generate semua kunci bucket yang diharapkan
+  const allKeys = generateAllBuckets(start, end, trunc);
+  // 2. Isi Map dengan data kosong (0) untuk kunci yang hilang
+  const zeroFilledBuckets = new Map();
+
+  // Iterasi melalui SEMUA kunci yang diharapkan
+  for (const key of allKeys) {
+    // Jika Map asli memiliki data, gunakan data tersebut.
+    // Jika tidak, gunakan nilai default { success_count: 0, total_calls: 0 }.
+    const data = buckets.get(key) || { success_count: 0, total_calls: 0 };
+    zeroFilledBuckets.set(key, data);
+  }
+
+  // --- ZERO-FILLING LOGIC END ---
+
+  // 3. Konversi map zeroFilledBuckets -> sorted array
+  // Gunakan zeroFilledBuckets, bukan buckets Map asli
+  const result = Array.from(zeroFilledBuckets.entries())
     .map(([period, { success_count, total_calls }]) => ({
       bucket: period,
       count: success_count,
       total: total_calls,
       raw: { period, success_count, total_calls },
     }))
+  // Pastikan pengurutan berdasarkan tanggal (kunci ISO)
     .sort((a, b) => new Date(a.bucket) - new Date(b.bucket));
 
   return result;

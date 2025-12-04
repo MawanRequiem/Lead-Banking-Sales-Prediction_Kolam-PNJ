@@ -1,6 +1,8 @@
 const salesOpService = require('../services/sales-operation.service');
 const { successResponse } = require('../utils/response.util');
 const { asyncHandler } = require('../middlewares/errorHandler.middleware');
+const logger = require('../config/logger');
+const { start } = require('repl');
 
 /**
  * Dashboard: recent call history peek (default 10)
@@ -81,6 +83,30 @@ const exportData = asyncHandler(async (req, res) => {
 });
 
 /**
+ * Export Call History (server-side CSV)
+ * GET /api/sales/call-history/export
+ */
+const exportCallHistory = asyncHandler(async (req, res) => {
+  const { from: startDate, to: endDate, limit } = req.query;
+  logger.info('[EXPORT] call-history request', {
+    requestId: res.locals.requestId,
+    user: req.user && { id: req.user.id, userId: req.user.userId, role: req.user.role },
+    startDate,
+    endDate,
+    limit,
+    path: req.path,
+  });
+
+  const csvData = await salesOpService.exportCallHistory(req.user?.userId, { startDate, endDate, limit });
+
+  const filename = `call-history-${new Date().toISOString().split('T')[0]}.csv`;
+  res.header('Content-Type', 'text/csv');
+  res.header('Content-Disposition', `attachment; filename="${filename}"`);
+
+  return res.send(csvData);
+});
+
+/**
  * Update Lead Status
  * PATCH /api/sales/status
  */
@@ -111,7 +137,7 @@ const getAssignments = asyncHandler(async (req, res) => {
  * Dashboard: deposit conversion chart (per interval)
  * GET /api/sales/dashboard/deposits/conversion
  */
-const getDashboardDepositsConversion = asyncHandler(async (req, res) => {
+const getDashboardCallsConversion = asyncHandler(async (req, res) => {
   const { startDate, endDate, interval = 'month', successSet = 'TERKONEKSI', salesId } = req.query;
   // prefer explicit `successSet` query param, fallback to `status` for backward compatibility
   const successParam = successSet || 'TERKONEKSI';
@@ -141,7 +167,7 @@ const getDashboardDepositsTypes = asyncHandler(async (req, res) => {
  */
 const getDashboardSummary = asyncHandler(async (req, res) => {
   let { startDate, endDate, year, month } = req.query;
-  const { interval = 'month', successSet = 'AKTIF', callsLimit = '10', assignmentsLimit = '5' } = req.query;
+  const { interval = 'month', successSet = 'VOICEMAIL', callsLimit = '10', assignmentsLimit = '5' } = req.query;
 
   let wholeYear = false;
   // If frontend provided year/month but not explicit startDate/endDate,
@@ -183,12 +209,12 @@ const getDashboardSummary = asyncHandler(async (req, res) => {
     return 'week';
   };
   const intervalFinal = buildInterval();
-  const salesId = req.user?.id;
+  const salesId = req.user.id;
 
   const tasks = {
     callHistory: salesOpService.getCallHistoryForDash({ limit: parseInt(callsLimit, 10), salesId }),
-    assignments: salesOpService.getAssignmentsForDash(req.user, parseInt(assignmentsLimit, 10)),
-    depositsConversion: salesOpService.getDepositConversionForDash(
+    assignments: salesOpService.getAssignmentsForDash(salesId, parseInt(assignmentsLimit)),
+    callsConversion: salesOpService.getCallsConversionForDash(
       { startDate, endDate, interval: intervalFinal, successSet, salesId },
     ),
     depositTypes: salesOpService.getDepositTypesForDash({ startDate, endDate }),
@@ -217,13 +243,14 @@ module.exports = {
   getCallHistory,
   logCall,
   exportData,
+  exportCallHistory,
   updateStatus,
   getLeadDetail,
   getAssignments,
   // controller for all dashboard endpoint
   getDashboardCallHistory,
   getDashboardAssignments,
-  getDashboardDepositsConversion,
+  getDashboardCallsConversion,
   getDashboardDepositsTypes,
   // controller for all dashboard data
   getDashboardSummary,

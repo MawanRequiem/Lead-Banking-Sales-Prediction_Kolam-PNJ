@@ -61,7 +61,7 @@ export default function Dashboard() {
   } = useDashboardData(backendParams);
 
   return (
-    <div className="p-6 space-y-6 min-h-[calc(100vh-var(--app-header-height,4rem))] ml-8">
+    <div className="p-6 space-y-6 min-h-[calc(100vh-var(--app-header-height,4rem))]">
       {/* Shared month/year selectors that align with backend filters */}
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-2">
@@ -128,7 +128,7 @@ export default function Dashboard() {
             loading={dashboardLoading}
           />
           <SalesBarChartCard
-            data={dashboard?.depositsConversion}
+            data={dashboard?.callsConversion}
             range={range}
             interval={displayKey}
             month={month}
@@ -156,7 +156,7 @@ export default function Dashboard() {
       {/* Call history below the cards — full width */}
       <div>
         <CallHistoryCard
-          entries={dashboard?.callHistory}
+          data={dashboard?.callHistory}
           loading={dashboardLoading}
         />
       </div>

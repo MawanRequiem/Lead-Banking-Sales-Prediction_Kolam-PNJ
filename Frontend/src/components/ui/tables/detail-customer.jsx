@@ -12,12 +12,16 @@ import CallResultDialog from "@/components/ui/dialogs/call-result-dialog";
 
 // Component untuk menampilkan tombol aksi pada setiap baris data nasabah
 export default function ActionCell({ nasabah }) {
-  const [isDialogOpen, setIsDialogOpen] = useState(false)
-  const [isResultOpen, setIsResultOpen] = useState(false)
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isResultOpen, setIsResultOpen] = useState(false);
 
   const handleCallLog = () => {
     setIsResultOpen(true);
-  }
+  };
+
+  const openDialog = () => {
+    setIsDialogOpen(true);
+  };
 
   const hoverCardContent = (
     <div className="space-y-1">
@@ -49,22 +53,17 @@ export default function ActionCell({ nasabah }) {
         <HoverCardContent>{hoverCardContent}</HoverCardContent>
       </HoverCard>
 
-      {process.env.NODE_ENV === "development" && (
-        <span className="text-xs text-muted-foreground ml-2">
-          open:{isDialogOpen ? "1" : "0"}
-        </span>
-      )}
-
       <CustomerDetailDialog
         open={isDialogOpen}
         onOpenChange={setIsDialogOpen}
         nasabah={nasabah}
         title="Detail Nasabah"
-        subtitle={`Nomor: ${nasabah.nomorTelepon || '-'}`}
+        subtitle={`Nomor: ${nasabah.nomorTelepon || "-"}`}
         openLogDialog={handleCallLog}
-        rightToolbar={(
+        rightToolbar={
           <Button variant="outline" size="sm" onClick={handleCallLog}>
-            <Phone className="h-4 w-4 mr-2" />Telepon
+            <Phone className="h-4 w-4 mr-2" />
+            Telepon
           </Button>
         }
       />
@@ -75,7 +74,7 @@ export default function ActionCell({ nasabah }) {
         nasabah={nasabah}
         onSave={(payload) => {
           // payload contains hasilTelepon, catatan, nasabahId, lamaTelepon, nextFollowupDate
-          console.log('Call result saved:', payload)
+          console.log("Call result saved:", payload);
           // close result dialog
           setIsResultOpen(false);
         }}

@@ -52,6 +52,13 @@ router.get(
   controller.exportData,
 );
 
+// Export call history (server-side CSV)
+router.get(
+  '/call-history/export',
+  searchLimiter,
+  controller.exportCallHistory,
+);
+
 /**
  * Log Call Route
  * Secured with Write Rate Limit & Strict Validation
