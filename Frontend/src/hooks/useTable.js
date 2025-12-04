@@ -31,7 +31,7 @@ export const mockData = [
 // Hook to manage table data. By default returns mockData and a fetch helper.
 // Usage:
 // const { data, setData, fetchData } = useTable({ apiUrl: '/api/customers', initial: mockData })
-export function useTable({ apiUrl = '/sales/leads', initial = mockData } = {}) {
+export function useTable({ apiUrl, initial = mockData } = {}) {
   const [data, setData] = useState(initial);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);

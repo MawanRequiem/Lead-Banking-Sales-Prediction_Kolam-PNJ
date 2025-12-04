@@ -137,6 +137,7 @@ async function getAllLeads(query) {
     nomorTelepon: item.nomorTelepon,
     umur: item.umur,
     pekerjaan: item.pekerjaan || '-',
+    domisili: item.domisili || '-',
     jenisKelamin: item.jenisKelaminRel?.namaJenisKelamin || '-',
     statusPernikahan: item.statusPernikahan?.namaStatus || '-',
     skor: parseFloat(item.skorPrediksi || 0),
@@ -169,14 +170,14 @@ async function getCallHistory(query) {
  * Log Activity (Telepon)
  */
 async function logActivity(salesId, data) {
-  const lead = await salesOpRepo.getLeadDetail(salesId, data.nasabahId);
+  const lead = await salesOpRepo.getLeadDetail(data.nasabahId);
   if (!lead) {
-    throw new NotFoundError('Nasabah not found or not assigned to you');
+    throw new NotFoundError('Nasabah not found');
   }
 
   return salesOpRepo.createCallLog({
     ...data,
-    idNasabah: data.nasabahId,
+    idNasabah: data.nasabahId, // why are we mangling this?
     idSales: salesId,
   });
 }
@@ -218,9 +219,9 @@ async function exportWorkReport(salesId) {
  * Update Deposito Status
  */
 async function updateLeadStatus(salesId, data) {
-  const lead = await salesOpRepo.getLeadDetail(salesId, data.nasabahId);
+  const lead = await salesOpRepo.getLeadDetail( data.nasabahId);
   if (!lead) {
-    throw new NotFoundError('Nasabah not found or not assigned to you');
+    throw new NotFoundError('Nasabah not found');
   }
 
   return salesOpRepo.updateDepositoStatus(salesId, data.nasabahId, data.status);
@@ -230,11 +231,11 @@ async function updateLeadStatus(salesId, data) {
  * Get Lead Detail
  * Termasuk history telepon & status deposito
  */
-async function getLeadDetail(salesId, nasabahId) {
-  const lead = await salesOpRepo.getLeadDetail(salesId, nasabahId);
+async function getLeadDetail(nasabahId) {
+  const lead = await salesOpRepo.getLeadDetail(nasabahId);
 
   if (!lead) {
-    throw new NotFoundError('Nasabah not found or not assigned to you');
+    throw new NotFoundError('Nasabah not found');
   }
 
   // Formatting response agar lebih bersih
@@ -277,15 +278,10 @@ async function getMyAssignments(user, query) {
   const salesData = await salesRepo.findByUserId(user.id);
 
   if (!salesData) {
-    throw new Error('Sales profile not found');
+    throw new NotFoundError('Sales profile not found');
   }
 
-  const { page, limit, search } = query;
-
-  const { count, assignments } = await salesOpRepo.getAssignedLeads(
-    salesData.idSales,
-    { page: parseInt(page), limit: parseInt(limit), search },
-  );
+  const { assignments, pagination } = await salesOpRepo.getAssignedLeads(salesData.idSales, query);
 
   const mappedData = assignments.map((item) => ({
     id: item.nasabah.idNasabah,
@@ -294,19 +290,15 @@ async function getMyAssignments(user, query) {
     nomorTelepon: item.nasabah.nomorTelepon || '-',
     jenisKelamin: item.nasabah.jenisKelamin === 'L' ? 'Laki-laki' : 'Perempuan',
     umur: item.nasabah.umur,
-    statusPernikahan: item.nasabah.statusPernikahanRef?.namaStatus || 'Unknown',
+    domisili: item.nasabah.domisili || '-',
+    statusPernikahan: item.nasabah.statusPernikahan?.namaStatus || 'Unknown',
     assignmentId: item.idAssignment,
     skorPrediksi: item.nasabah.skorPrediksi,
   }));
 
   return {
-    data: mappedData,
-    meta: {
-      page: parseInt(page),
-      limit: parseInt(limit),
-      total: count,
-      totalPages: Math.ceil(count / limit),
-    },
+    assignments: mappedData,
+    pagination,
   };
 }
 

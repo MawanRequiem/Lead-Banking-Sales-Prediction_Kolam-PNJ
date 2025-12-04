@@ -22,6 +22,11 @@ const {
 router.use(authenticateToken);
 router.use(requireSales);
 
+function debug(req, res, next) {
+  console.log('[DEBUG] Raw incoming body:', req.body);
+  next();
+}
+
 /**
  * Dashboard Route
  * Secured with Search Rate Limit & Query Validation
@@ -36,17 +41,6 @@ router.get(
 // Dashboard-specific peek endpoints removed. Use GET /dashboard with params instead.
 
 // Note: combined summary is now served by GET /dashboard when summary params are present
-
-/**
- * Log Call Route
- * Secured with Write Rate Limit (Anti-Spam)
- */
-router.post(
-  '/log-call',
-  writeLimiter,
-  // TODO: Tambahkan 'validateLogCall' di validation.middleware.js untuk validasi body (nasabahId, hasil, dll)
-  controller.logCall,
-);
 
 /**
  * Export Route
@@ -64,6 +58,7 @@ router.get(
  */
 router.post(
   '/log-call',
+  debug,
   writeLimiter,     // Mencegah spam klik tombol save
   validateLogCall,  // <--- Validasi aktif di sini!
   controller.logCall,

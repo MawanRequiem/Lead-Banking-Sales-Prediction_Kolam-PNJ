@@ -148,6 +148,9 @@ const login = asyncHandler(async (req, res) => {
     throw new UnauthorizedError('Invalid email or password', 'INVALID_CREDENTIALS');
   }
 
+  // Revoke existing refresh tokens for the user
+  await tokenRepository.revokeTokensByUserId(user.userId);
+
   // Generate tokens
   const accessToken = generateAccessToken(user);
   const refreshToken = await createRefreshToken(user.userId);

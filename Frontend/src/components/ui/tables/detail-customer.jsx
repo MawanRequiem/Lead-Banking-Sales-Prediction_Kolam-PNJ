@@ -10,33 +10,21 @@ import { MoreHorizontal, Info, Phone } from "lucide-react";
 import CallTimerOverlay from "@/components/ui/dialogs/call-timer-overlay";
 import CallResultDialog from "@/components/ui/dialogs/call-result-dialog";
 
-// Component untuk menampilkan tombol aksi pada setiap baris data karyawan
-export default function ActionCell({ karyawan }) {
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isTimerOpen, setIsTimerOpen] = useState(false);
-  const [isResultOpen, setIsResultOpen] = useState(false);
-  const [lastCall, setLastCall] = useState(null);
-  const [timerStart, setTimerStart] = useState(null);
+// Component untuk menampilkan tombol aksi pada setiap baris data nasabah
+export default function ActionCell({ nasabah }) {
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [isResultOpen, setIsResultOpen] = useState(false)
 
-  const handleCallCenter = () => {
-    // open controlled call timer dialog
-    const ts = Date.now();
-    setTimerStart(ts);
-    setIsTimerOpen(true);
-  };
-
-  function openDialog() {
-    if (process.env.NODE_ENV === "development")
-      console.debug("[debug] ActionCell openDialog", karyawan?.id);
-    setIsDialogOpen(true);
+  const handleCallLog = () => {
+    setIsResultOpen(true);
   }
 
   const hoverCardContent = (
     <div className="space-y-1">
-      <p className="text-sm font-semibold">{karyawan.nama}</p>
+      <p className="text-sm font-semibold">{nasabah.nama}</p>
       <div className="text-xs text-muted-foreground">
-        <p>Pekerjaan: {karyawan.pekerjaan}</p>
-        <p>Umur: {karyawan.umur} thn</p>
+        <p>Pekerjaan: {nasabah.pekerjaan}</p>
+        <p>Umur: {nasabah.umur} thn</p>
       </div>
       <Button
         variant="default"
@@ -70,42 +58,24 @@ export default function ActionCell({ karyawan }) {
       <CustomerDetailDialog
         open={isDialogOpen}
         onOpenChange={setIsDialogOpen}
-        karyawan={karyawan}
-        title="Detail Karyawan"
-        subtitle={`Nomor: ${karyawan.nomorTelepon || "-"}`}
-        onCall={handleCallCenter}
-        rightToolbar={
-          <Button variant="outline" size="sm" onClick={handleCallCenter}>
-            <Phone className="h-4 w-4 mr-2" />
-            Telepon
+        nasabah={nasabah}
+        title="Detail Nasabah"
+        subtitle={`Nomor: ${nasabah.nomorTelepon || '-'}`}
+        openLogDialog={handleCallLog}
+        rightToolbar={(
+          <Button variant="outline" size="sm" onClick={handleCallLog}>
+            <Phone className="h-4 w-4 mr-2" />Telepon
           </Button>
         }
-      />
-
-      {/* Controlled Call Timer (non-dismissible except hangup) */}
-      <CallTimerOverlay
-        open={isTimerOpen}
-        onOpenChange={setIsTimerOpen}
-        callerName={karyawan.nama}
-        callerPhone={karyawan.nomorTelepon}
-        startedAt={timerStart}
-        onHangup={({ startedAt, durationSec }) => {
-          // close timer and open result dialog
-          setIsTimerOpen(false);
-          setLastCall({ startedAt, durationSec });
-          setIsResultOpen(true);
-        }}
       />
 
       <CallResultDialog
         open={isResultOpen}
         onOpenChange={setIsResultOpen}
-        caller={karyawan}
-        startedAt={lastCall?.startedAt}
-        durationSec={lastCall?.durationSec}
+        nasabah={nasabah}
         onSave={(payload) => {
-          // payload contains result, note, caller, startedAt, durationSec
-          console.log("Call result saved:", payload);
+          // payload contains hasilTelepon, catatan, nasabahId, lamaTelepon, nextFollowupDate
+          console.log('Call result saved:', payload)
           // close result dialog
           setIsResultOpen(false);
         }}
