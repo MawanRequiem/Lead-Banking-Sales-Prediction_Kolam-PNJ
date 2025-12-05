@@ -284,6 +284,61 @@ async function getMyAssignments(userId, query) {
   };
 }
 
+async function getAllLeadsOverview(query) {
+  const { current, last } = await salesOpRepo.getAllLeadsOverview(query);
+
+  const countDepositoMembers = (list) =>
+    list.filter((n) => n.deposito && n.deposito.length > 0).length;
+
+  const countActiveDeposits = (list) =>
+    list.filter((n) => n.deposito?.some((d) => d.isActive === true)).length;
+
+  const calcChange = (current, last) => {
+    const diff = current - last;
+    let direction = 'neutral';
+
+    if (diff > 0) {direction = 'up';}
+    else if (diff < 0) {direction = 'down';}
+
+    return {
+      value: Math.abs(diff),
+      direction,
+    };
+  };
+
+  const totalCurrent = current.length;
+  const totalLast = last.length;
+  const totalChange = calcChange(totalCurrent, totalLast);
+
+  const depositoMembersCurrent = countDepositoMembers(current);
+  const depositoMembersLast = countDepositoMembers(last);
+  const depositoMembersChange = calcChange(
+    depositoMembersCurrent,
+    depositoMembersLast,
+  );
+
+  const activeDepositsCurrent = countActiveDeposits(current);
+  const activeDepositsLast = countActiveDeposits(last);
+  const activeDepositsChange = calcChange(
+    activeDepositsCurrent,
+    activeDepositsLast,
+  );
+
+  return {
+    totalCustomers: totalCurrent,
+    totalChange: totalChange.value,
+    totalDirection: totalChange.direction,
+
+    depositoMembers: depositoMembersCurrent,
+    depositoMembersChange: depositoMembersChange.value,
+    depositoMembersDirection: depositoMembersChange.direction,
+
+    depositoActive: activeDepositsCurrent,
+    depositoActiveChange: activeDepositsChange.value,
+    depositoActiveDirection: activeDepositsChange.direction,
+  };
+}
+
 module.exports = {
   getAllLeads,
   getCallHistory,
@@ -292,6 +347,7 @@ module.exports = {
   updateLeadStatus,
   getLeadDetail,
   getMyAssignments,
+  getAllLeadsOverview,
   // Dashboard helpers
   getCallHistoryForDash,
   getAssignmentsForDash,

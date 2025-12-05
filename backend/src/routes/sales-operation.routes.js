@@ -16,6 +16,7 @@ const {
   validateUpdateStatus,
   validateUUIDParam,
   validateDashboardQuery,
+  validateLeadsOverviewQuery,
 } = require('../middlewares/validation.middleware');
 
 // Global Middleware untuk router ini
@@ -75,6 +76,12 @@ router.get(
   '/leads',
   validateGetAllQuery,
   controller.getAllLeads,
+);
+
+router.get(
+  '/leads/overview',
+  validateLeadsOverviewQuery,
+  controller.getAllLeadsOverview,
 );
 
 router.get(

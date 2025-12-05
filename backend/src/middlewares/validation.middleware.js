@@ -22,6 +22,7 @@ const {
   logCallSchema,
   updateStatusSchema,
   dashboardQuerySchema,
+  leadsOverviewQuerySchema,
 } = require('../validation/schemas/sales.schema');
 
 const {
@@ -406,6 +407,28 @@ function validateGetAllQuery(req, res, next) {
   next();
 }
 
+function validateLeadsOverviewQuery(req, res, next) {
+  const threats = deepSecurityScan(req.query, 'query');
+  if (threats.length > 0) {
+    logSecurityThreat(req, res, threats);
+    if (threats.some(t => t.severity === 'CRITICAL')) {
+      return validationErrorResponse(res, [{
+        field: 'query',
+        message: 'Invalid query parameters',
+        code: 'INVALID_QUERY',
+      }]);
+    }
+  }
+
+  const joiValidation = validateWithJoi(leadsOverviewQuerySchema, req.query);
+  if (joiValidation.hasError) {
+    return validationErrorResponse(res, joiValidation.errors);
+  }
+
+  req.query = joiValidation.value;
+  next();
+}
+
 /**
  * Validate Dashboard Query
  */
@@ -608,6 +631,7 @@ module.exports = {
   validateLogCall,
   validateUpdateStatus,
   validateDashboardQuery,
+  validateLeadsOverviewQuery,
 
   // Auth validation
   validateLogin,

@@ -329,6 +329,14 @@ const updateStatusSchema = Joi.object({
   stripUnknown: true,
 });
 
+const leadsOverviewQuerySchema = Joi.object({
+  month: Joi.number().integer().min(1).max(12),
+  year: Joi.number().integer().min(0),
+}).options({
+  abortEarly: false,
+  stripUnknown: true,
+});
+
 module.exports = {
   createSalesSchema,
   updateSalesSchema,
@@ -338,4 +346,5 @@ module.exports = {
   logCallSchema,
   updateStatusSchema,
   dashboardQuerySchema,
+  leadsOverviewQuerySchema,
 };

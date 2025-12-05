@@ -650,6 +650,25 @@ async function getDepositTypesAggregate({ startDate, endDate, status } = {}) {
   }));
 }
 
+async function getAllLeadsOverview({ month, year } = {}) {
+  const now = new Date();
+  const m = month ? Number(month) : now.getMonth() + 1;
+  const y = year ? Number(year) : now.getFullYear();
+  const cutoff = new Date(y, m - 1, 0);
+
+  const current = await prisma.nasabah.findMany({ include: { deposito: true } });
+  const last = await prisma.nasabah.findMany({
+    where: {
+      createdAt: { lte: cutoff },
+    },
+    include: {
+      deposito: true,
+    },
+  });
+
+  return { current, last };
+}
+
 module.exports = {
   getMyLeads,
   getAllLeads,
@@ -661,4 +680,5 @@ module.exports = {
   getCallHistory,
   updateDepositoStatus,
   getAssignedLeads,
+  getAllLeadsOverview,
 };

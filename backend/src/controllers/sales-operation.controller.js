@@ -222,6 +222,11 @@ const getDashboardSummary = asyncHandler(async (req, res) => {
   return successResponse(res, payload, 'Dashboard summary retrieved', { errors: errors.length ? errors : undefined });
 });
 
+const getAllLeadsOverview = asyncHandler(async (req, res) => {
+  const result = await salesOpService.getAllLeadsOverview(req.query);
+  return successResponse(res, result, 'Leads overview retrieved successfully');
+});
+
 module.exports = {
   getAllLeads,
   getCallHistory,
@@ -230,6 +235,7 @@ module.exports = {
   updateStatus,
   getLeadDetail,
   getAssignments,
+  getAllLeadsOverview,
   // controller for all dashboard endpoint
   getDashboardCallHistory,
   getDashboardAssignments,
