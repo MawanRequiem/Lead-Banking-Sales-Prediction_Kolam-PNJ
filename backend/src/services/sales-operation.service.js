@@ -164,39 +164,6 @@ async function logActivity(salesId, data) {
 }
 
 /**
- * Export Work Report (CSV)
- * Performance Note: Dibatasi max 5000 row untuk mencegah Server Hang.
- * Jika butuh >5000, harus pakai Background Job (Queue).
- */
-async function exportWorkReport(salesId) {
-  const result = await salesOpRepo.getMyLeads(salesId, {
-    limit: 5000,
-    page: 1,
-  });
-
-  const leads = result.data;
-
-  if (leads.length === 0) {
-    throw new NotFoundError('No data to export');
-  }
-
-  const reportData = leads.map(l => ({
-    'Nama Nasabah': l.nasabah.nama,
-    'Skor AI': parseFloat(l.nasabah.skorPrediksi || 0).toFixed(2),
-    'Status': l.nasabah.deposito[0]?.statusDeposito || 'PROSPEK',
-    'Total Telepon': l.nasabah.historiTelepon.length || 0,
-    'Telepon Terakhir': l.nasabah.historiTelepon[0]?.createdAt
-      ? new Date(l.nasabah.historiTelepon[0].createdAt).toLocaleDateString('id-ID')
-      : '-',
-    'Hasil Terakhir': l.nasabah.historiTelepon[0]?.hasilTelepon || '-',
-  }));
-
-  // 3. Generate CSV String
-  const parser = new Parser();
-  return parser.parse(reportData);
-}
-
-/**
  * Export Call History CSV for a sales user with optional date range and limit
  */
 async function exportCallHistory(salesId, { startDate, endDate, limit = 1000 } = {}) {
@@ -217,18 +184,17 @@ async function exportCallHistory(salesId, { startDate, endDate, limit = 1000 } =
   }
 
   const reportData = rows.map((r) => ({
-    id: r.idHistori || r.id || '',
-    tanggal: r.tanggalTelepon || r.createdAt || '',
-    namaNasabah: r.nasabah?.nama || '',
-    nomorTelepon: r.nasabah?.nomorTelepon || '',
-    agent: r.sales?.nama || r.salesNama || '',
-    durasi: r.lamaTelepon || r.durasi || '',
-    hasil: r.hasilTelepon || r.hasil || '',
-    catatan: r.catatan || '',
+    'Histori Panggilan': r.idHistori || r.id || '',
+    'Tanggal': r.tanggalTelepon || r.createdAt || '',
+    'Nama Nasabah': r.nasabah?.nama || '',
+    'Nomor Telepon': r.nasabah?.nomorTelepon || '',
+    'Durasi': r.lamaTelepon || r.durasi || '-',
+    'Hasil': r.hasilTelepon || r.hasil || '-',
+    'Catatan': r.catatan || '-',
   }));
 
-  const parser2 = new Parser();
-  return parser2.parse(reportData);
+  const parser = new Parser();
+  return parser.parse(reportData);
 }
 
 /**
@@ -322,7 +288,6 @@ module.exports = {
   getAllLeads,
   getCallHistory,
   logActivity,
-  exportWorkReport,
   exportCallHistory,
   updateLeadStatus,
   getLeadDetail,

@@ -268,15 +268,6 @@ function getCallHistoryBySales(filter = {}) {
           select: {
             nama: true,
             nomorTelepon: true,
-            deposito: {
-              take: 1,
-              orderBy: { createdAt: 'desc' },
-              select: {
-                idDeposito: true,
-                statusDeposito: true,
-                createdAt: true,
-              },
-            },
           },
         },
       },

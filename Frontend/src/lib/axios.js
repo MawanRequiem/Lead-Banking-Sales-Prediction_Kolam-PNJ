@@ -17,19 +17,8 @@ const axiosInstance = axios.create({
 
 // Interceptor: Handle jika Token Expired (401)
 axiosInstance.interceptors.response.use(
-  (response) => {
-    const newAccessToken = response.headers['x-new-access-token'];
-    const newRefreshToken = response.headers['x-new-refresh-token'];
-
-    if (newAccessToken) {
-      localStorage.setItem('accessToken', newAccessToken);
-    }
-    if (newRefreshToken) {
-      localStorage.setItem('refreshToken', newRefreshToken);
-    }
-
-    return response;
-  },
+  //fix dead code from merge
+  (response) => response,
   (error) => {
     if (error.response && error.response.status === 401) {
       // Jika token hangus, paksa logout atau redirect ke login

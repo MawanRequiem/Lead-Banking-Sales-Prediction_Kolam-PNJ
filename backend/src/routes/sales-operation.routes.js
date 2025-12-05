@@ -49,13 +49,6 @@ router.get(
 router.get(
   '/export',
   searchLimiter,
-  controller.exportData,
-);
-
-// Export call history (server-side CSV)
-router.get(
-  '/call-history/export',
-  searchLimiter,
   controller.exportCallHistory,
 );
 

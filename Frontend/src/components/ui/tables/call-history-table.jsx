@@ -132,7 +132,7 @@ export default function CallHistoryTable() {
         data={data}
         onApply={async ({ from, to, limit }) => {
           try {
-            const res = await axios.get("/sales/call-history/export", {
+            const res = await axios.get("/sales/export", {
               params: { from, to, limit },
               responseType: "blob",
             });

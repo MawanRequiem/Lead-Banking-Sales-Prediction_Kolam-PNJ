@@ -2,7 +2,6 @@ const salesOpService = require('../services/sales-operation.service');
 const { successResponse } = require('../utils/response.util');
 const { asyncHandler } = require('../middlewares/errorHandler.middleware');
 const logger = require('../config/logger');
-const { start } = require('repl');
 
 /**
  * Dashboard: recent call history peek (default 10)
@@ -68,21 +67,6 @@ const logCall = asyncHandler(async (req, res) => {
 });
 
 /**
- * Export Data to CSV
- * GET /api/sales/export
- */
-const exportData = asyncHandler(async (req, res) => {
-  const csvData = await salesOpService.exportWorkReport(req.user?.userId);
-
-  // Set Header untuk download file
-  const filename = `laporan-kerja-${new Date().toISOString().split('T')[0]}.csv`;
-  res.header('Content-Type', 'text/csv');
-  res.header('Content-Disposition', `attachment; filename="${filename}"`);
-
-  return res.send(csvData);
-});
-
-/**
  * Export Call History (server-side CSV)
  * GET /api/sales/call-history/export
  */
@@ -97,7 +81,7 @@ const exportCallHistory = asyncHandler(async (req, res) => {
     path: req.path,
   });
 
-  const csvData = await salesOpService.exportCallHistory(req.user?.userId, { startDate, endDate, limit });
+  const csvData = await salesOpService.exportCallHistory(req.user?.id, { startDate, endDate, limit });
 
   const filename = `call-history-${new Date().toISOString().split('T')[0]}.csv`;
   res.header('Content-Type', 'text/csv');
@@ -242,7 +226,6 @@ module.exports = {
   getAllLeads,
   getCallHistory,
   logCall,
-  exportData,
   exportCallHistory,
   updateStatus,
   getLeadDetail,
