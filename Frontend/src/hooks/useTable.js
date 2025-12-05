@@ -35,17 +35,19 @@ export function useTable({ apiUrl, initial = mockData, page, limit } = {}) {
   const [data, setData] = useState(initial);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [ pageIndex, setPageIndex ] = useState(page - 1 || 0); //TanStack starts from 0
-  const [ pageSize, setPageSize ] = useState(limit || 10);
-  const [ pageCount, setPageCount] = useState(1);
-  const [ total, setTotal ] = useState(0);
+  const [pagination, setPagination] = useState({pageIndex: page - 1 || 0, pageSize: limit || 10});
+  const [pageCount, setPageCount] = useState(1);
+  const [total, setTotal] = useState(0);
 
-  async function fetchData(params = {page: pageIndex + 1, limit: pageSize}) {
+  async function fetchData(params = {}) {
     if (!apiUrl) return;
     setLoading(true);
     setError(null);
     try {
-      const response = await axios.get(apiUrl, { params });
+      const page = pagination.pageIndex + 1;
+      const limit = pagination.pageSize;
+      const paginatedParameters = { ... params, page, limit };
+      const response = await axios.get(apiUrl, { params: paginatedParameters });
       setData(response.data.data);
       setTotal(response.data.meta?.pagination?.total);
       setPageCount(response.data.meta?.pagination?.lastPage);
@@ -62,9 +64,9 @@ export function useTable({ apiUrl, initial = mockData, page, limit } = {}) {
     if (!apiUrl) return
     fetchData()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [apiUrl, pageIndex, pageSize]);
+  }, [apiUrl, pagination]);
 
-  return { data, setData, refetch: fetchData, loading, error, pageIndex, setPageIndex, pageSize, setPageSize, pageCount, setPageCount, total, setTotal };
+  return { data, setData, refetch: fetchData, loading, error, pagination, setPagination, pageCount, setPageCount, total, setTotal };
 }
 
 export default useTable
