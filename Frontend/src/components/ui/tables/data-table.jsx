@@ -30,7 +30,9 @@ export default function DataTable({
   toolbarRight,
   renderRowActions,
   loading = false,
-  options = {},
+  options = {
+    // Should contain pagination options since all our tables use pagination on the backend
+  },
   showSearch = true,
   renderViewOptions = null,
 }) {
@@ -44,11 +46,21 @@ export default function DataTable({
     columns: memoColumns,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
+    // getPaginationRowModel: getPaginationRowModel(), used for client-side pagination.
+    manualPagination: true, // since we are doing server-side pagination
+    pageCount: options.pageCount,
+    onPaginationChange: options.onPageChange,
     getFilteredRowModel: getFilteredRowModel(),
     onSortingChange: setSorting,
-    state: { sorting, globalFilter },
-    initialState: { pagination: { pageSize: options.pageSize || 10 } },
+    state: {
+      sorting,
+      globalFilter,
+      pagination: {
+        pageIndex: options.pageIndex || 0,
+        pageSize: options.pageSize || 10,
+      }
+    },
+    // initialState: { pagination: { pageIndex: options.pageIndex || 1, pageSize: options.pageSize || 10 } },
   })
 
   return (
@@ -155,7 +167,7 @@ export default function DataTable({
       <div className="mt-2">
         <div className="flex items-center justify-between">
           {/** Ini adalah bagian pagination tabel */}
-          <div className="text-muted-foreground text-sm">Total {table.getFilteredRowModel().rows.length} Data</div>
+          <div className="text-muted-foreground text-sm">Total {options.total || table.getFilteredRowModel().rows.length} Data</div>
           <div className="flex items-center space-x-2">
             <Button variant="outline" size="icon" onClick={() => table.setPageIndex(0)} disabled={!table.getCanPreviousPage()}>
               {'<<'}

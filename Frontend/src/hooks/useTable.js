@@ -31,24 +31,29 @@ export const mockData = [
 // Hook to manage table data. By default returns mockData and a fetch helper.
 // Usage:
 // const { data, setData, fetchData } = useTable({ apiUrl: '/api/customers', initial: mockData })
-export function useTable({ apiUrl, initial = mockData } = {}) {
+export function useTable({ apiUrl, initial = mockData, page, limit } = {}) {
   const [data, setData] = useState(initial);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [ pageIndex, setPageIndex ] = useState(page - 1 || 0); //TanStack starts from 0
+  const [ pageSize, setPageSize ] = useState(limit || 10);
+  const [ pageCount, setPageCount] = useState(1);
+  const [ total, setTotal ] = useState(0);
 
-  async function fetchData(params = {}) {
+  async function fetchData(params = {page: pageIndex + 1, limit: pageSize}) {
     if (!apiUrl) return;
     setLoading(true);
     setError(null);
     try {
       const response = await axios.get(apiUrl, { params });
       setData(response.data.data);
-      setLoading(false);
-      return response.data;
+      setTotal(response.data.meta?.pagination?.total);
+      setPageCount(response.data.meta?.pagination?.lastPage);
     } catch (err) {
       setError(err);
-      setLoading(false);
       return null;
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -57,9 +62,9 @@ export function useTable({ apiUrl, initial = mockData } = {}) {
     if (!apiUrl) return
     fetchData()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [apiUrl])
+  }, [apiUrl, pageIndex, pageSize]);
 
-  return { data, setData, fetchData, loading, error }
+  return { data, setData, refetch: fetchData, loading, error, pageIndex, setPageIndex, pageSize, setPageSize, pageCount, setPageCount, total, setTotal };
 }
 
 export default useTable
