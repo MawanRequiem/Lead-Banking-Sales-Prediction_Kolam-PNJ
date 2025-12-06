@@ -37,7 +37,6 @@ export default function DataTable({
   renderViewOptions = null,
 }) {
   const [sorting, setSorting] = useState([])
-  const [globalFilter, setGlobalFilter] = useState('')
   const memoColumns = useMemo(() => columns || [], [columns])
   const memoData = useMemo(() => data || [], [data])
 
@@ -50,15 +49,12 @@ export default function DataTable({
     manualPagination: true, // since we are doing server-side pagination
     pageCount: options.pageCount,
     onPaginationChange: options.onPageChange,
-    getFilteredRowModel: getFilteredRowModel(),
+    manualFiltering: true,
+    // getFilteredRowModel: getFilteredRowModel(),
     onSortingChange: setSorting,
     state: {
       sorting,
-      globalFilter,
-      pagination: {
-        pageIndex: options.pageIndex || 0,
-        pageSize: options.pageSize || 10,
-      }
+      pagination: options.pagination || { pageIndex: 0, pageSize: 10 },
     },
     // initialState: { pagination: { pageIndex: options.pageIndex || 1, pageSize: options.pageSize || 10 } },
   })
@@ -86,9 +82,9 @@ export default function DataTable({
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
-                  placeholder="Cari semua kolom..."
-                  value={globalFilter}
-                  onChange={(e) => setGlobalFilter(e.target.value)}
+                  placeholder="Cari..."
+                  value={options.search || ''}
+                  onChange={(e) => options.onSearchChange?.(e.target.value)}
                   className="pl-10"
                 />
               </div>
