@@ -5,23 +5,24 @@ import useProfile from "@/hooks/useProfile";
 import { Switch } from "../switch";
 import { useTheme } from "@/hooks/useTheme";
 import useAuth from "@/hooks/useAuth";
+import { useNavigate } from "react-router-dom";
 
 export default function ProfileDropdown(props) {
   const {
     user,
-    setUser,
     changeLanguage,
     changePassword,
     openPersonalInfo,
     openNotifications,
   } = useProfile();
   const { logout } = useAuth();
+  const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
 
   function logoutHandler() {
     try {
-      setUser(null);
       logout();
+      navigate("/login");
     } catch (e) {
       console.error("Logout failed", e);
     }

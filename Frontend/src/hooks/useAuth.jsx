@@ -1,41 +1,43 @@
 import { useCallback, useState } from "react";
 import axios from "@/lib/axios";
-import { useNavigate } from "react-router-dom";
+import useProfile from "@/hooks/useProfile";
 
 export default function useAuth() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const navigate = useNavigate();
+  const { setUser } = useProfile();
 
-  const login = useCallback(async (email, password) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await axios.post("/login", { email, password });
-      const data = res.data.data || {};
+  const login = useCallback(
+    async (email, password) => {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await axios.post("/login", { email, password });
+        const data = res.data.data || {};
 
-      const user = data.user || {};
+        const user = data.user || {};
+        const userData = {
+          role: user.role || "",
+          name: user.nama || user.email || "",
+          email: user.email || "",
+          phone: user.nomorTelepon || user.phone || "",
+          domisili: user.domisili || user.city || "",
+        };
 
-      const userRole = user.role || "";
-      const userName = user.nama || user.email || "";
-      const userEmail = user.email || "";
-      const userPhone = user.nomorTelepon || user.phone || "";
-      const userDomisili = user.domisili || user.city || "";
-
-      // Do not modify global profile here; return user to caller to let
-      // the caller decide whether to persist it in context/local state.
-
-      setLoading(false);
-      return {
-        success: true,
-        user: { name: userName, role: userRole, email: userEmail },
-      };
-    } catch (err) {
-      setError(err);
-      setLoading(false);
-      return { success: false, error: err };
-    }
-  }, []);
+        setUser(userData);
+        setLoading(false);
+        return {
+          success: true,
+          user: userData,
+        };
+      } catch (err) {
+        setError(err);
+        setLoading(false);
+        return { success: false, error: err };
+      }
+    },
+    [setUser]
+  );
 
   const logout = useCallback(async () => {
     // best-effort: call backend logout endpoint
@@ -44,7 +46,8 @@ export default function useAuth() {
     } catch (e) {
       // ignore errors
     }
-  }, []);
+    setUser(null);
+  }, [setUser]);
 
   return {
     login,

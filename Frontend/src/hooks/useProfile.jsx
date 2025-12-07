@@ -1,5 +1,4 @@
 import { useCallback, useState, useEffect, useContext } from "react";
-import { useNavigate } from "react-router-dom";
 import axios from "@/lib/axios";
 import { useProfileContext } from "@/contexts/profile-context";
 
@@ -8,8 +7,6 @@ import { useProfileContext } from "@/contexts/profile-context";
 export default function useProfile(initial = null) {
   const ctx = useProfileContext();
   if (ctx) return ctx;
-
-  const navigate = useNavigate();
 
   const [user, setUserState] = useState(initial);
   const [loading, setLoading] = useState(false);

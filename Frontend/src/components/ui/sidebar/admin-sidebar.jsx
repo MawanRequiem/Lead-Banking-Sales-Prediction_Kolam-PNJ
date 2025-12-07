@@ -7,13 +7,11 @@ import {
 } from "@/components/ui/sidebar/sidebar-consts";
 import { cn } from "@/lib/utils";
 import useAuth from "@/hooks/useAuth";
-import useProfile from "@/hooks/useProfile";
 
 export function Sidebar() {
   const { activeItem, setActiveItem } = useSidebar();
   const navigate = useNavigate();
   const { logout } = useAuth();
-  const { setUser } = useProfile();
 
   const verticalMargin = "0.5rem";
 
@@ -58,8 +56,8 @@ export function Sidebar() {
           onClick={() => {
             setActiveItem(footerItem.id);
             try {
-              setUser(null);
               logout();
+              navigate("/login");
             } catch (e) {
               console.log("Logout error", e);
             }

@@ -6,8 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export default function HeaderSelector({ role }) {
   const { user, loading } = useProfile();
-  const { user: profileUser } = useProfile();
-  const resolvedRole = role ?? user?.role ?? profileUser?.role ?? null;
+  const resolvedRole = role ?? user?.role ?? null;
 
   let baseName = "unknown";
   let email = "anonymous@example.com";

@@ -20,14 +20,13 @@ export default function MainLayout() {
 
 function LayoutInner() {
   // Consumers run inside provider
-  const { user, setUser } = useProfile();
+  const { user } = useProfile();
   const { logout } = useAuth();
   const [showReauth, setShowReauth] = useState(false);
 
   useEffect(() => {
     function onExpired() {
       try {
-        setUser(null);
         logout();
       } catch (e) {}
       setShowReauth(true);
