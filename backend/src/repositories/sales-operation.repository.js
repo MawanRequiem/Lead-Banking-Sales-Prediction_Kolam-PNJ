@@ -280,7 +280,7 @@ function getCallHistoryBySales(filter = {}) {
     data,
     meta: {
       total,
-      page: parseInt(page, 10),
+      page: parseInt(page),
       lastPage: Math.ceil(total / take),
     },
   }));
@@ -417,9 +417,8 @@ async function getAssignedLeads(salesId, query) {
 
   const pagination = {
     page: parseInt(page),
-    limit: parseInt(limit),
     total: count,
-    totalPages: Math.ceil(count / limit),
+    lastPage: Math.ceil(count / limit),
   };
 
   return { assignments, pagination };
