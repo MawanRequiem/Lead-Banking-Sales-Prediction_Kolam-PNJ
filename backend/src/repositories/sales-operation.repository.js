@@ -307,7 +307,7 @@ function getCallHistory(filters = {}) {
   }
   if (search) {
     where.OR = [
-      { hasilTelepon: { contains: search, mode: 'sensitive' } },
+      { hasilTelepon: { contains: search, mode: 'default' } },
       { catatan: { contains: search, mode: 'insensitive' } },
       { sales:
         { nama: { contains: search, mode: 'insensitive' } },
