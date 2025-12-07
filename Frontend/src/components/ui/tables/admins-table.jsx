@@ -5,7 +5,7 @@ import AdminActions from "@/components/ui/tables/admins-actions";
 import { useAdmins } from "@/hooks/useAdmins";
 
 export default function AdminsTable() {
-  const { data, loading, refetch } = useAdmins();
+  const { data, loading, refetch, pagination, setPagination, search, setSearch } = useAdmins();
   const cols = useMemo(() => columns, []);
 
   return (
@@ -17,6 +17,14 @@ export default function AdminsTable() {
       toolbarLeft={
         <div className="text-xl font-semibold">Manajemen Pengguna</div>
       }
+      options={{
+        pagination: pagination,
+        total: pagination.total,
+        pageCount: pagination.pageCount,
+        onPageChange: setPagination,
+        search: search,
+        onSearchChange: setSearch,
+      }}
       renderRowActions={(row) => (
         <AdminActions user={row.original} refresh={refetch} />
       )}

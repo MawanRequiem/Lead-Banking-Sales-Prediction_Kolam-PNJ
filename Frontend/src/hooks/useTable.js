@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import axios from '@/lib/axios'
 
 // Dummy data moved here so table definitions remain clean.
@@ -40,7 +40,7 @@ export function useTable({ apiUrl, initial = mockData, page, limit } = {}) {
   const [total, setTotal] = useState(0);
   const [search, setSearch] = useState('');
 
-  async function fetchData(params = {}) {
+  const fetchData = useCallback(async(params = {}) => {
     if (!apiUrl) return;
     setLoading(true);
     setError(null);
@@ -55,18 +55,16 @@ export function useTable({ apiUrl, initial = mockData, page, limit } = {}) {
     } finally {
       setLoading(false);
     }
-  }
+  }, [apiUrl]);
 
   // optional auto-fetch when apiUrl provided
   useEffect(() => {
-    if (!apiUrl) return
     fetchData({
       page: pagination.pageIndex + 1,
       limit: pagination.pageSize,
       search,
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [apiUrl, pagination, search]);
+  }, [ pagination, search, fetchData ]);
 
   return { data, setData, refetch: fetchData, loading, error, pagination, setPagination, pageCount, setPageCount, total, setTotal, search, setSearch };
 }

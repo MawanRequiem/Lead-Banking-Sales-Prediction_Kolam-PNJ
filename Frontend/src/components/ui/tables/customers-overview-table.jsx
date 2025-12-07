@@ -36,12 +36,9 @@ export default function CustomersOverviewTable() {
         pagination: pagination,
         pageCount: pageCount || Math.ceil((data ? data.length : mockData.length) / 10),
         total: total,
-        onPageChange: (updater) => {
-          const next = typeof updater === 'function' ? updater(pagination) : updater;
-          setPagination((old) => ({...old, pageIndex: next.pageIndex, pageSize: next.pageSize }));
-        },
+        onPageChange: setPagination,
         search,
-        onSearchChange: (value) => setSearch(value),
+        onSearchChange: setSearch,
       }}
       renderRowActions={(row) => <ActionCell nasabah={row.original} />}
     />
