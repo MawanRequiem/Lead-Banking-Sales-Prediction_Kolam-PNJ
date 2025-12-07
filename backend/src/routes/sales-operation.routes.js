@@ -16,16 +16,13 @@ const {
   validateUpdateStatus,
   validateUUIDParam,
   validateDashboardQuery,
+  validateLeadsOverviewQuery,
 } = require('../middlewares/validation.middleware');
 
 // Global Middleware untuk router ini
 router.use(authenticateToken);
 router.use(requireSales);
 
-function debug(req, res, next) {
-  console.log('[DEBUG] Raw incoming body:', req.body);
-  next();
-}
 
 /**
  * Dashboard Route
@@ -49,7 +46,7 @@ router.get(
 router.get(
   '/export',
   searchLimiter,
-  controller.exportData,
+  controller.exportCallHistory,
 );
 
 /**
@@ -58,7 +55,6 @@ router.get(
  */
 router.post(
   '/log-call',
-  debug,
   writeLimiter,     // Mencegah spam klik tombol save
   validateLogCall,  // <--- Validasi aktif di sini!
   controller.logCall,
@@ -75,6 +71,12 @@ router.get(
   '/leads',
   validateGetAllQuery,
   controller.getAllLeads,
+);
+
+router.get(
+  '/leads/overview',
+  validateLeadsOverviewQuery,
+  controller.getAllLeadsOverview,
 );
 
 router.get(

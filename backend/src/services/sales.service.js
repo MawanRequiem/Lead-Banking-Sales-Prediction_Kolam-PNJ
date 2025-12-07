@@ -91,13 +91,14 @@ async function getAllSales(filters) {
 
   // repository returns total count as `total`
   const total = typeof result.total === 'number' ? result.total : 0;
+  const lastPage = Math.ceil(total / limit);
 
   return {
     sales: decryptedSales,
     pagination: {
       page,
-      limit,
       total,
+      lastPage,
     },
   };
 }

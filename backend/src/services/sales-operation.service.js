@@ -6,16 +6,8 @@ const { Parser } = require('json2csv');
 /**
  * Dashboard helper: recent call history (default 10)
  */
-async function getCallHistoryForDash({ limit = 10, user, search } = {}) {
+async function getCallHistoryForDash({ limit = 10, salesId, search } = {}) {
   // Use getCallLog (perubahan dari getCallHistory) — cukup berdasarkan idSales
-
-  let salesId;
-  if (typeof user === 'string') {
-    salesId = user;
-  } else if (user && typeof user === 'object') {
-    salesId = user.id || user.salesId || user.userId;
-  }
-
   if (!salesId) {
     console.warn('No valid salesId found');
     return [];
@@ -27,7 +19,7 @@ async function getCallHistoryForDash({ limit = 10, user, search } = {}) {
 
   return res.data.map(h => ({
     id: h.idHistori || h.id || null,
-    namaNasabah: h.idNasabah?.nama || h.namaNasabah || '-',
+    namaNasabah: h.nasabah?.nama || h.idNasabah?.nama || '-',
     tanggal: h.tanggalTelepon || h.createdAt || null,
     durasi: h.lamaTelepon || h.durasi || null,
     hasil: h.hasilTelepon || h.hasil || null,
@@ -38,66 +30,55 @@ async function getCallHistoryForDash({ limit = 10, user, search } = {}) {
 /**
  * Dashboard helper: assignment suggestions (default 5)
  */
-async function getAssignmentsForDash(user, limit = 5) {
+async function getAssignmentsForDash(salesId, limit = 5) {
   // Accept either user object (from req.user) or direct salesId
-
-  let salesId;
-  if (typeof user === 'string') {
-    salesId = user;
-  } else if (user && typeof user === 'object') {
-    salesId = user. id || user.salesId || user.userId;
-  }
-
   if (!salesId) {
     console.warn('No valid salesId found');
     return [];
   }
   const salesData = await salesOpRepo.getMyLeads(salesId, { page: 1, limit, search: '' });
 
-  if (! salesData || ! salesData.data || ! Array.isArray(salesData.data)) {
-    return [];
-  }
-
   return salesData.data.map(item => ({
     id: item.nasabah.idNasabah,
     nama: item.nasabah.nama,
     nomorTelepon: item.nasabah.nomorTelepon,
-    lastCall: item.historiTelepon.historiTelepon[0]?.createdAt || null,
-    assignmentId: item.idAssignment,
-    skorPrediksi: item.nasabah.skorPrediksi,
+    pekerjaan: item.nasabah.pekerjaan || '-',
+    domisili: item.nasabah.domisili || '-',
+    jenisKelamin: item.nasabah.jenisKelaminRel?.namaJenisKelamin || '-',
+    statusPernikahan: item.nasabah.statusPernikahan?.namaStatus || '-',
+    skor: parseFloat(item.nasabah.skorPrediksi || 0),
+    statusTerakhir: item.nasabah.deposito[0]?.statusDeposito || 'PROSPEK',
+    lastCall: item.nasabah.historiTelepon[0]?.createdAt || null,
+    needFollowUp: item.nasabah.historiTelepon[0]?.nextFollowupDate
+      ? new Date(item.nasabah.historiTelepon[0].nextFollowupDate) <= new Date()
+      : false,
   }));
 }
 
 /**
  * Dashboard helper: deposit conversion aggregates (date_trunc)
  */
-async function getDepositConversionForDash({ startDate, endDate, interval = 'month', status = 'AKTIF', user } = {}) {
+async function getCallsConversionForDash({ startDate, endDate, interval = 'month', successSet = 'VOICEMAIL', salesId } = {}) {
   // Delegate DB query to repository layer: conversion = successful calls in histori_telepon
-  const defaultSuccessSet = 'TERKONEKSI';
-  const successSet = (typeof status === 'string' && status.trim().length > 0)
-    ? status.trim().toUpperCase()
+  const defaultSuccessSet = 'VOICEMAIL';
+  const finalsuccessSet = (typeof successSet === 'string' && successSet.trim().length > 0)
+    ? successSet.trim().toUpperCase()
     : defaultSuccessSet.toUpperCase();
-
-  let salesId;
-  if (typeof user === 'string') {
-    salesId = user;
-  } else if (user && typeof user === 'object') {
-    salesId = user. id || user.salesId || user.userId;
-  }
 
   if (!salesId) {
     console.warn('No valid salesId found');
     return [];
   }
 
-  const rows = await salesOpRepo.getCallConversionByBucket({ startDate, endDate, interval, successSet, salesId });
-  if (!rows) {return [];}
+  const rows = await salesOpRepo.getCallConversionByBucket(
+    { startDate, endDate, interval, successSet: finalsuccessSet, salesId },
+  );
 
   // map hasil agar konsisten dan memungkinkan penggunaan async
   return rows.map(r => ({
     bucket: r.bucket ?? r.interval ?? r.tanggal ?? r.date ?? null,
     count: Number(r.count ?? r.jumlah ?? 0),
-    totalDeposits: Number(r.totalDeposits ?? r.total ?? 0),
+    totalPanggilan: Number(r.totalPanggilan ?? r.total ?? 0),
     value: r.value !== undefined ? Number(r.value) : undefined,
     raw: r, // simpan raw jika butuh referensi asli
   }));
@@ -183,34 +164,35 @@ async function logActivity(salesId, data) {
 }
 
 /**
- * Export Work Report (CSV)
- * Performance Note: Dibatasi max 5000 row untuk mencegah Server Hang.
- * Jika butuh >5000, harus pakai Background Job (Queue).
+ * Export Call History CSV for a sales user with optional date range and limit
  */
-async function exportWorkReport(salesId) {
-  const result = await salesOpRepo.getMyLeads(salesId, {
-    limit: 5000,
-    page: 1,
-  });
-
-  const leads = result.data;
-
-  if (leads.length === 0) {
-    throw new NotFoundError('No data to export');
+async function exportCallHistory(salesId, { startDate, endDate, limit = 1000 } = {}) {
+  if (!salesId) {
+    throw new NotFoundError('No salesId provided');
   }
 
-  const reportData = leads.map(l => ({
-    'Nama Nasabah': l.nasabah.nama,
-    'Skor AI': parseFloat(l.nasabah.skorPrediksi || 0).toFixed(2),
-    'Status': l.nasabah.deposito[0]?.statusDeposito || 'PROSPEK',
-    'Total Telepon': l.nasabah.historiTelepon.length || 0,
-    'Telepon Terakhir': l.nasabah.historiTelepon[0]?.createdAt
-      ? new Date(l.nasabah.historiTelepon[0].createdAt).toLocaleDateString('id-ID')
-      : '-',
-    'Hasil Terakhir': l.nasabah.historiTelepon[0]?.hasilTelepon || '-',
+  // enforce sensible maximum to avoid memory OOM
+  const maxLimit = 5000;
+  let finalLimit = limit === 'all' ? maxLimit : Number(limit) || 1000;
+  if (finalLimit > maxLimit) {finalLimit = maxLimit;}
+
+  const res = await salesOpRepo.getCallHistoryBySales({ page: 1, limit: finalLimit, salesId, startDate, endDate });
+
+  const rows = res && res.data ? res.data : [];
+  if (!rows || rows.length === 0) {
+    throw new NotFoundError('No call history to export');
+  }
+
+  const reportData = rows.map((r) => ({
+    'Histori Panggilan': r.idHistori || r.id || '',
+    'Tanggal': r.tanggalTelepon || r.createdAt || '',
+    'Nama Nasabah': r.nasabah?.nama || '',
+    'Nomor Telepon': r.nasabah?.nomorTelepon || '',
+    'Durasi': r.lamaTelepon || r.durasi || '-',
+    'Hasil': r.hasilTelepon || r.hasil || '-',
+    'Catatan': r.catatan || '-',
   }));
 
-  // 3. Generate CSV String
   const parser = new Parser();
   return parser.parse(reportData);
 }
@@ -274,8 +256,8 @@ async function getLeadDetail(nasabahId) {
   };
 }
 
-async function getMyAssignments(user, query) {
-  const salesData = await salesRepo.findByUserId(user.id);
+async function getMyAssignments(userId, query) {
+  const salesData = await salesRepo.findByUserId(userId);
 
   if (!salesData) {
     throw new NotFoundError('Sales profile not found');
@@ -302,18 +284,74 @@ async function getMyAssignments(user, query) {
   };
 }
 
+async function getAllLeadsOverview(query) {
+  const { current, last } = await salesOpRepo.getAllLeadsOverview(query);
+
+  const countDepositoMembers = (list) =>
+    list.filter((n) => n.deposito && n.deposito.length > 0).length;
+
+  const countActiveDeposits = (list) =>
+    list.filter((n) => n.deposito?.some((d) => d.isActive === true)).length;
+
+  const calcChange = (current, last) => {
+    const diff = current - last;
+    let direction = 'neutral';
+
+    if (diff > 0) {direction = 'up';}
+    else if (diff < 0) {direction = 'down';}
+
+    return {
+      value: Math.abs(diff),
+      direction,
+    };
+  };
+
+  const totalCurrent = current.length;
+  const totalLast = last.length;
+  const totalChange = calcChange(totalCurrent, totalLast);
+
+  const depositoMembersCurrent = countDepositoMembers(current);
+  const depositoMembersLast = countDepositoMembers(last);
+  const depositoMembersChange = calcChange(
+    depositoMembersCurrent,
+    depositoMembersLast,
+  );
+
+  const activeDepositsCurrent = countActiveDeposits(current);
+  const activeDepositsLast = countActiveDeposits(last);
+  const activeDepositsChange = calcChange(
+    activeDepositsCurrent,
+    activeDepositsLast,
+  );
+
+  return {
+    totalCustomers: totalCurrent,
+    totalChange: totalChange.value,
+    totalDirection: totalChange.direction,
+
+    depositoMembers: depositoMembersCurrent,
+    depositoMembersChange: depositoMembersChange.value,
+    depositoMembersDirection: depositoMembersChange.direction,
+
+    depositoActive: activeDepositsCurrent,
+    depositoActiveChange: activeDepositsChange.value,
+    depositoActiveDirection: activeDepositsChange.direction,
+  };
+}
+
 module.exports = {
   getAllLeads,
   getCallHistory,
   logActivity,
-  exportWorkReport,
+  exportCallHistory,
   updateLeadStatus,
   getLeadDetail,
   getMyAssignments,
+  getAllLeadsOverview,
   // Dashboard helpers
   getCallHistoryForDash,
   getAssignmentsForDash,
-  getDepositConversionForDash,
+  getCallsConversionForDash,
   getDepositTypesForDash,
 };
 

@@ -8,7 +8,7 @@ export function Header({
   userName = "John Doe",
   userEmail = "anonymous@example.com",
   className,
-  role = null,
+  role,
 }) {
   const headerRef = useHeaderHeight();
 

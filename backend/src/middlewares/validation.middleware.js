@@ -22,6 +22,7 @@ const {
   logCallSchema,
   updateStatusSchema,
   dashboardQuerySchema,
+  leadsOverviewQuerySchema,
 } = require('../validation/schemas/sales.schema');
 
 const {
@@ -406,6 +407,28 @@ function validateGetAllQuery(req, res, next) {
   next();
 }
 
+function validateLeadsOverviewQuery(req, res, next) {
+  const threats = deepSecurityScan(req.query, 'query');
+  if (threats.length > 0) {
+    logSecurityThreat(req, res, threats);
+    if (threats.some(t => t.severity === 'CRITICAL')) {
+      return validationErrorResponse(res, [{
+        field: 'query',
+        message: 'Invalid query parameters',
+        code: 'INVALID_QUERY',
+      }]);
+    }
+  }
+
+  const joiValidation = validateWithJoi(leadsOverviewQuerySchema, req.query);
+  if (joiValidation.hasError) {
+    return validationErrorResponse(res, joiValidation.errors);
+  }
+
+  req.query = joiValidation.value;
+  next();
+}
+
 /**
  * Validate Dashboard Query
  */
@@ -484,14 +507,12 @@ function validateLogCall(req, res, next) {
 
   // Layer 2: Joi Schema Validation
   const joiValidation = validateWithJoi(logCallSchema, req.body);
-  console.log('[DEBUG] Joi Validation Result:', joiValidation.value);
   if (joiValidation.hasError) {
     return validationErrorResponse(res, joiValidation.errors);
   }
 
   // Layer 3: Sanitization (Bersihkan HTML/Script dari catatan)
   req.body = deepSanitize(joiValidation.value);
-  console.log('[DEBUG] After sanitization:', req.body);
 
   next();
 }
@@ -608,6 +629,7 @@ module.exports = {
   validateLogCall,
   validateUpdateStatus,
   validateDashboardQuery,
+  validateLeadsOverviewQuery,
 
   // Auth validation
   validateLogin,

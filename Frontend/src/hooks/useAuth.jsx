@@ -1,11 +1,11 @@
 import { useCallback, useState } from "react";
 import axios from "@/lib/axios";
-import useProfile from "./useProfile";
+import useProfile from "@/hooks/useProfile";
 
 export default function useAuth() {
-  const { setUser } = useProfile();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const { setUser } = useProfile();
 
   const login = useCallback(
     async (email, password) => {
@@ -14,30 +14,21 @@ export default function useAuth() {
       try {
         const res = await axios.post("/login", { email, password });
         const data = res.data.data || {};
+
         const user = data.user || {};
+        const userData = {
+          role: user.role || "",
+          name: user.nama || user.email || "",
+          email: user.email || "",
+          phone: user.nomorTelepon || user.phone || "",
+          domisili: user.domisili || user.city || "",
+        };
 
-        // Expect backend to set httpOnly cookies for tokens. Still capture user fields for
-        // in-memory profile state.
-        const userRole = user.role || "";
-        const userName = user.nama || user.email || "";
-        const userEmail = user.email || "";
-        const userPhone = user.nomorTelepon || user.phone || "";
-        const userDomisili = user.domisili || user.city || "";
-
-        if (typeof setUser === "function") {
-          setUser({
-            name: userName,
-            email: userEmail,
-            role: userRole,
-            phone: userPhone,
-            domisili: userDomisili,
-          });
-        }
-
+        setUser(userData);
         setLoading(false);
         return {
           success: true,
-          user: { name: userName, role: userRole, email: userEmail },
+          user: userData,
         };
       } catch (err) {
         setError(err);
@@ -49,15 +40,13 @@ export default function useAuth() {
   );
 
   const logout = useCallback(async () => {
-    // Call backend logout (server should clear httpOnly cookies). Also
-    // clear any legacy localStorage tokens for migration safety.
+    // best-effort: call backend logout endpoint
     try {
       await axios.post("/logout");
     } catch (e) {
-      // ignore network/logout errors; still proceed to clear client state
+      // ignore errors
     }
-
-    if (typeof setUser === "function") setUser(null);
+    setUser(null);
   }, [setUser]);
 
   return {

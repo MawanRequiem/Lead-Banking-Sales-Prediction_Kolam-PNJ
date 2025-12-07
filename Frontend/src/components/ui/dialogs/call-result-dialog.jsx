@@ -23,7 +23,7 @@ export default function CallResultDialog({
   const [note, setNote] = useState("");
   const [duration, setDuration] = useState(""); // HH:MM:SS
   const [ durationSec, setDurationSec ] = useState(0); // seconds integer
-  const [followUpDate, setFollowUpDate] = useState(null);
+  const [followUpDate, setFollowUpDate] = useState(new Date().toISOString().slice(0, 10));
 
 
   useEffect(() => {

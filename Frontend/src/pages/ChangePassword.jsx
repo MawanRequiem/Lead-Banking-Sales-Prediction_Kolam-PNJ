@@ -55,12 +55,8 @@ export default function ChangePasswordPage() {
         ? { verificationToken: tokenToUse, newPassword, confirmPassword }
         : { currentPassword, newPassword, confirmPassword };
       const res = await axios.post("/change-password", payload);
-      // Force re-authentication after password change: remove any stored tokens
-      // and redirect user to login so they sign in with the new password.
-      try {
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("refreshToken");
-      } catch (e) {}
+      // Force re-authentication after password change: redirect user to login
+      // Tokens are stored in httpOnly cookies; no localStorage cleanup needed.
       navigate("/login", { replace: true });
       toast.success("Password changed successfully");
       setCurrentPassword("");

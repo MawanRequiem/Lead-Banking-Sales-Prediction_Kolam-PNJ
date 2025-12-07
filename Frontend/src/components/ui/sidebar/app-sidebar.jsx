@@ -1,14 +1,14 @@
 import React from "react";
 import { useSidebar } from "@/hooks/useSidebar";
 import { useNavigate } from "react-router-dom";
-import useProfile from "@/hooks/useProfile";
 import { navItems, footerItem } from "@/components/ui/sidebar/sidebar-consts";
 import { cn } from "@/lib/utils";
+import useAuth from "@/hooks/useAuth";
 
 export function Sidebar() {
   const { activeItem, setActiveItem } = useSidebar();
   const navigate = useNavigate();
-  const { logout } = useProfile();
+  const { logout } = useAuth();
 
   const verticalMargin = "0.5rem";
 
@@ -54,6 +54,7 @@ export function Sidebar() {
             setActiveItem(footerItem.id);
             try {
               logout();
+              navigate("/login");
             } catch (e) {
               console.log("Logout error", e);
             }
