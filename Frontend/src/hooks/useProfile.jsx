@@ -63,11 +63,10 @@ export default function useProfile(initial = null) {
   }, []);
 
   const openNotifications = useCallback(() => {
-    // dispatch a custom event so NotificationButton or other listeners can react
     try {
       window.dispatchEvent(new CustomEvent("open-notifications"));
     } catch (e) {
-      console.log("Open notifications error", e);
+      // ignore
     }
   }, []);
 
