@@ -23,10 +23,6 @@ const {
 router.use(authenticateToken);
 router.use(requireSales);
 
-function debug(req, res, next) {
-  console.log('[DEBUG] Raw incoming body:', req.body);
-  next();
-}
 
 /**
  * Dashboard Route
@@ -59,7 +55,6 @@ router.get(
  */
 router.post(
   '/log-call',
-  debug,
   writeLimiter,     // Mencegah spam klik tombol save
   validateLogCall,  // <--- Validasi aktif di sini!
   controller.logCall,
