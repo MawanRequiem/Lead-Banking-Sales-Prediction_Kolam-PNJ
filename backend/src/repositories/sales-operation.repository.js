@@ -722,6 +722,20 @@ async function getAllLeadsOverview({ month, year } = {}) {
   return { current, last };
 }
 
+async function updateSalesAssignmentActiveStatus(nasabahId, salesId, isActive) {
+  const result = await prisma.salesNasabahAssignment.updateMany({
+    where: {
+      idNasabah: nasabahId,
+      idSales: salesId,
+      isActive: true,
+    },
+    data: {
+      isActive,
+    },
+  });
+  return result;
+}
+
 module.exports = {
   getMyLeads,
   getAllLeads,
@@ -734,4 +748,5 @@ module.exports = {
   updateDepositoStatus,
   getAssignedLeads,
   getAllLeadsOverview,
+  updateSalesAssignmentActiveStatus,
 };

@@ -92,12 +92,12 @@ export default function CallResultDialog({
                 </SelectTrigger>
 
                 <SelectContent>
-                  <SelectItem value="Terkoneksi">Terkoneksi</SelectItem>
+                  <SelectItem value="Tertarik">Tertarik</SelectItem>
+                  <SelectItem value="Tidak Tertarik">Tidak Tertarik</SelectItem>
                   <SelectItem value="Voicemail">Voicemail</SelectItem>
                   <SelectItem value="Tidak Terangkat">
                     Tidak Terangkat
                   </SelectItem>
-                  <SelectItem value="Tidak Tertarik">Tidak Tertarik</SelectItem>
                 </SelectContent>
               </Select>
             </div>

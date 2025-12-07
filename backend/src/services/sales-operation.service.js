@@ -156,10 +156,12 @@ async function logActivity(salesId, data) {
   if (!lead) {
     throw new NotFoundError('Nasabah not found');
   }
+  //This just deactivate assignment between that sales and nasabah
+  await salesOpRepo.updateSalesAssignmentActiveStatus(lead.idNasabah, salesId, false);
 
   return salesOpRepo.createCallLog({
     ...data,
-    idNasabah: data.nasabahId, // why are we mangling this?
+    idNasabah: data.nasabahId,
     idSales: salesId,
   });
 }
