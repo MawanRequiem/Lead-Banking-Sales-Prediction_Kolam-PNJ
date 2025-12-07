@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { ChevronDown } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { formatSecondsToHHMMSS } from "@/lib/date-utils";
 
 // entries: [{ id, nama (nasabah), time, agent, duration, result, note }]
 export default function CallHistoryCard({ data = [], loading = false }) {
@@ -44,7 +45,7 @@ export default function CallHistoryCard({ data = [], loading = false }) {
       nama: e.namaNasabah || e.nama || e.agent || "—",
       time,
       agent: e.agent || null,
-      duration: e.durasi ?? e.duration ?? "-",
+      duration: formatSecondsToHHMMSS(e.durasi),
       result: e.hasil ?? e.result ?? "-",
       note: e.catatan ?? e.note ?? "-",
     };
