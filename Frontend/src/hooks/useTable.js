@@ -31,7 +31,7 @@ export const mockData = [
 // Hook to manage table data. By default returns mockData and a fetch helper.
 // Usage:
 // const { data, setData, fetchData } = useTable({ apiUrl: '/api/customers', initial: mockData })
-export function useTable({ apiUrl, initial = mockData, page, limit } = {}) {
+export function useTable({ apiUrl, initial = mockData, page, limit, moreFilters = {} } = {}) {
   const [data, setData] = useState(initial);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -39,6 +39,7 @@ export function useTable({ apiUrl, initial = mockData, page, limit } = {}) {
   const [pageCount, setPageCount] = useState(1);
   const [total, setTotal] = useState(0);
   const [search, setSearch] = useState('');
+  const [filters, setFilters] = useState(moreFilters || {});
 
   const fetchData = useCallback(async(params = {}) => {
     if (!apiUrl) return;
@@ -63,10 +64,11 @@ export function useTable({ apiUrl, initial = mockData, page, limit } = {}) {
       page: pagination.pageIndex + 1,
       limit: pagination.pageSize,
       search,
+      ...filters,
     });
-  }, [ pagination, search, fetchData ]);
+  }, [ pagination, search, filters, fetchData ]);
 
-  return { data, setData, refetch: fetchData, loading, error, pagination, setPagination, pageCount, setPageCount, total, setTotal, search, setSearch };
+  return { data, setData, refetch: fetchData, loading, error, pagination, setPagination, pageCount, setPageCount, total, setTotal, search, setSearch, filters, setFilters };
 }
 
 export default useTable

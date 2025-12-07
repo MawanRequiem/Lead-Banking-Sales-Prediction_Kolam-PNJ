@@ -10,7 +10,9 @@ import CallNoteDialog from "@/components/ui/dialogs/call-note-dialog";
 
 const historyColumns = (onOpenNote) => [
   { accessorKey: "idHistori", header: "No Penawaran" },
-  { accessorKey: "tanggalTelepon", header: "Tanggal" },
+  { accessorKey: "tanggalTelepon", header: "Tanggal",
+    cell: ({ row }) => (row.original.tanggalTelepon ? new Date(row.original.tanggalTelepon).toLocaleString() : "—"),
+  },
   {
     accessorKey: "nasabah",
     header: "Nama Nasabah",
@@ -41,17 +43,17 @@ const historyColumns = (onOpenNote) => [
 
 export default function CallHistoryTable() {
   const [openExport, setOpenExport] = useState(false);
-  const [filters, setFilters] = useState({
-    from: null,
-    to: null,
-    grade: "all",
-    status: "any",
-    keyword: "",
-  });
   const [selectedCall, setSelectedCall] = useState(null);
   const [openNote, setOpenNote] = useState(false);
 
-  const { data, loading } = useCallHistory({ apiUrl: "/sales/call-history" });
+  const {
+    data,
+    loading,
+    setFilters,
+    pagination, setPagination,
+    pageCount,
+    total
+  } = useCallHistory({ apiUrl: "/sales/call-history" });
 
   const cols = useMemo(
     () =>
@@ -73,57 +75,24 @@ export default function CallHistoryTable() {
     </>
   );
 
-  const filteredData = useMemo(() => {
-    if (!data) return [];
-    return data.filter((item) => {
-      if (filters.keyword) {
-        const kw = String(filters.keyword).toLowerCase();
-        const agent = String(item.agent || "").toLowerCase();
-        const nama = String(item.namaNasabah || "").toLowerCase();
-        if (!agent.includes(kw) && !nama.includes(kw)) return false;
-      }
-
-      if (filters.from) {
-        const fromD = new Date(filters.from);
-        const itemD = new Date(item.time);
-        if (isNaN(itemD.getTime()) || itemD < fromD) return false;
-      }
-      if (filters.to) {
-        const toD = new Date(filters.to);
-        const itemD = new Date(item.time);
-        if (isNaN(itemD.getTime()) || itemD > toD) return false;
-      }
-
-      if (
-        filters.grade &&
-        filters.grade !== "all" &&
-        item.grade &&
-        item.grade !== filters.grade
-      )
-        return false;
-      if (
-        filters.status &&
-        filters.status !== "any" &&
-        item.status &&
-        item.status !== filters.status
-      )
-        return false;
-
-      return true;
-    });
-  }, [data, filters]);
 
   return (
     <>
       <DataTable
         columns={cols}
-        data={filteredData}
+        data={data}
         loading={loading}
         title="History Call"
         showSearch={false}
         renderViewOptions={(table) => <DataTableViewOptions table={table} />}
         toolbarLeft={<div className="text-lg font-semibold">History Call</div>}
         toolbarRight={toolbarRight}
+        options={{
+          pagination,
+          onPageChange: setPagination,
+          pageCount,
+          total,
+        }}
       />
 
       <ExportDialog

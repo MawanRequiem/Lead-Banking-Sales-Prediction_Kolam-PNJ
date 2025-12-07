@@ -8,12 +8,12 @@ import {
   DropdownMenuContent,
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu'
-import { 
-  Select, 
-  SelectTrigger, 
-  SelectValue, 
-  SelectContent, 
-  SelectItem 
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem
 } from '@/components/ui/select'
 import DateField from '@/components/ui/dropdown/date-field'
 
@@ -21,30 +21,27 @@ import DateField from '@/components/ui/dropdown/date-field'
 // Pass a `trigger` prop (React node) to render a custom trigger inside the
 // DropdownMenuTrigger. If omitted, a default button is rendered.
 export default function FilterDropdown({ className, trigger = null, onApply }) {
-  const [from, setFrom] = useState(() => {
-    const d = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-    return d.toISOString().slice(0, 10)
-  })
+  const [from, setFrom] = useState(null)
   const [to, setTo] = useState(() => {
     const d = new Date()
     return d.toISOString().slice(0, 10)
   })
   const [grade, setGrade] = useState('all')
   const [status, setStatus] = useState('any')
-  const [keyword, setKeyword] = useState('')
+  const [search, setSearch] = useState('')
 
   function resetSection(section) {
     if (section === 'date') {
       const d1 = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
       const d2 = new Date()
-      setFrom(d1.toISOString().slice(0, 10))
+      setFrom(null)
       setTo(d2.toISOString().slice(0, 10))
     } else if (section === 'grade') {
       setGrade('all')
     } else if (section === 'status') {
       setStatus('any')
     } else if (section === 'keyword') {
-      setKeyword('')
+      setSearch('')
     }
   }
 
@@ -56,7 +53,7 @@ export default function FilterDropdown({ className, trigger = null, onApply }) {
   }
 
   function apply(close) {
-    const payload = { from, to, grade, status, keyword }
+    const payload = { from, to, grade, status, search }
     // NOTE: jika mau berganti ke server-side filtering, ini adalah tempatnya
     // bisa menggunakan (A) panggil backend langsung dari dropdown (kurang
     // direkomendasikan), atau (B) kirim payload ke parent melalui `onApply`
@@ -115,7 +112,7 @@ export default function FilterDropdown({ className, trigger = null, onApply }) {
         <DropdownMenuSeparator />
 
         {/* Grade */}
-        <div className="px-4 py-3">
+        {/*<div className="px-4 py-3">
           <div className="flex items-center justify-between">
             <div className="font-medium">Grade</div>
             <button className="text-xs text-foreground underline" onClick={() => resetSection('grade')}>Reset</button>
@@ -135,10 +132,10 @@ export default function FilterDropdown({ className, trigger = null, onApply }) {
           </div>
         </div>
 
-        <DropdownMenuSeparator />
+        <DropdownMenuSeparator />*/}
 
         {/* Status */}
-        <div className="px-4 py-3">
+        {/*<div className="px-4 py-3">
           <div className="flex items-center justify-between">
             <div className="font-medium">Status</div>
             <button className="text-xs text-foreground underline" onClick={() => resetSection('status')}>Reset</button>
@@ -158,7 +155,7 @@ export default function FilterDropdown({ className, trigger = null, onApply }) {
           </div>
         </div>
 
-        <DropdownMenuSeparator />
+        <DropdownMenuSeparator />*/}
 
         {/* Keyword */}
         <div className="px-4 py-3">
@@ -167,7 +164,7 @@ export default function FilterDropdown({ className, trigger = null, onApply }) {
             <button className="text-xs text-foreground underline" onClick={() => resetSection('keyword')}>Reset</button>
           </div>
           <div className="mt-2">
-            <input value={keyword} onChange={(e) => setKeyword(e.target.value)} placeholder="Ketik kata kunci..." className="w-full rounded-md border px-2 py-1" />
+            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Ketik kata kunci..." className="w-full rounded-md border px-2 py-1" />
           </div>
         </div>
 

@@ -294,6 +294,8 @@ function getCallHistory(filters = {}) {
     sortOrder = 'desc',
     page = 1, // default is for call-history page but for peeks request should give smaller limits.
     limit = 20,
+    from,
+    to,
   } = filters;
 
   const skip = (page - 1) * limit;
@@ -314,6 +316,12 @@ function getCallHistory(filters = {}) {
         { nama: { contains: search, mode: 'insensitive' } },
       },
     ];
+  }
+  // Optional date range filter
+  if (from || to) {
+    where.tanggalTelepon = {};
+    if (from) {where.tanggalTelepon.gte = new Date(from);}
+    if (to) {where.tanggalTelepon.lte = new Date(to);}
   }
 
   return Promise.all([

@@ -7,7 +7,7 @@ const mockData = [
 
 // Wrapper around generic `useTable` so call-history follows same API.
 // Usage: useCallHistory({ apiUrl?: string, initial?: Array })
-export default function useCallHistory({ apiUrl = null, initial } = {}) {
-  const opts = { apiUrl, initial: initial && initial.length ? initial : mockData }
-  return useTable(opts)
+export default function useCallHistory({ apiUrl = null, initial, filters = {} } = {}) {
+  const opts = { apiUrl, initial: initial && initial.length ? initial : mockData, moreFilters: filters,}
+  return useTable(opts);
 }
