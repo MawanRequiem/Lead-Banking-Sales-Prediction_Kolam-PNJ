@@ -94,6 +94,7 @@ function getAllLeads(filters = {}) {
     sortOrder = 'desc',
     page = 1,
     limit = 20,
+    grade,
   } = filters;
 
   const skip = (page - 1) * limit;
@@ -109,6 +110,21 @@ function getAllLeads(filters = {}) {
     }),
   };
 
+  switch (grade) {
+    case 'A':
+      where.skorPrediksi = { gte: 0.75 };
+      break;
+    case 'B':
+      where.skorPrediksi = { gte: 0.5, lt: 0.75 };
+      break;
+    case 'C':
+      where.skorPrediksi = { lt: 0.5 };
+      break;
+    default:
+      // No grade filter
+      break;
+  }
+
   return Promise.all([
     prisma.nasabah.findMany({
       where,
@@ -123,6 +139,10 @@ function getAllLeads(filters = {}) {
         },
         historiTelepon: {
           orderBy: { createdAt: 'desc' },
+          take: 1,
+        },
+        assignments: {
+          where: { isActive: true },
           take: 1,
         },
       },
@@ -296,6 +316,7 @@ function getCallHistory(filters = {}) {
     limit = 20,
     from,
     to,
+    grade,
   } = filters;
 
   const skip = (page - 1) * limit;
@@ -324,6 +345,18 @@ function getCallHistory(filters = {}) {
     if (to) {where.tanggalTelepon.lte = new Date(to);}
   }
 
+  if (grade) {
+    let skorCondition;
+    if (grade === 'A') {skorCondition = { gte: 0.75 };}
+    if (grade === 'B') {skorCondition = { gte: 0.5, lt: 0.75 };}
+    if (grade === 'C') {skorCondition = { lt: 0.5 };}
+
+    where.nasabah = {
+      ...where.nasabah,
+      skorPrediksi: skorCondition,
+    };
+  }
+
   return Promise.all([
     prisma.historiTelepon.findMany({
       where,
@@ -334,6 +367,7 @@ function getCallHistory(filters = {}) {
           select: {
             nama: true,
             nomorTelepon: true,
+            skorPrediksi: true,
           },
         },
         sales: {
@@ -388,7 +422,7 @@ async function updateDepositoStatus(salesId, nasabahId, newStatus) {
 }
 
 async function getAssignedLeads(salesId, query) {
-  const { page = 1, limit = 10, search = '' } = query;
+  const { page = 1, limit = 10, search = '', grade } = query;
   const skip = (page - 1) * limit;
   const take = parseInt(limit);
 
@@ -405,6 +439,18 @@ async function getAssignedLeads(salesId, query) {
       },
     },
   };
+
+  if (grade) {
+    let skorCondition;
+    if (grade === 'A') {skorCondition = { gte: 0.75 };}
+    if (grade === 'B') {skorCondition = { gte: 0.5, lt: 0.75 };}
+    if (grade === 'C') {skorCondition = { lt: 0.5 };}
+
+    whereCondition.nasabah.is = {
+      ...whereCondition.nasabah.is,
+      skorPrediksi: skorCondition,
+    };
+  }
 
   const [count, assignments] = await prisma.$transaction([
     prisma.salesNasabahAssignment.count({ where: whereCondition }),

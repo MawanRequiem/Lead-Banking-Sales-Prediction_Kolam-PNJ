@@ -127,6 +127,7 @@ async function getAllLeads(query) {
     needFollowUp: item.historiTelepon[0]?.nextFollowupDate
       ? new Date(item.historiTelepon[0].nextFollowupDate) <= new Date()
       : false,
+    isAssigned: item.assignments.length > 0 ? true : false,
   }));
 
   return {

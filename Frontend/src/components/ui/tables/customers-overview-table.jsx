@@ -6,7 +6,7 @@ import {
 } from "@/components/ui/tables/customers-overview-column";
 import ActionCell from "@/components/ui/tables/detail-customer";
 import { useTable } from "@/hooks/useTable";
-import { set } from "date-fns";
+import NasabahFilter from "../dropdown/nasabah-filter";
 
 // Accept `data` and `loading` as props (page can pass API results). If not
 // provided, fall back to internal hook with mockData (useful for isolated storybook/tests).
@@ -18,10 +18,13 @@ export default function CustomersOverviewTable() {
     pagination, setPagination,
     pageCount,
     total,
-    search, setSearch
+    search, setSearch,
+    setFilters,
   } = useTable({apiUrl: '/sales/leads', initial: mockData });
 
   const cols = useMemo(() => columns, []);
+
+  const toolbarRight = (<NasabahFilter className="mr-2" onApply={setFilters} />);
 
   return (
     <DataTable
@@ -32,10 +35,11 @@ export default function CustomersOverviewTable() {
       toolbarLeft={
         <div className="text-lg font-semibold">Customers Overview</div>
       }
+      toolbarRight={toolbarRight}
       options={{
-        pagination: pagination,
+        pagination,
         pageCount: pageCount || Math.ceil((data ? data.length : mockData.length) / 10),
-        total: total,
+        total,
         onPageChange: setPagination,
         search,
         onSearchChange: setSearch,
