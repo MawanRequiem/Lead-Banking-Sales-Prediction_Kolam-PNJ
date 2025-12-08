@@ -1,0 +1,74 @@
+name: Deploy Staging
+
+on:
+  push:
+    branches: [staging]
+
+jobs:
+  # ----------------FRONTEND----------------
+  deploy-frontend:
+    runs-on: ubuntu-latest
+    if: contains(github.event.head_commit.modified, 'Frontend/') || github.event_name == 'push'
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: "18"
+
+      - name: Build React App
+        working-directory: ./Frontend
+        env:
+          # Inject variabel API URL dari GitHub Secrets ke proses Build
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
+        run: |
+          npm install
+          npm run build
+
+      - name: Deploy to VM FE
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.VM_FE_HOST }}
+          username: ${{ secrets.VM_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "Frontend/dist/*"
+          target: "/var/www/html/frontend-app"
+          strip_components: 2
+
+  # ----------------BACKEND----------------
+  deploy-backend:
+    runs-on: ubuntu-latest
+    if: contains(github.event.head_commit.modified, 'backend/') || github.event_name == 'push'
+    steps:
+      - name: SSH & Update Backend
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.VM_BE_HOST }}
+          username: mwn
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /home/mwn/lead-banking-sales-prediction_kolam-pnj/backend
+            git pull origin staging
+            npm install
+            npx prisma generate
+            pm2 restart backend-api
+
+  # ----------------AI ENGINE----------------
+  deploy-ai-engine:
+    runs-on: ubuntu-latest
+    if: contains(github.event.head_commit.modified, 'ai-engine/') || github.event_name == 'push'
+    steps:
+      - name: SSH & Update AI Engine
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.VM_AI_HOST }}
+          username: ${{ secrets.VM_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /home/${{ secrets.VM_USERNAME }}/lead-banking-sales-prediction_kolam-pnj/ai-engine
+            git pull origin staging
+            # Update dependency di venv
+            ./venv/bin/pip install -r requirements.txt
+            # Restart service
+            sudo systemctl restart ai-engine
