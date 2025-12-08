@@ -1,12 +1,14 @@
 import React from "react";
 import * as Dialog from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { useLang } from "@/contexts/theme-context.jsx";
 
 export default function AdminImportResultsDialog({
   open = false,
   onOpenChange,
   result,
 }) {
+  const { t } = useLang();
   // result may be null when dialog is mounted before data arrives; guard with fallback
   const safeResult = result || {};
   const created = safeResult.created || [];
@@ -16,22 +18,33 @@ export default function AdminImportResultsDialog({
     <Dialog.Dialog open={open} onOpenChange={onOpenChange}>
       <Dialog.DialogContent className="max-w-2xl">
         <Dialog.DialogHeader>
-          <Dialog.DialogTitle>Import Results</Dialog.DialogTitle>
+          <Dialog.DialogTitle>
+            {t("dialog.adminImportResults.title", "Import Results")}
+          </Dialog.DialogTitle>
           <Dialog.DialogDescription>
-            Ringkasan import — total {safeResult.total ?? 0}. {created.length}{" "}
-            berhasil, {failed.length} gagal.
+            {t(
+              "dialog.adminImportResults.summary_prefix",
+              "Ringkasan import — total"
+            )}{" "}
+            {safeResult.total ?? 0}. {created.length}{" "}
+            {t("dialog.adminImportResults.summary_created", "berhasil")},{" "}
+            {failed.length}{" "}
+            {t("dialog.adminImportResults.summary_failed", "gagal")}.
           </Dialog.DialogDescription>
         </Dialog.DialogHeader>
 
         <div className="py-2">
           {failed.length > 0 ? (
             <div className="mb-4">
-              <div className="font-medium mb-2">Failures</div>
+              <div className="font-medium mb-2">
+                {t("dialog.adminImportResults.failures", "Failures")}
+              </div>
               <div className="border rounded-md max-h-64 overflow-auto p-2 bg-background-secondary">
                 {failed.map((f, i) => (
                   <div key={i} className="mb-2 text-sm">
                     <div className="font-semibold">
-                      Row {f.rowNumber ?? f.row ?? i + 1}
+                      {t("dialog.adminImportResults.row", "Row")}{" "}
+                      {f.rowNumber ?? f.row ?? i + 1}
                     </div>
                     <div className="text-red-600">
                       {f.reason || f.message || JSON.stringify(f)}
@@ -41,12 +54,16 @@ export default function AdminImportResultsDialog({
               </div>
             </div>
           ) : (
-            <div className="mb-4 text-sm text-green-700">No failures.</div>
+            <div className="mb-4 text-sm text-green-700">
+              {t("dialog.adminImportResults.noFailures", "No failures.")}
+            </div>
           )}
 
           {created.length > 0 && (
             <div>
-              <div className="font-medium mb-2">Created</div>
+              <div className="font-medium mb-2">
+                {t("dialog.adminImportResults.created", "Created")}
+              </div>
               <div className="border rounded-md max-h-48 overflow-auto p-2 bg-white text-sm">
                 {created.map((c, i) => (
                   <div key={i} className="mb-1">
@@ -59,7 +76,9 @@ export default function AdminImportResultsDialog({
         </div>
 
         <Dialog.DialogFooter>
-          <Button onClick={() => onOpenChange(false)}>Close</Button>
+          <Button onClick={() => onOpenChange(false)}>
+            {t("dialog.adminImportResults.close", "Close")}
+          </Button>
         </Dialog.DialogFooter>
       </Dialog.DialogContent>
     </Dialog.Dialog>

@@ -35,10 +35,6 @@ router.get(
   controller.getDashboardSummary,
 );
 
-// Dashboard-specific peek endpoints removed. Use GET /dashboard with params instead.
-
-// Note: combined summary is now served by GET /dashboard when summary params are present
-
 /**
  * Export Route
  * Secured with Search Rate Limit
@@ -46,6 +42,7 @@ router.get(
 router.get(
   '/export',
   searchLimiter,
+  validateCallHistoryQuery,
   controller.exportCallHistory,
 );
 
@@ -55,8 +52,8 @@ router.get(
  */
 router.post(
   '/log-call',
-  writeLimiter,     // Mencegah spam klik tombol save
-  validateLogCall,  // <--- Validasi aktif di sini!
+  writeLimiter,
+  validateLogCall,
   controller.logCall,
 );
 
@@ -67,18 +64,41 @@ router.patch(
   controller.updateStatus,
 );
 
+/**
+ * Get All Nasabah
+ * GET /api/sales/leads
+ */
 router.get(
   '/leads',
+  searchLimiter,
   validateGetAllQuery,
   controller.getAllLeads,
 );
 
+/**
+ * Get Leads Overview
+ * GET /api/sales/leads/overview
+ */
 router.get(
   '/leads/overview',
   validateLeadsOverviewQuery,
   controller.getAllLeadsOverview,
 );
 
+/**
+ * Get Assignments Overview
+ * GET /api/sales/assignments/overview
+ */
+router.get(
+  '/assignments/overview',
+  validateLeadsOverviewQuery,
+  controller.getMyLeadsOverview,
+);
+
+/**
+ * Get Call History
+ * GET /api/sales/call-history
+ */
 router.get(
   '/call-history',
   validateCallHistoryQuery,
@@ -95,6 +115,10 @@ router.get(
   controller.getLeadDetail,
 );
 
+/**
+ * Get Assignments
+ * GET /api/sales/assignments
+ */
 router.get(
   '/assignments',
   searchLimiter,

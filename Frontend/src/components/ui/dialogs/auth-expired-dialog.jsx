@@ -2,9 +2,11 @@ import React from "react";
 import * as Dialog from "@/components/ui/dialog";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { useLang } from "@/contexts/theme-context.jsx";
 
 export default function AuthExpiredDialog({ open = false, onOpenChange }) {
   const navigate = useNavigate();
+  const { t } = useLang();
 
   return (
     <Dialog.Dialog open={open} onOpenChange={onOpenChange}>
@@ -12,9 +14,14 @@ export default function AuthExpiredDialog({ open = false, onOpenChange }) {
         <Dialog.DialogOverlay />
         <Dialog.DialogContent className="w-full max-w-md">
           <Dialog.DialogHeader>
-            <Dialog.DialogTitle>Sesi Berakhir</Dialog.DialogTitle>
+            <Dialog.DialogTitle>
+              {t("dialog.authExpired.title", "Sesi Berakhir")}
+            </Dialog.DialogTitle>
             <Dialog.DialogDescription>
-              Sesi Anda telah berakhir. Silakan masuk kembali untuk melanjutkan.
+              {t(
+                "dialog.authExpired.description",
+                "Sesi Anda telah berakhir. Silakan masuk kembali untuk melanjutkan."
+              )}
             </Dialog.DialogDescription>
           </Dialog.DialogHeader>
 
@@ -28,7 +35,7 @@ export default function AuthExpiredDialog({ open = false, onOpenChange }) {
                 navigate("/login", { replace: true });
               }}
             >
-              Buka Halaman Login
+              {t("dialog.authExpired.openLogin", "Buka Halaman Login")}
             </Button>
           </div>
         </Dialog.DialogContent>

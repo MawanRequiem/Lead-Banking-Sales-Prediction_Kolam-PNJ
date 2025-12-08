@@ -10,6 +10,7 @@ import {
   AlertDialogCancel,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { useLang } from "@/contexts/theme-context.jsx";
 
 export default function AdminConfirmDeleteDialog({
   open = false,
@@ -17,6 +18,7 @@ export default function AdminConfirmDeleteDialog({
   user = {},
   onConfirm,
 }) {
+  const { t } = useLang();
   function handleConfirm() {
     if (typeof onConfirm === "function") onConfirm(user);
     if (typeof onOpenChange === "function") onOpenChange(false);
@@ -30,12 +32,20 @@ export default function AdminConfirmDeleteDialog({
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Hapus Pengguna</AlertDialogTitle>
+          <AlertDialogTitle>
+            {t("dialog.adminDelete.title", "Hapus Pengguna")}
+          </AlertDialogTitle>
           <AlertDialogDescription>
-            Anda akan <strong>menghapus</strong> akun{" "}
-            <strong>{user.nama || user.email}</strong>. Aksi ini akan menandai
-            akun sebagai terhapus (soft delete) dan tidak dapat dilihat pada
-            daftar publik. Lanjutkan?
+            {t("dialog.adminDelete.description_prefix", "Anda akan")}{" "}
+            <strong>
+              {t("dialog.adminDelete.description_action", "menghapus")}
+            </strong>{" "}
+            {t("dialog.adminDelete.description_account", "akun")}{" "}
+            <strong>{user.nama || user.email}</strong>.{" "}
+            {t(
+              "dialog.adminDelete.description_suffix",
+              "Aksi ini akan menandai akun sebagai terhapus (soft delete) dan tidak dapat dilihat pada daftar publik. Lanjutkan?"
+            )}
           </AlertDialogDescription>
         </AlertDialogHeader>
 
@@ -44,12 +54,12 @@ export default function AdminConfirmDeleteDialog({
         <AlertDialogFooter>
           <AlertDialogCancel asChild>
             <Button variant="ghost" onClick={handleCancel}>
-              Batal
+              {t("dialog.adminDelete.cancel", "Batal")}
             </Button>
           </AlertDialogCancel>
           <AlertDialogAction asChild>
             <Button variant="destructive" onClick={handleConfirm}>
-              Hapus
+              {t("dialog.adminDelete.confirm", "Hapus")}
             </Button>
           </AlertDialogAction>
         </AlertDialogFooter>

@@ -1,13 +1,17 @@
 import LoginForm from "@/components/ui/auth/login-form";
 import loginPic from "@/assets/login.png";
+import { useLang } from "@/hooks/useLang";
 
 const LoginPage = () => {
+  const { t } = useLang();
   return (
     <div className="min-h-screen flex flex-col bg-background md:flex-row bg-muted/10">
       {/* Left: form (40%) */}
       <div className="w-full flex items-center justify-center px-8 py-12">
         <div className="w-full p-8">
-          <h1 className="text-4xl font-bold text-primary mb-8">SalesCRM</h1>
+          <h1 className="text-4xl font-bold text-primary mb-8">
+            {t("page.login.title", "SalesCRM")}
+          </h1>
           <LoginForm />
         </div>
       </div>
@@ -18,7 +22,7 @@ const LoginPage = () => {
           {/* Decorative illustration (clipped to container height) */}
           <img
             src={loginPic}
-            alt="Login Illustration"
+            alt={t("page.login.illustrationAlt", "Login Illustration")}
             className="w-full h-auto object-cover block"
           />
         </div>

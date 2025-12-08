@@ -10,6 +10,7 @@ import {
   AlertDialogCancel,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { useLang } from "@/contexts/theme-context.jsx";
 
 export default function AdminConfirmDeactivateDialog({
   open = false,
@@ -18,6 +19,7 @@ export default function AdminConfirmDeactivateDialog({
   onConfirm,
   mode = "deactivate",
 }) {
+  const { t } = useLang();
   function handleConfirm() {
     if (typeof onConfirm === "function") onConfirm(user);
     if (typeof onOpenChange === "function") onOpenChange(false);
@@ -34,19 +36,36 @@ export default function AdminConfirmDeactivateDialog({
         <AlertDialogHeader>
           <AlertDialogTitle>
             {mode === "activate"
-              ? "Konfirmasi Aktivasi"
-              : "Konfirmasi Nonaktifkan"}
+              ? t("dialog.adminDeactivate.titleActivate", "Konfirmasi Aktivasi")
+              : t(
+                  "dialog.adminDeactivate.titleDeactivate",
+                  "Konfirmasi Nonaktifkan"
+                )}
           </AlertDialogTitle>
           <AlertDialogDescription>
             {mode === "activate" ? (
               <>
-                Anda akan mengaktifkan akun <strong>{user.nama}</strong>.
-                Pengguna akan dapat masuk kembali.
+                {t(
+                  "dialog.adminDeactivate.activate_prefix",
+                  "Anda akan mengaktifkan akun"
+                )}{" "}
+                <strong>{user.nama}</strong>.{" "}
+                {t(
+                  "dialog.adminDeactivate.activate_suffix",
+                  "Pengguna akan dapat masuk kembali."
+                )}
               </>
             ) : (
               <>
-                Anda akan menonaktifkan akun <strong>{user.nama}</strong>. Aksi
-                ini dapat dibatalkan oleh admin.
+                {t(
+                  "dialog.adminDeactivate.deactivate_prefix",
+                  "Anda akan menonaktifkan akun"
+                )}{" "}
+                <strong>{user.nama}</strong>.{" "}
+                {t(
+                  "dialog.adminDeactivate.deactivate_suffix",
+                  "Aksi ini dapat dibatalkan oleh admin."
+                )}
               </>
             )}
           </AlertDialogDescription>
@@ -57,7 +76,7 @@ export default function AdminConfirmDeactivateDialog({
         <AlertDialogFooter>
           <AlertDialogCancel asChild>
             <Button variant="ghost" onClick={handleCancel}>
-              Batal
+              {t("dialog.adminDeactivate.cancel", "Batal")}
             </Button>
           </AlertDialogCancel>
           <AlertDialogAction asChild>
@@ -65,7 +84,9 @@ export default function AdminConfirmDeactivateDialog({
               variant={mode === "activate" ? "default" : "destructive"}
               onClick={handleConfirm}
             >
-              {mode === "activate" ? "Aktifkan" : "Nonaktifkan"}
+              {mode === "activate"
+                ? t("dialog.adminDeactivate.confirmActivate", "Aktifkan")
+                : t("dialog.adminDeactivate.confirmDeactivate", "Nonaktifkan")}
             </Button>
           </AlertDialogAction>
         </AlertDialogFooter>

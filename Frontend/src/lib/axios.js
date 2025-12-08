@@ -1,11 +1,7 @@
 import axios from 'axios';
 
-// Sesuaikan dengan URL Backend Anda
-// Jika backend jalan di port 3000 local:
-const BASE_URL = 'http://localhost:3000/api';
-
 const axiosInstance = axios.create({
-  baseURL: BASE_URL,
+  baseURL: import.meta.env.VITE_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },

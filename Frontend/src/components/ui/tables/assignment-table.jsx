@@ -1,29 +1,43 @@
 import React, { useMemo } from "react";
 import DataTable from "@/components/ui/tables/data-table";
-import { columns } from "@/components/ui/tables/assignment-column";
+import {
+  makeAssignmentColumns,
+  mockData,
+} from "@/components/ui/tables/assignment-column";
 import ActionCell from "@/components/ui/tables/detail-customer";
-import { useAssignments } from "@/hooks/useAssignment";
+import { useTable } from "@/hooks/useTable";
+import { useLang } from "@/hooks/useLang";
 
 export default function AssignmentTable() {
-  const cols = useMemo(() => columns, []);
+  const { t } = useLang();
+  const cols = useMemo(() => makeAssignmentColumns(t), [t]);
   const {
     data,
     loading,
-    pagination, setPagination,
-    search, setSearch
-  } = useAssignments();
+    pagination,
+    setPagination,
+    pageCount,
+    total,
+    search,
+    setSearch,
+  } = useTable({ apiUrl: "/sales/assignments", initial: mockData });
 
   return (
     <DataTable
       columns={cols}
-      data={data}
+      data={data || mockData}
       loading={loading}
-      title="Customer List"
-      toolbarLeft={<div className="text-lg font-semibold">Customer List</div>}
+      title={t("table.assignment.title")}
+      toolbarLeft={
+        <div className="text-lg font-semibold">
+          {t("table.assignment.toolbarTitle")}
+        </div>
+      }
       options={{
         pagination: pagination,
-        total: pagination.total,
-        pageCount: pagination.pageCount,
+        total: total,
+        pageCount:
+          pageCount || Math.ceil((data ? data.length : mockData.length) / 10),
         onPageChange: setPagination,
         search,
         onSearchChange: setSearch,

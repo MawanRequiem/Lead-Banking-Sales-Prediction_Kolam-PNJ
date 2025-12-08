@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CategoryBadge } from "@/components/ui/badges";
+import { useLang } from "@/hooks/useLang";
 
 export default function ContactPriorityCard({
   data,
@@ -13,6 +14,7 @@ export default function ContactPriorityCard({
   loading = false,
 }) {
   const navigate = useNavigate();
+  const { t } = useLang();
   const list = Array.isArray(data) ? data.slice(0, 5) : [];
   const finalLoading = loading;
 
@@ -41,9 +43,14 @@ export default function ContactPriorityCard({
       <CardContent>
         <div className="flex items-start justify-between mb-3">
           <div className="flex flex-col">
-            <div className="text-sm font-semibold">Kontak Prioritas</div>
+            <div className="text-sm font-semibold">
+              {t("card.contactPriority.title", "Kontak Prioritas")}
+            </div>
             <div className="text-xs text-muted-foreground">
-              Nasabah prioritas anda hari ini
+              {t(
+                "card.contactPriority.subtitle",
+                "Nasabah prioritas anda hari ini"
+              )}
             </div>
           </div>
 
@@ -55,7 +62,7 @@ export default function ContactPriorityCard({
                 navigate("/assignments");
               }}
             >
-              Lihat Semua
+              {t("card.contactPriority.seeAll", "Lihat Semua")}
             </Button>
           </div>
         </div>
@@ -70,7 +77,10 @@ export default function ContactPriorityCard({
             ))
           ) : list && list.length === 0 ? (
             <div className="py-4 text-center text-sm text-muted-foreground">
-              Tidak ada kontak prioritas untuk ditampilkan hari ini.
+              {t(
+                "card.contactPriority.empty",
+                "Tidak ada kontak prioritas untuk ditampilkan hari ini."
+              )}
             </div>
           ) : (
             // Daftar kontak ditampilkan
@@ -98,7 +108,11 @@ export default function ContactPriorityCard({
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="text-sm text-muted-foreground text-right">
-                      Terakhir dihubungi: {lastContact}
+                      {t(
+                        "card.contactPriority.lastContact",
+                        "Terakhir dihubungi:"
+                      )}{" "}
+                      {lastContact}
                     </div>
                   </div>
                 </div>

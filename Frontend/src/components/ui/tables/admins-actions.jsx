@@ -13,8 +13,10 @@ import AdminEditDialog from "@/components/ui/dialogs/admin-edit-dialog";
 import AdminConfirmDeactivateDialog from "@/components/ui/dialogs/admin-confirm-deactivate-dialog";
 import AdminConfirmDeleteDialog from "@/components/ui/dialogs/admin-confirm-delete-dialog";
 import AdminResetPasswordDialog from "@/components/ui/dialogs/admin-reset-password-dialog";
+import { useLang } from "@/hooks/useLang";
 
 export default function AdminActions({ user, refresh }) {
+  const { t } = useLang();
   const [isOpen, setIsOpen] = useState(false);
   const [isDeactivateOpen, setIsDeactivateOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
@@ -59,7 +61,9 @@ export default function AdminActions({ user, refresh }) {
         else window.dispatchEvent(new CustomEvent("data:changed"));
       } catch (err) {
         console.error("Failed to save:", err);
-        alert(err?.response?.data?.message || "Gagal menyimpan data");
+        alert(
+          err?.response?.data?.message || t("table.admin.messages.failedToSave")
+        );
       }
     })();
   }
@@ -74,7 +78,10 @@ export default function AdminActions({ user, refresh }) {
         else window.dispatchEvent(new CustomEvent("data:changed"));
       } catch (err) {
         console.error("Failed to deactivate:", err);
-        alert(err?.response?.data?.message || "Gagal menonaktifkan akun");
+        alert(
+          err?.response?.data?.message ||
+            t("table.admin.messages.failedToDeactivate")
+        );
       }
     })();
   }
@@ -88,7 +95,10 @@ export default function AdminActions({ user, refresh }) {
         else window.dispatchEvent(new CustomEvent("data:changed"));
       } catch (err) {
         console.error("Failed to activate:", err);
-        alert(err?.response?.data?.message || "Gagal mengaktifkan akun");
+        alert(
+          err?.response?.data?.message ||
+            t("table.admin.messages.failedToActivate")
+        );
       }
     })();
   }
@@ -102,7 +112,10 @@ export default function AdminActions({ user, refresh }) {
         else window.dispatchEvent(new CustomEvent("data:changed"));
       } catch (err) {
         console.error("Failed to delete:", err);
-        alert(err?.response?.data?.message || "Gagal menghapus akun");
+        alert(
+          err?.response?.data?.message ||
+            t("table.admin.messages.failedToDelete")
+        );
       }
     })();
   }
@@ -115,10 +128,13 @@ export default function AdminActions({ user, refresh }) {
         await axios.post(`/admin/sales/${id}/reset-password`, {
           newPassword: "Temporary123!",
         });
-        alert("Password telah direset (dev).");
+        alert(t("table.admin.messages.passwordResetDev"));
       } catch (err) {
         console.error("Failed to reset password:", err);
-        alert(err?.response?.data?.message || "Gagal mereset password");
+        alert(
+          err?.response?.data?.message ||
+            t("table.admin.messages.failedToResetPassword")
+        );
       }
     })();
   }
@@ -134,7 +150,7 @@ export default function AdminActions({ user, refresh }) {
 
         <DropdownMenuContent align="end" className="w-[160px]">
           <DropdownMenuItem onClick={() => setIsOpen(true)}>
-            <Edit className="h-4 w-4 mr-2" /> Edit
+            <Edit className="h-4 w-4 mr-2" /> {t("table.admin.actions.edit")}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
@@ -147,19 +163,22 @@ export default function AdminActions({ user, refresh }) {
           >
             {normalizedIsActive === false ? (
               <>
-                <UserCheck className="h-4 w-4 mr-2" /> Aktifkan
+                <UserCheck className="h-4 w-4 mr-2" />{" "}
+                {t("table.admin.actions.activate")}
               </>
             ) : (
               <>
-                <UserX className="h-4 w-4 mr-2" /> Nonaktifkan
+                <UserX className="h-4 w-4 mr-2" />{" "}
+                {t("table.admin.actions.deactivate")}
               </>
             )}
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => setIsDeleteOpen(true)}>
-            <UserX className="h-4 w-4 mr-2" /> Hapus
+            <UserX className="h-4 w-4 mr-2" /> {t("table.admin.actions.delete")}
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => setIsResetOpen(true)}>
-            <Key className="h-4 w-4 mr-2" /> Reset Password
+            <Key className="h-4 w-4 mr-2" />{" "}
+            {t("table.admin.actions.resetPassword")}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

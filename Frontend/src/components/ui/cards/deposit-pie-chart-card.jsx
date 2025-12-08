@@ -5,7 +5,7 @@ import { mockDeposit } from "@/lib/mock-deposit-data";
 import {
   getDepositChartTitle,
   getDepositChartSubtitle,
-  sortOptions,
+  getSortOptions,
 } from "@/lib/chart-strings";
 import {
   DropdownMenu,
@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/chart";
 import { PieChart, Pie, Cell, Label } from "recharts";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useLang } from "@/hooks/useLang";
 
 export default function DepositPieChartCard({
   className,
@@ -31,6 +32,7 @@ export default function DepositPieChartCard({
   year,
   loading = false,
 }) {
+  const { t } = useLang();
   // month/year/wholeYear props are provided by parent Dashboard to align with backend filters
   const [sortKey, setSortKey] = useState("value_desc");
   const [activeIndex, setActiveIndex] = useState(null);
@@ -92,10 +94,10 @@ export default function DepositPieChartCard({
         <div className="flex items-start justify-between mb-3">
           <div className="flex flex-col  mr-2">
             <div className="text-sm font-semibold">
-              {getDepositChartTitle(range)}
+              {getDepositChartTitle(t)}
             </div>
             <div className="text-xs text-muted-foreground">
-              {getDepositChartSubtitle(range)}
+              {getDepositChartSubtitle(range, t)}
             </div>
           </div>
 
@@ -103,11 +105,11 @@ export default function DepositPieChartCard({
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button className="text-sm px-3 py-1 rounded-md border bg-transparent text-muted-foreground">
-                  Sort
+                  {t("card.deposit.sort", "Sort")}
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent sideOffset={6}>
-                {sortOptions.map((opt) => (
+                {getSortOptions(t).map((opt) => (
                   <DropdownMenuItem
                     key={opt.value}
                     onSelect={() => setSortKey(opt.value)}
@@ -202,7 +204,9 @@ export default function DepositPieChartCard({
                               y={(viewBox.cy || 0) + 20}
                               className="fill-muted-foreground text-xs"
                             >
-                              {active ? active.label : "Total"}
+                              {active
+                                ? active.label
+                                : t("card.deposit.total", "Total")}
                             </tspan>
                           </text>
                         );
@@ -217,13 +221,14 @@ export default function DepositPieChartCard({
 
           {series.total > 0 && (
             <div className="text-sm font-medium">
-              Total: {series.total.toLocaleString()}
+              {t("card.deposit.total", "Total")}:{" "}
+              {series.total.toLocaleString()}
             </div>
           )}
 
           {series.items.length === 0 && !loading && (
             <div className="text-sm text-muted-foreground py-8">
-              Tidak ada data untuk periode ini
+              {t("card.deposit.noData", "Tidak ada data untuk periode ini")}
             </div>
           )}
 

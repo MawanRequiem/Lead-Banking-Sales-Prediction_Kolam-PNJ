@@ -263,24 +263,28 @@ async function getMyAssignments(userId, query) {
     throw new NotFoundError('Sales profile not found');
   }
 
-  const { assignments, pagination } = await salesOpRepo.getAssignedLeads(salesData.idSales, query);
+  const result = await salesOpRepo.getMyLeads(salesData.idSales, query);
 
-  const mappedData = assignments.map((item) => ({
+  const mappedData = result.data.map((item) => ({
     id: item.nasabah.idNasabah,
     nama: item.nasabah.nama,
     pekerjaan: item.nasabah.pekerjaan || '-',
     nomorTelepon: item.nasabah.nomorTelepon || '-',
-    jenisKelamin: item.nasabah.jenisKelamin === 'L' ? 'Laki-laki' : 'Perempuan',
+    jenisKelamin: item.nasabah.jenisKelaminRel?.namaJenisKelamin === 'L' ? 'Laki-laki' : 'Perempuan',
     umur: item.nasabah.umur,
     domisili: item.nasabah.domisili || '-',
     statusPernikahan: item.nasabah.statusPernikahan?.namaStatus || 'Unknown',
     assignmentId: item.idAssignment,
-    skorPrediksi: item.nasabah.skorPrediksi,
+    skor: item.nasabah.skorPrediksi,
+    lastCall: item.nasabah.historiTelepon[0]?.createdAt || null,
+    needFollowUp: item.nasabah.historiTelepon[0]?.nextFollowupDate
+      ? new Date(item.nasabah.historiTelepon[0].nextFollowupDate) <= new Date()
+      : false,
   }));
 
   return {
     assignments: mappedData,
-    pagination,
+    pagination: result.meta,
   };
 }
 
@@ -291,7 +295,7 @@ async function getAllLeadsOverview(query) {
     list.filter((n) => n.deposito && n.deposito.length > 0).length;
 
   const countActiveDeposits = (list) =>
-    list.filter((n) => n.deposito?.some((d) => d.isActive === true)).length;
+    list.filter((n) => n.deposito?.some((d) => String(d.statusDeposito).toUpperCase() === 'AKTIF')).length;
 
   const calcChange = (current, last) => {
     const diff = current - last;
@@ -339,6 +343,73 @@ async function getAllLeadsOverview(query) {
   };
 }
 
+async function getMyLeadsOverview(salesId, query) {
+  const { current, last } = await salesOpRepo.getMyLeadsOverview(salesId, query);
+
+  // current/last are arrays of assignments; each item has `nasabah` with `deposito`
+  const currentList = Array.isArray(current) ? current : [];
+  const lastList = Array.isArray(last) ? last : [];
+
+  const countDepositoMembers = (list) =>
+    list.filter((a) => a?.nasabah?.deposito && a.nasabah.deposito.length > 0).length;
+
+  const countActiveDeposits = (list) =>
+    list.filter((a) => a?.nasabah?.deposito?.some((d) => String(d.statusDeposito).toUpperCase() === 'AKTIF')).length;
+
+  const calcChange = (currentCount, lastCount) => {
+    const diff = currentCount - lastCount;
+    let direction = 'neutral';
+    let percentage = 0;
+
+    if (lastCount > 0) {
+      percentage = (diff / lastCount) * 100;
+    } else if (currentCount > 0 && lastCount === 0) {
+      percentage = 100;
+    }
+
+    if (diff > 0) { direction = 'up'; }
+    else if (diff < 0) { direction = 'down'; }
+
+    return {
+      value: Math.abs(diff),
+      direction,
+      percentage: Math.round(Math.abs(percentage)),
+    };
+  };
+
+  const totalCurrent = currentList.length;
+  const totalLast = lastList.length;
+  const totalChange = calcChange(totalCurrent, totalLast);
+
+  const depositoMembersCurrent = countDepositoMembers(currentList);
+  const depositoMembersLast = countDepositoMembers(lastList);
+  const depositoMembersChange = calcChange(
+    depositoMembersCurrent,
+    depositoMembersLast,
+  );
+
+  const activeDepositsCurrent = countActiveDeposits(currentList);
+  const activeDepositsLast = countActiveDeposits(lastList);
+  const activeDepositsChange = calcChange(
+    activeDepositsCurrent,
+    activeDepositsLast,
+  );
+
+  return {
+    totalCustomers: totalCurrent,
+    totalChange: totalChange.value,
+    totalDirection: totalChange.direction,
+
+    depositoMembers: depositoMembersCurrent,
+    depositoMembersChange: depositoMembersChange.value,
+    depositoMembersDirection: depositoMembersChange.direction,
+
+    depositoActive: activeDepositsCurrent,
+    depositoActiveChange: activeDepositsChange.value,
+    depositoActiveDirection: activeDepositsChange.direction,
+  };
+}
+
 module.exports = {
   getAllLeads,
   getCallHistory,
@@ -348,6 +419,7 @@ module.exports = {
   getLeadDetail,
   getMyAssignments,
   getAllLeadsOverview,
+  getMyLeadsOverview,
   // Dashboard helpers
   getCallHistoryForDash,
   getAssignmentsForDash,

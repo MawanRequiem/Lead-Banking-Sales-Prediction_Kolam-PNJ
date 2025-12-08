@@ -5,16 +5,19 @@ import { mockData } from "@/hooks/useTable";
 import { formatDisplay } from "@/lib/date-utils";
 import { StatusBadge, CategoryBadge } from "@/components/ui/badges";
 
-export const columns = [
+export const makeCustomersOverviewColumns = (t) => [
   {
     accessorKey: "nama",
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Nama" />
+      <DataTableColumnHeader
+        column={column}
+        title={t("table.customersOverview.columns.nama")}
+      />
     ),
   },
   {
     accessorKey: "nomorTelepon",
-    header: "Nomor Telepon",
+    header: t("table.customersOverview.columns.nomorTelepon"),
     cell: ({ row }) => {
       const phone =
         row.original.nomorTelepon ||
@@ -30,40 +33,46 @@ export const columns = [
   },
   {
     accessorKey: "jenisKelamin",
-    header: "Jenis Kelamin",
+    header: t("table.customersOverview.columns.jenisKelamin"),
   },
   {
     accessorKey: "statusTelepon",
-    header: "Panggilan Terakhir",
+    header: t("table.customersOverview.columns.statusTelepon"),
     cell: ({ row }) => {
-      const lastCall = row.original.lastCall
+      const lastCall = row.original.lastCall;
       if (!lastCall) {
         return <div className="text-sm text-muted-foreground">-</div>;
       }
-      return <div className="text-sm text-muted-foreground">{formatDisplay(lastCall)}</div>;
+      return (
+        <div className="text-sm text-muted-foreground">
+          {formatDisplay(lastCall)}
+        </div>
+      );
     },
   },
   {
     accessorKey: "assignment",
-    header: "Status Penugasan",
+    header: t("table.customersOverview.columns.assignment"),
     cell: ({ row }) => {
-      // Jika API menyertakan tanda assignment, gunakan itu untuk menentukan status
       const isAssigned = !!(
         row.original.assignmentId ||
         row.original.idAssignment ||
         row.original.isAssigned
       );
       return isAssigned ? (
-        <StatusBadge status={"Ditugaskan"} />
+        <StatusBadge
+          status={t("table.customersOverview.columns.assignedLabel")}
+        />
       ) : (
-        <div className="text-sm text-muted-foreground">Belum Ditugaskan</div>
+        <div className="text-sm text-muted-foreground">
+          {t("table.customersOverview.columns.notAssignedLabel")}
+        </div>
       );
     },
   },
   {
-    // Kategori isn't provided by API; derive from `skor` (skorPrediksi)
     accessorKey: "skor",
-    header: "Kategori",
+    header: t("table.customersOverview.columns.skor"),
     cell: ({ row }) => {
       const s = parseFloat(row.original.skor || row.original.skorPrediksi || 0);
       const cat = s >= 0.75 ? "A" : s >= 0.5 ? "B" : "C";
@@ -75,4 +84,4 @@ export const columns = [
 // re-export mock data for convenience
 export { mockData };
 
-export default columns;
+export default makeCustomersOverviewColumns;

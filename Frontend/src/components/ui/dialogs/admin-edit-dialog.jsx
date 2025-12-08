@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef, startTransition } from "react";
 import * as Dialog from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { useLang } from "@/contexts/theme-context.jsx";
 import {
   Select,
   SelectTrigger,
@@ -16,6 +17,7 @@ export default function AdminEditDialog({
   user = {},
   onSave,
 }) {
+  const { t } = useLang();
   const [form, setForm] = useState({
     nama: "",
     nomorTelepon: "",
@@ -68,15 +70,22 @@ export default function AdminEditDialog({
         onEscapeKeyDown={(e) => e.preventDefault()}
       >
         <Dialog.DialogHeader>
-          <Dialog.DialogTitle>Edit Admin</Dialog.DialogTitle>
+          <Dialog.DialogTitle>
+            {t("dialog.adminEdit.title", "Edit Admin")}
+          </Dialog.DialogTitle>
           <Dialog.DialogDescription>
-            Ubah data admin. Tutup hanya dengan Simpan atau Batal.
+            {t(
+              "dialog.adminEdit.description",
+              "Ubah data admin. Tutup hanya dengan Simpan atau Batal."
+            )}
           </Dialog.DialogDescription>
         </Dialog.DialogHeader>
 
         <div className="grid gap-3 py-4">
           <div>
-            <label className="text-sm text-muted-foreground">Nama</label>
+            <label className="text-sm text-muted-foreground">
+              {t("dialog.adminEdit.fields.nama", "Nama")}
+            </label>
             <Input
               value={form.nama}
               onChange={(e) => handleChange("nama", e.target.value)}
@@ -84,7 +93,9 @@ export default function AdminEditDialog({
           </div>
 
           <div>
-            <label className="text-sm text-muted-foreground">No. Telepon</label>
+            <label className="text-sm text-muted-foreground">
+              {t("dialog.adminEdit.fields.nomorTelepon", "No. Telepon")}
+            </label>
             <Input
               value={form.nomorTelepon}
               onChange={(e) => handleChange("nomorTelepon", e.target.value)}
@@ -92,7 +103,9 @@ export default function AdminEditDialog({
           </div>
 
           <div>
-            <label className="text-sm text-muted-foreground">Email</label>
+            <label className="text-sm text-muted-foreground">
+              {t("dialog.adminEdit.fields.email", "Email")}
+            </label>
             <Input
               value={form.email}
               onChange={(e) => handleChange("email", e.target.value)}
@@ -100,7 +113,9 @@ export default function AdminEditDialog({
           </div>
 
           <div>
-            <label className="text-sm text-muted-foreground">Domisili</label>
+            <label className="text-sm text-muted-foreground">
+              {t("dialog.adminEdit.fields.domisili", "Domisili")}
+            </label>
             <Input
               value={form.domisili}
               onChange={(e) => handleChange("domisili", e.target.value)}
@@ -112,9 +127,11 @@ export default function AdminEditDialog({
 
         <Dialog.DialogFooter>
           <Button variant="ghost" onClick={handleCancel}>
-            Batal
+            {t("dialog.adminEdit.cancel", "Batal")}
           </Button>
-          <Button onClick={handleConfirm}>Simpan</Button>
+          <Button onClick={handleConfirm}>
+            {t("dialog.adminEdit.save", "Simpan")}
+          </Button>
         </Dialog.DialogFooter>
       </Dialog.DialogContent>
     </Dialog.Dialog>

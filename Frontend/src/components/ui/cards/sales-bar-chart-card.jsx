@@ -5,7 +5,7 @@ import { mockSales } from "@/lib/mock-sales-data";
 import {
   getChartTitle,
   getChartSubtitle,
-  sortOptions,
+  getSortOptions,
 } from "@/lib/chart-strings";
 import {
   DropdownMenu,
@@ -21,6 +21,7 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useLang } from "@/hooks/useLang";
 import {
   BarChart as ReBarChart,
   Bar as ReBar,
@@ -45,6 +46,7 @@ export default function SalesBarChartCard({
   loading = false,
 }) {
   const [sortKey, setSortKey] = useState("value_desc");
+  const { t } = useLang();
 
   // If parent provides `range`, treat as external; otherwise keep local state
   const [internalRange, setInternalRange] = useState(range || "month");
@@ -189,9 +191,11 @@ export default function SalesBarChartCard({
       <CardContent>
         <div className="flex items-start justify-between mb-3">
           <div className="flex flex-col">
-            <div className="text-sm font-semibold">{getChartTitle(range)}</div>
+            <div className="text-sm font-semibold">
+              {getChartTitle(range, t)}
+            </div>
             <div className="text-xs text-muted-foreground">
-              {getChartSubtitle(range)}
+              {getChartSubtitle(range, t)}
             </div>
           </div>
 
@@ -204,7 +208,8 @@ export default function SalesBarChartCard({
                     type="button"
                     className="text-sm px-3 py-1 rounded-md border bg-transparent text-muted-foreground"
                   >
-                    {ranges.find((r) => r.key === range)?.label || "Periode"}
+                    {ranges.find((r) => r.key === range)?.label ||
+                      t("card.sales.periodLabel", "Periode")}
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent sideOffset={6}>
@@ -229,11 +234,11 @@ export default function SalesBarChartCard({
                   type="button"
                   className="text-sm px-3 py-1 rounded-md border bg-transparent text-muted-foreground"
                 >
-                  Sort
+                  {t("card.sales.sort", "Sort")}
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent sideOffset={6}>
-                {sortOptions.map((opt) => (
+                {getSortOptions(t).map((opt) => (
                   <DropdownMenuItem
                     key={opt.value}
                     onSelect={() => setSortKey(opt.value)}
@@ -253,10 +258,12 @@ export default function SalesBarChartCard({
             </div>
           ) : isDataEmpty ? (
             <div className="h-56 flex items-center justify-center">
-              {" "}
               <p className="text-center text-muted-foreground">
-                Tidak ada Riwayat Keberhasilan konversi{" "}
-              </p>{" "}
+                {t(
+                  "card.sales.empty",
+                  "Tidak ada Riwayat Keberhasilan konversi"
+                )}
+              </p>
             </div>
           ) : (
             <ChartContainer
