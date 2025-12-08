@@ -2,19 +2,21 @@ import { useState, useEffect, useCallback } from 'react'
 import axios from '../lib/axios'
 
 // Hook that fetches users which are either admin or sales from the backend
-export function useAdmins({ page = 1, limit = 50 } = {}) {
+export function useAdmins({ page = 1, limit = 5 } = {}) {
   const [data, setData] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  const [pagination, setPagination] = useState({ page, limit, total: 0 })
+  const [pagination, setPagination] = useState({ pageIndex: page - 1, pageSize: limit, total: 0, pageCount: 0 }) //use tanstack table pagination shape
+  const [search, setSearch] = useState('')
 
   const fetchAdmins = useCallback(async (opts = {}) => {
     setLoading(true)
     setError(null)
     try {
-      const p = opts.page || page
-      const l = opts.limit || limit
-      const res = await axios.get(`/admin/sales?page=${p}&limit=${l}`, { withCredentials: true })
+      const p = opts.page || pagination.pageIndex + 1
+      const l = opts.limit || pagination.pageSize
+      const params = { ... opts, search: search }
+      const res = await axios.get(`/admin/sales?page=${p}&limit=${l}`, { params })
 
       // response shape: { success, requestId, ..., data: { users: [...] }, meta: { pagination: { ... } } }
       // backend may return `sales` or `users` depending on endpoint; prefer `sales`
@@ -49,13 +51,18 @@ export function useAdmins({ page = 1, limit = 50 } = {}) {
       })
 
       setData(mapped)
-      setPagination(pag)
+      setPagination((old) => ({
+        ...old,
+        pageIndex: pag.page - 1,
+        total: pag.total,
+        pageCount: pag.lastPage,
+      }))
     } catch (e) {
       setError(e)
     } finally {
       setLoading(false)
     }
-  }, [page, limit])
+  }, [pagination.pageIndex, pagination.pageSize, search])
 
   useEffect(() => {
     let mounted = true;
@@ -66,7 +73,7 @@ export function useAdmins({ page = 1, limit = 50 } = {}) {
     return () => { mounted = false }
   }, [fetchAdmins])
 
-  return { data, loading, error, pagination, refetch: fetchAdmins }
+  return { data, loading, error, pagination, setPagination, search, setSearch, refetch: fetchAdmins }
 }
 
 export default useAdmins

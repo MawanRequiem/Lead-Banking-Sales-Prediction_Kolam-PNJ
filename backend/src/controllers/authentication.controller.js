@@ -148,10 +148,34 @@ const login = asyncHandler(async (req, res) => {
     throw new UnauthorizedError('Invalid email or password', 'INVALID_CREDENTIALS');
   }
 
+  // Revoke existing refresh tokens for the user
+  await tokenRepository.revokeTokensByUserId(user.userId);
+
   // Generate tokens
   const accessToken = generateAccessToken(user);
   const refreshToken = await createRefreshToken(user.userId);
   const expiresIn = getTokenExpiresIn();
+
+  // Set httpOnly cookies for tokens (cookie-based auth)
+  const isProd = process.env.NODE_ENV === 'production';
+  try {
+    res.cookie('accessToken', accessToken, {
+      httpOnly: true,
+      secure: isProd,
+      sameSite: 'lax',
+      path: '/',
+    });
+
+    // Refresh token longer lived (7 days)
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: isProd,
+      sameSite: 'lax',
+      path: '/',
+    });
+  } catch (e) {
+    logger.warn('Failed to set auth cookies', e);
+  }
 
   logger.audit('Login successful', {
     userId: user.userId,
@@ -162,11 +186,10 @@ const login = asyncHandler(async (req, res) => {
   });
 
   // ✅ OAuth 2.0 structure with camelCase (API consistency)
+  // We set httpOnly cookies above; still return minimal token metadata for clients
   return successResponse(res, {
-    accessToken,              // ✅ camelCase
-    tokenType: 'Bearer',      // ✅ camelCase
-    expiresIn,                // ✅ camelCase (seconds)
-    refreshToken,             // ✅ camelCase
+    tokenType: 'Bearer',
+    expiresIn,
     user: {
       id: user.id,
       email: user.email,
@@ -181,14 +204,28 @@ const login = asyncHandler(async (req, res) => {
  * POST /api/logout
  */
 const logout = asyncHandler(async (req, res) => {
-  const { refreshToken } = req.body;
-
-  if (!refreshToken) {
-    throw new UnauthorizedError('Refresh token required', 'TOKEN_REQUIRED');
+  // Accept refresh token from body or cookie
+  let refreshToken = req.body && req.body.refreshToken;
+  if (!refreshToken && req.cookies) {
+    refreshToken = req.cookies.refreshToken || req.cookies.refresh_token || req.cookies.refresh;
   }
 
-  // Revoke refresh token
-  await tokenRepository.revokeToken(refreshToken);
+  if (refreshToken) {
+    try {
+      await tokenRepository.revokeToken(refreshToken);
+    } catch (e) {
+      logger.warn('Failed to revoke refresh token during logout', e);
+    }
+  }
+
+  // Clear cookies regardless (best-effort)
+  try {
+    const isProd = process.env.NODE_ENV === 'production';
+    res.clearCookie('accessToken', { httpOnly: true, secure: isProd, sameSite: 'lax', path: '/' });
+    res.clearCookie('refreshToken', { httpOnly: true, secure: isProd, sameSite: 'lax', path: '/' });
+  } catch (e) {
+    logger.warn('Failed to clear auth cookies during logout', e);
+  }
 
   logger.audit('User logged out', {
     userId: res.locals.userId,
@@ -196,9 +233,7 @@ const logout = asyncHandler(async (req, res) => {
     requestId: res.locals.requestId,
   });
 
-  return successResponse(res, {
-    message: 'Logout successful',
-  });
+  return successResponse(res, { message: 'Logout successful' });
 });
 
 /**
@@ -208,7 +243,11 @@ const logout = asyncHandler(async (req, res) => {
  * ✅ OAuth 2.0 inspired structure with camelCase
  */
 const refresh = asyncHandler(async (req, res) => {
-  const { refreshToken } = req.body;
+  // Accept refresh token from body or cookie
+  let refreshToken = req.body && req.body.refreshToken;
+  if (!refreshToken && req.cookies) {
+    refreshToken = req.cookies.refreshToken || req.cookies.refresh_token || req.cookies.refresh;
+  }
 
   if (!refreshToken) {
     throw new UnauthorizedError('Refresh token required', 'TOKEN_REQUIRED');
@@ -250,17 +289,35 @@ const refresh = asyncHandler(async (req, res) => {
   const accessToken = generateAccessToken(user);
   const expiresIn = getTokenExpiresIn();
 
+  // Set access token cookie (rotate refresh if needed)
+  const isProd = process.env.NODE_ENV === 'production';
+  try {
+    res.cookie('accessToken', accessToken, {
+      httpOnly: true,
+      secure: isProd,
+      sameSite: 'lax',
+      path: '/',
+    });
+    // Keep refresh token cookie as-is (or rotate if implementing rotate)
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: isProd,
+      sameSite: 'lax',
+      path: '/',
+    });
+  } catch (e) {
+    logger.warn('Failed to set auth cookies on refresh', e);
+  }
+
   logger.audit('Token refreshed', {
     userId: user.userId,
     role: user.role,
   });
 
-  // ✅ OAuth 2.0 structure with camelCase
+  // Return minimal metadata; tokens are set in cookies
   return successResponse(res, {
-    accessToken,
     tokenType: 'Bearer',
     expiresIn,
-    refreshToken, // Return same refresh token
   }, 'Token refreshed successfully');
 });
 
@@ -269,8 +326,8 @@ const refresh = asyncHandler(async (req, res) => {
  * POST /api/verify-current
  */
 const verifyCurrentPassword = asyncHandler(async (req, res) => {
-  const userId = res.locals.userId;
-  const role = res.locals.userRole;
+  const userId = req.user.userId;
+  const role = req.user.role;
   const { currentPassword } = req.body;
 
   if (!currentPassword) {
@@ -310,7 +367,7 @@ const verifyCurrentPassword = asyncHandler(async (req, res) => {
       attempts: next,
     });
 
-    // If exceeded threshold, revoke refresh tokens for this user (force logout)
+    // If exceeded threshold, revoke refresh tokens and force re-login
     if (next >= MAX_FAILED_ATTEMPTS) {
       try {
         await prisma.refreshToken.updateMany({
@@ -329,9 +386,11 @@ const verifyCurrentPassword = asyncHandler(async (req, res) => {
         // reset counter after revocation
         failedPasswordAttempts.delete(userId);
       }
-
-      // Return 400 so client sees a non-logout-causing error, but message explains forced logout
-      throw new BadRequestError('Current password is incorrect. Too many failed attempts — your session has been revoked.', 'TOO_MANY_ATTEMPTS');
+      // Return 401, forcing user to re-login
+      throw new UnauthorizedError(
+        'Too many failed attempts. Your session has been revoked and you must log in again.',
+        'SESSION_REVOKED_ATTEMPTS',
+      );
     }
 
     // For normal incorrect password attempts, return 400 (do not force immediate logout)
@@ -341,7 +400,6 @@ const verifyCurrentPassword = asyncHandler(async (req, res) => {
   // success -> reset counter
   failedPasswordAttempts.delete(userId);
 
-  // Generate one-time verification token (short-lived)
   const verification = await pwdVerificationService.generateVerificationTokenForUser(userId, 5);
 
   logger.audit('Password verification successful (verification token issued)', {
@@ -360,8 +418,9 @@ const verifyCurrentPassword = asyncHandler(async (req, res) => {
  * POST /api/change-password
  */
 const changePassword = asyncHandler(async (req, res) => {
-  const userId = res.locals.userId;
-  const role = res.locals.userRole;
+  // Use application-level userId (idUser) for repository lookups
+  const userId = req.user.userId;
+  const role = req.user.role;
   const { currentPassword, newPassword, verificationToken } = req.body;
 
   // newPassword is always required (validation middleware also enforces this)
@@ -471,20 +530,17 @@ const changePassword = asyncHandler(async (req, res) => {
     logger.error('Failed to revoke prior refresh tokens after password change', e);
   }
 
-  // Issue new tokens for the current session so user remains logged in
-  const newRefreshToken = await createRefreshToken(userId);
-  const userPayload = {
-    id: record.idSales || record.idAdmin,
-    userId: record.user.idUser,
-    email: record.user.email,
-    role: role,
-  };
-  const newAccessToken = generateAccessToken(userPayload);
+  try {
+    const cookieOptions = { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', path: '/' };
+    // Setel tanggal kadaluarsa ke masa lalu untuk menghapus cookie yang sudah ada
+    res.cookie('accessToken', '', { ...cookieOptions, expires: new Date(0) });
+    res.cookie('refreshToken', '', { ...cookieOptions, expires: new Date(0) });
+  } catch (e) {
+    logger.warn('Failed to clear auth cookies after password change', e);
+  }
 
   return successResponse(res, {
     message: 'Password changed successfully',
-    accessToken: newAccessToken,
-    refreshToken: newRefreshToken,
   });
 });
 

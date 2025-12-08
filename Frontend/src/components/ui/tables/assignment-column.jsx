@@ -1,7 +1,7 @@
 import React from "react"
 import DataTableColumnHeader from '@/components/ui/tables/data-table-header'
 import { mockData } from "@/hooks/useTable"
-import { MarriageBadge } from '@/components/ui/badges'
+import { CategoryBadge, MarriageBadge } from '@/components/ui/badges'
 
 // kolom kolom yang digunakan di DataTable untuk Customers
 export const columns = [
@@ -32,6 +32,15 @@ export const columns = [
     cell: ({ row }) => (
       <div>
         <MarriageBadge value={row.original.statusPernikahan} />
+      </div>
+    ),
+  },
+  {
+    accessorKey: 'skorPrediksi',
+    header: 'Kategori',
+    cell: ({ row }) => (
+      <div>
+        <CategoryBadge category={row.original.skorPrediksi} />
       </div>
     ),
   },

@@ -9,6 +9,7 @@ import { SidebarProvider } from "./components/ui/sidebar/sidebar";
 import MainLayout from "./components/ui/layout/main-layout";
 
 // Pages
+import DashboardPage from "./pages/Dashboard";
 import AssignmentsPage from "./pages/AssigmentPage";
 import NotFound from "./pages/NotFound";
 import LoginPage from "./pages/LoginPage";
@@ -16,90 +17,7 @@ import AdminPage from "./pages/AdminPage";
 import AddUserPage from "./pages/AddUserPager";
 import ChangePasswordPage from "./pages/ChangePassword";
 import CustomerOverviewPage from "./pages/CustomerOverviewPage";
-
-// Components untuk Halaman Dashboard (Home)
-import AssignmentTable from "./components/ui/tables/assignment-table";
-import CallHistoryTable from "./components/ui/tables/call-history-table";
-import CallHistoryCard from "./components/ui/cards/call-history-card";
-import CustomerStatusCard from "./components/ui/cards/customer-status-card";
-import SalesBarChartCard from "./components/ui/cards/sales-bar-chart-card";
-import DepositPieChartCard from "./components/ui/cards/deposit-pie-chart-card";
-import { CategoryBadge } from "./components/ui/badges";
-import CustomerOverviewTable from "./components/ui/tables/customers-overview-table";
-import OtpForm from "./components/ui/auth/otp-form";
-import AdminsTable from "./components/ui/tables/admins-table";
-
-// --- Komponen Halaman Home (Dashboard Lama Anda) ---
-// Saya pindahkan isi main lama ke sini agar App.jsx lebih bersih
-function Dashboard() {
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between mb-4">
-        <CategoryBadge category="A" />
-        <CategoryBadge category="B" />
-        <CategoryBadge category="C" />
-      </div>
-
-      {/* Simple login form (email + password) */}
-      <OtpForm />
-
-      <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-2 gap-6">
-        <SalesBarChartCard />
-        <DepositPieChartCard />
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-2 gap-6">
-        <CustomerStatusCard
-          customerId="12345"
-          entries={[
-            { id: "1", result: "Terkoneksi" },
-            { id: "2", result: "Voicemail" },
-            { id: "3", result: "Terkoneksi" },
-            { id: "4", result: "Tidak Terangkat" },
-            { id: "5", result: "Terkoneksi" },
-          ]}
-          className="w-full"
-        />
-      </div>
-
-      <CustomerOverviewTable />
-      <AssignmentTable />
-      <CallHistoryTable />
-      <CallHistoryCard
-        entries={[
-          {
-            id: "1",
-            nama: "Budi Santoso",
-            time: "2025-11-18 10:00",
-            agent: "Ari",
-            duration: "00:05:23",
-            result: "Terkoneksi",
-            note: "Nasabah tertarik dengan produk baru.",
-          },
-          {
-            id: "2",
-            nama: "Siti Aminah",
-            time: "2025-11-18 11:30",
-            agent: "Budi",
-            duration: "00:02:10",
-            result: "Voicemail",
-            note: "",
-          },
-          {
-            id: "3",
-            nama: "Andi Wijaya",
-            time: "2025-11-18 12:15",
-            agent: "Citra",
-            duration: "00:03:45",
-            result: "Terkoneksi",
-            note: "Nasabah meminta informasi lebih lanjut via email.",
-          },
-        ]}
-        onExport={() => alert("Exporting call history...")}
-      />
-    </div>
-  );
-}
+import CallHistoryPage from "./pages/CallHistoryPage";
 
 function App() {
   return (
@@ -118,8 +36,9 @@ function App() {
           <Route element={<MainLayout />}>
             <Route path="/admin" element={<AdminPage />} />
             <Route path="/add-user" element={<AddUserPage />} />
-            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/customers" element={<CustomerOverviewPage />} />
+            <Route path="/history" element={<CallHistoryPage />} />
             <Route path="/assignments" element={<AssignmentsPage />} />
           </Route>
           <Route path="*" element={<NotFound />} />

@@ -7,7 +7,12 @@ import { Input } from "../input";
 import logoUrl from "@/assets/Logo Sales.svg";
 import useHeaderHeight from "@/hooks/useHeaderHeight";
 
-export function Header({ userName = "John Doe", className, role = null }) {
+export function Header({
+  userName = "John Doe",
+  userEmail = "anonymous@example.com",
+  className,
+  role,
+}) {
   const headerRef = useHeaderHeight();
 
   return (
@@ -47,6 +52,7 @@ export function Header({ userName = "John Doe", className, role = null }) {
         <ProfileDropdown
           className="cursor-pointer"
           userName={userName}
+          userEmail={userEmail}
           userRole={role}
         />
       </div>

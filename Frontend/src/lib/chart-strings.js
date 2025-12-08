@@ -33,12 +33,10 @@ export function getDepositChartTitle() {
 //Mendapatkan subtitle chart deposit berdasarkan range yang dipilih
 export function getDepositChartSubtitle(rangeKey) {
   switch (rangeKey) {
-    case 'week':
-      return 'Distribusi penjualan minggu ini'
     case 'month':
       return 'Distribusi penjualan bulan ini'
     case 'year':
-      return 'Distribusi selama 12 bulan'
+      return 'Distribusi penjualan tahun ini'
     default:
       return 'Distribusi penjualan per tipe'
   }

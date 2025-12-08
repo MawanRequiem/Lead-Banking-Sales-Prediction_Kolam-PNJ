@@ -21,22 +21,34 @@ export function StatusBadge({ status }) {
 }
 
 export function CategoryBadge({ category }) {
-  if (!category) return null;
+  if (category == null) return null;
 
-  const className = (() => {
-    switch (String(category)) {
-      case "A":
-        return "bg-chart-1 text-white";
-      case "B":
-        return "bg-chart-2 text-white";
-      case "C":
-        return "bg-chart-3 text-white";
-      default:
-        return "bg-muted text-muted-foreground";
+  // Convert numeric score to category A/B/C
+  const normalizedCategory = (() => {
+    const num = Number(category);
+
+    if (!Number.isNaN(num)) {
+      if (num >= 0.75) return "A";
+      if (num >= 0.5) return "B";
+      return "C";
     }
+
+    // If it's not a number, assume it's already "A" | "B" | "C"
+    const str = String(category).toUpperCase();
+    if (["A", "B", "C"].includes(str)) return str;
+
+    return null;
   })();
 
-  return <Badge className={className}>Grade {category}</Badge>;
+  if (!normalizedCategory) return null;
+
+  const className = {
+    A: "bg-chart-1 text-white",
+    B: "bg-chart-2 text-white",
+    C: "bg-chart-3 text-white",
+  }[normalizedCategory] || "bg-muted text-muted-foreground";
+
+  return <Badge className={className}>Grade {normalizedCategory}</Badge>;
 }
 
 export function DepositStatusBadge({ status }) {

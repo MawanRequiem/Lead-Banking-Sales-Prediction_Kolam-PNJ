@@ -30,12 +30,13 @@ export default function DataTable({
   toolbarRight,
   renderRowActions,
   loading = false,
-  options = {},
+  options = {
+    // Should contain pagination options since all our tables use pagination on the backend
+  },
   showSearch = true,
   renderViewOptions = null,
 }) {
   const [sorting, setSorting] = useState([])
-  const [globalFilter, setGlobalFilter] = useState('')
   const memoColumns = useMemo(() => columns || [], [columns])
   const memoData = useMemo(() => data || [], [data])
 
@@ -44,11 +45,18 @@ export default function DataTable({
     columns: memoColumns,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
+    // getPaginationRowModel: getPaginationRowModel(), used for client-side pagination.
+    manualPagination: true, // since we are doing server-side pagination
+    pageCount: options.pageCount,
+    onPaginationChange: options.onPageChange,
+    manualFiltering: true,
+    // getFilteredRowModel: getFilteredRowModel(),
     onSortingChange: setSorting,
-    state: { sorting, globalFilter },
-    initialState: { pagination: { pageSize: options.pageSize || 10 } },
+    state: {
+      sorting,
+      pagination: options.pagination || { pageIndex: 0, pageSize: 10 },
+    },
+    // initialState: { pagination: { pageIndex: options.pageIndex || 1, pageSize: options.pageSize || 10 } },
   })
 
   return (
@@ -74,9 +82,9 @@ export default function DataTable({
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
-                  placeholder="Cari semua kolom..."
-                  value={globalFilter}
-                  onChange={(e) => setGlobalFilter(e.target.value)}
+                  placeholder="Cari..."
+                  value={options.search || ''}
+                  onChange={(e) => options.onSearchChange?.(e.target.value)}
                   className="pl-10"
                 />
               </div>
@@ -155,7 +163,7 @@ export default function DataTable({
       <div className="mt-2">
         <div className="flex items-center justify-between">
           {/** Ini adalah bagian pagination tabel */}
-          <div className="text-muted-foreground text-sm">Total {table.getFilteredRowModel().rows.length} Data</div>
+          <div className="text-muted-foreground text-sm">Total {options.total || table.getFilteredRowModel().rows.length} Data</div>
           <div className="flex items-center space-x-2">
             <Button variant="outline" size="icon" onClick={() => table.setPageIndex(0)} disabled={!table.getCanPreviousPage()}>
               {'<<'}

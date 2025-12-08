@@ -15,45 +15,29 @@ import {
   SelectContent,
   SelectItem
 } from '@/components/ui/select'
-import DateField from '@/components/ui/dropdown/date-field'
 
 // FilterDropdown uses your Radix-based DropdownMenu primitives.
 // Pass a `trigger` prop (React node) to render a custom trigger inside the
 // DropdownMenuTrigger. If omitted, a default button is rendered.
-export default function FilterDropdown({ className, trigger = null, onApply }) {
-  const [from, setFrom] = useState(null)
-  const [to, setTo] = useState(() => {
-    const d = new Date()
-    return d.toISOString().slice(0, 10)
-  })
+export default function NasabahFilter({ className, trigger = null, onApply }) {
   const [grade, setGrade] = useState('all')
-  const [status, setStatus] = useState('any')
   const [search, setSearch] = useState('')
 
   function resetSection(section) {
-    if (section === 'date') {
-      const d1 = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-      const d2 = new Date()
-      setFrom(null)
-      setTo(d2.toISOString().slice(0, 10))
-    } else if (section === 'grade') {
+    if (section === 'grade') {
       setGrade('all')
-    } else if (section === 'status') {
-      setStatus('any')
     } else if (section === 'keyword') {
       setSearch('')
     }
   }
 
   function resetAll() {
-    resetSection('date')
     resetSection('grade')
-    resetSection('status')
     resetSection('keyword')
   }
 
   function apply(close) {
-    const payload = { from, to, grade, status, search }
+    const payload = { grade, search }
     // NOTE: jika mau berganti ke server-side filtering, ini adalah tempatnya
     // bisa menggunakan (A) panggil backend langsung dari dropdown (kurang
     // direkomendasikan), atau (B) kirim payload ke parent melalui `onApply`
@@ -97,20 +81,6 @@ export default function FilterDropdown({ className, trigger = null, onApply }) {
 
         <DropdownMenuSeparator />
 
-        {/* Date range */}
-        <div className="px-4 py-3">
-          <div className="flex items-center justify-between">
-            <div className="font-medium">Rentang Waktu</div>
-            <button className="text-xs text-foreground underline" onClick={() => resetSection('date')}>Reset</button>
-          </div>
-          <div className="mt-2 grid grid-cols-2 gap-2">
-            <DateField id="filter-from" value={from} onChange={setFrom} placeholder="From" />
-            <DateField id="filter-to" value={to} onChange={setTo} placeholder="To" />
-          </div>
-        </div>
-
-        <DropdownMenuSeparator />
-
         {/* Grade */}
         <div className="px-4 py-3">
           <div className="flex items-center justify-between">
@@ -133,29 +103,6 @@ export default function FilterDropdown({ className, trigger = null, onApply }) {
         </div>
 
         <DropdownMenuSeparator />
-
-        {/* Status */}
-        {/*<div className="px-4 py-3">
-          <div className="flex items-center justify-between">
-            <div className="font-medium">Status</div>
-            <button className="text-xs text-foreground underline" onClick={() => resetSection('status')}>Reset</button>
-          </div>
-          <div className="mt-2">
-            <Select value={status} onValueChange={(v) => setStatus(v)}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Pilih status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="any">Semua</SelectItem>
-                <SelectItem value="open">Open</SelectItem>
-                <SelectItem value="closed">Closed</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
-              </SelectContent>
-          </Select>
-          </div>
-        </div>
-
-        <DropdownMenuSeparator />*/}
 
         {/* Keyword */}
         <div className="px-4 py-3">

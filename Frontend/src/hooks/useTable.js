@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import axios from '@/lib/axios'
 
 // Dummy data moved here so table definitions remain clean.
@@ -31,35 +31,44 @@ export const mockData = [
 // Hook to manage table data. By default returns mockData and a fetch helper.
 // Usage:
 // const { data, setData, fetchData } = useTable({ apiUrl: '/api/customers', initial: mockData })
-export function useTable({ apiUrl = '/sales/leads', initial = mockData } = {}) {
+export function useTable({ apiUrl, initial = mockData, page, limit, moreFilters = {} } = {}) {
   const [data, setData] = useState(initial);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [pagination, setPagination] = useState({pageIndex: page - 1 || 0, pageSize: limit || 10});
+  const [pageCount, setPageCount] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [search, setSearch] = useState('');
+  const [filters, setFilters] = useState(moreFilters || {});
 
-  async function fetchData(params = {}) {
+  const fetchData = useCallback(async(params = {}) => {
     if (!apiUrl) return;
     setLoading(true);
     setError(null);
     try {
       const response = await axios.get(apiUrl, { params });
       setData(response.data.data);
-      setLoading(false);
-      return response.data;
+      setTotal(response.data.meta?.pagination?.total);
+      setPageCount(response.data.meta?.pagination?.lastPage);
     } catch (err) {
       setError(err);
-      setLoading(false);
       return null;
+    } finally {
+      setLoading(false);
     }
-  }
+  }, [apiUrl]);
 
   // optional auto-fetch when apiUrl provided
   useEffect(() => {
-    if (!apiUrl) return
-    fetchData()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [apiUrl])
+    fetchData({
+      page: pagination.pageIndex + 1,
+      limit: pagination.pageSize,
+      search,
+      ...filters,
+    });
+  }, [ pagination, search, filters, fetchData ]);
 
-  return { data, setData, fetchData, loading, error }
+  return { data, setData, refetch: fetchData, loading, error, pagination, setPagination, pageCount, setPageCount, total, setTotal, search, setSearch, filters, setFilters };
 }
 
 export default useTable

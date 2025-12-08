@@ -1,52 +1,44 @@
-import { useCallback, useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useCallback, useState, useEffect, useContext } from "react";
+import axios from "@/lib/axios";
+import { useProfileContext } from "@/contexts/profile-context";
 
-// Profile hook backed by localStorage. Reads stored `user` (or `userName`/`userEmail`/`userRole`) and
-// keeps it in state. `setUser` persists to localStorage. `logout` clears tokens and redirects to `/login`.
+// Profile hook: prefer ProfileContext when available (single fetch). Fallback
+// to local behavior for components not wrapped by provider.
 export default function useProfile(initial = null) {
-  const navigate = useNavigate();
+  const ctx = useProfileContext();
+  if (ctx) return ctx;
 
-  function readStoredUser() {
-    try {
-      const raw = localStorage.getItem("user");
-      if (raw) {
-        return JSON.parse(raw);
-      }
-    } catch (e) {
-      // ignore parse errors
-    }
+  const [user, setUserState] = useState(initial);
+  const [loading, setLoading] = useState(false);
 
-    // Fallback to legacy keys
-    try {
-      const name = localStorage.getItem("userName");
-      const email = localStorage.getItem("userEmail");
-      const role = localStorage.getItem("userRole");
-      const phone = localStorage.getItem("userPhone");
-      const domisili = localStorage.getItem("userDomisili");
-      if (name || email || role || phone) {
-        return {
-          name: name || null,
-          email: email || null,
-          role: role || null,
-          phone: phone || null,
-          domisili: domisili || null,
-        };
-      }
-    } catch (e) {}
-
-    return initial;
-  }
-
-  const [user, setUserState] = useState(readStoredUser());
-
+  // On mount, attempt to fetch authoritative profile from backend.
   useEffect(() => {
-    // Keep state in sync if localStorage changed elsewhere
-    function onStorage() {
-      setUserState(readStoredUser());
+    let mounted = true;
+    async function loadProfile() {
+      setLoading(true);
+      try {
+        const res = await axios.get("/me");
+        if (!mounted) return;
+        const data = res.data && res.data.data ? res.data.data : res.data;
+        if (data) {
+          setUserState({
+            name: data.nama || data.name || null,
+            email: data.email || null,
+            role: data.role || null,
+            phone: data.nomorTelepon || data.phone || null,
+            domisili: data.domisili || null,
+          });
+        }
+      } catch (e) {
+        // ignore; leave user as-is (null or initial)
+      } finally {
+        if (mounted) setLoading(false);
+      }
     }
-
-    window.addEventListener("storage", onStorage);
-    return () => window.removeEventListener("storage", onStorage);
+    loadProfile();
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   const changeLanguage = useCallback((lang) => {
@@ -71,31 +63,18 @@ export default function useProfile(initial = null) {
   }, []);
 
   const openNotifications = useCallback(() => {
-    // dispatch a custom event so NotificationButton or other listeners can react
     try {
       window.dispatchEvent(new CustomEvent("open-notifications"));
     } catch (e) {
-      console.log("Open notifications error", e);
+      // ignore
     }
   }, []);
 
+  // Do not persist profile to localStorage. Keep profile in-memory only.
   const setUser = useCallback(
     (next) => {
       try {
-        // accept either object or function
         const resolved = typeof next === "function" ? next(user) : next;
-        if (resolved) {
-          localStorage.setItem("user", JSON.stringify(resolved));
-          // also keep legacy keys in sync
-          try {
-            if (resolved.name) localStorage.setItem("userName", resolved.name);
-            if (resolved.email)
-              localStorage.setItem("userEmail", resolved.email);
-            if (resolved.role) localStorage.setItem("userRole", resolved.role);
-          } catch (e) {}
-        } else {
-          localStorage.removeItem("user");
-        }
         setUserState(resolved);
         return resolved;
       } catch (e) {
@@ -106,29 +85,13 @@ export default function useProfile(initial = null) {
     [user]
   );
 
-  const logout = useCallback(() => {
-    try {
-      localStorage.removeItem("accessToken");
-      localStorage.removeItem("refreshToken");
-      localStorage.removeItem("user");
-      localStorage.removeItem("userName");
-      localStorage.removeItem("userEmail");
-      localStorage.removeItem("userRole");
-    } catch (e) {}
-
-    setUserState(null);
-    try {
-      navigate("/login", { replace: true });
-    } catch (e) {}
-  }, [navigate]);
-
   return {
     user,
+    loading,
     setUser,
     changeLanguage,
     changePassword,
     openPersonalInfo,
     openNotifications,
-    logout,
   };
 }

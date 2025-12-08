@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import axios from "@/lib/axios";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+import { Eye, EyeOff } from "lucide-react";
 
 export default function VerifyCurrentDialog({
   open: openProp,
@@ -12,6 +13,7 @@ export default function VerifyCurrentDialog({
 } = {}) {
   const [open, setOpen] = useState(Boolean(openProp));
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
@@ -23,6 +25,7 @@ export default function VerifyCurrentDialog({
       return;
     }
     function handle() {
+      console.log("✅ VerifyCurrentDialog: Received open-verify-current event");
       setOpen(true);
     }
     window.addEventListener("open-verify-current", handle);
@@ -30,6 +33,7 @@ export default function VerifyCurrentDialog({
   }, [openProp]);
 
   function handleOpenChange(next) {
+    console.log("VerifyCurrentDialog: Open state changing to:", next);
     if (typeof onOpenChange === "function") onOpenChange(next);
     if (typeof openProp === "undefined") setOpen(next);
     if (!next) {
@@ -67,7 +71,7 @@ export default function VerifyCurrentDialog({
       let msg;
 
       if (status === 400) {
-        msg = "User tidak ditemukan, silahkan coba kembalia";
+        msg = "Kata sandi salah, silahkan coba lagi";
       } else if (status >= 500 && status < 600) {
         msg = "Terjadi masalah, silahkan coba beberapa saat lagi";
       } else if (serverMsg) {
@@ -101,11 +105,25 @@ export default function VerifyCurrentDialog({
             <label className="block text-sm text-muted-foreground mb-1">
               Kata Sandi Saat Ini
             </label>
-            <Input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
+            <div className="relative">
+              <Input
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+              <button
+                type="button"
+                aria-label={showPassword ? "Hide password" : "Show password"}
+                onClick={() => setShowPassword((s) => !s)}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground"
+              >
+                {showPassword ? (
+                  <EyeOff className="h-5 w-5" />
+                ) : (
+                  <Eye className="h-5 w-5" />
+                )}
+              </button>
+            </div>
             {error && <div className="text-sm text-red-600 mt-1">{error}</div>}
           </div>
         </div>

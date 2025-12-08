@@ -15,11 +15,14 @@ const {
   validateLogCall,
   validateUpdateStatus,
   validateUUIDParam,
+  validateDashboardQuery,
+  validateLeadsOverviewQuery,
 } = require('../middlewares/validation.middleware');
 
 // Global Middleware untuk router ini
 router.use(authenticateToken);
 router.use(requireSales);
+
 
 /**
  * Dashboard Route
@@ -28,20 +31,13 @@ router.use(requireSales);
 router.get(
   '/dashboard',
   searchLimiter,
-  validateGetAllQuery, // Validasi page, limit, search, sortBy
-  controller.getDashboard,
+  validateDashboardQuery, // Validate dashboard params (year/month/summary/etc.)
+  controller.getDashboardSummary,
 );
 
-/**
- * Log Call Route
- * Secured with Write Rate Limit (Anti-Spam)
- */
-router.post(
-  '/log-call',
-  writeLimiter,
-  // TODO: Tambahkan 'validateLogCall' di validation.middleware.js untuk validasi body (nasabahId, hasil, dll)
-  controller.logCall,
-);
+// Dashboard-specific peek endpoints removed. Use GET /dashboard with params instead.
+
+// Note: combined summary is now served by GET /dashboard when summary params are present
 
 /**
  * Export Route
@@ -50,7 +46,7 @@ router.post(
 router.get(
   '/export',
   searchLimiter,
-  controller.exportData,
+  controller.exportCallHistory,
 );
 
 /**
@@ -75,6 +71,12 @@ router.get(
   '/leads',
   validateGetAllQuery,
   controller.getAllLeads,
+);
+
+router.get(
+  '/leads/overview',
+  validateLeadsOverviewQuery,
+  controller.getAllLeadsOverview,
 );
 
 router.get(

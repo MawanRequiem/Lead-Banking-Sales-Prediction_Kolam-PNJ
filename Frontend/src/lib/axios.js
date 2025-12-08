@@ -9,40 +9,28 @@ const axiosInstance = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  // Ensure cookies (httpOnly) are sent with requests to the backend
+  withCredentials: true,
 });
-
-// Interceptor: Setiap request keluar, otomatis tempel Token
-axiosInstance.interceptors.request.use(
-  (config) => {
-    // Ambil token dari localStorage (kita akan simpan dengan nama 'accessToken')
-    const token = localStorage.getItem('accessToken');
-    if (token) {
-      config.headers['Authorization'] = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
+// Note: Auth uses httpOnly cookies. Do not attach Authorization header from localStorage.
+// Do not attach Authorization header from localStorage when using httpOnly cookies.
 
 // Interceptor: Handle jika Token Expired (401)
 axiosInstance.interceptors.response.use(
+  //fix dead code from merge
   (response) => response,
   (error) => {
     if (error.response && error.response.status === 401) {
+      // Jika token hangus, paksa logout atau redirect ke login
       console.error("Session expired, please login again.");
       try {
-        // clear local tokens to avoid repeated 401 loops
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
-      } catch {
-        // ignore
-      }
-
-      // dispatch a DOM event the app can listen to
-      try {
-        window.dispatchEvent(new CustomEvent('auth:expired'));
-      } catch {
-        // ignore if CustomEvent fails
+        const reqUrl = (error.config && error.config.url) || '';
+        // Avoid dispatching for login/refresh endpoints to prevent loops
+        if (!reqUrl.includes('/login') && !reqUrl.includes('/refresh')) {
+          window.dispatchEvent(new CustomEvent('auth:expired'));
+        }
+      } catch (e) {
+        console.error('Failed to dispatch auth:expired', e);
       }
     }
     return Promise.reject(error);

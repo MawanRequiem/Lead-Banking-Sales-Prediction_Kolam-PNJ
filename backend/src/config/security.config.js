@@ -110,6 +110,7 @@ const corsConfig = cors({
     'Authorization',
     'X-Request-ID',
     'X-Correlation-ID',
+    'x-refresh-token',
   ],
   exposedHeaders: [
     'X-Request-ID',

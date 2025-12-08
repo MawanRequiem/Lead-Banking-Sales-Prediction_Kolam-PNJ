@@ -69,11 +69,17 @@ export default function ProfileDialog({ open: openProp, onOpenChange } = {}) {
 
   const extraAdminFields = [];
   if (role === "admin") {
-    if (src.emailRecovery)
+    if (src.emailRecovery) {
       extraAdminFields.push({
         label: "Recovery Email",
         value: src.emailRecovery,
       });
+    } else {
+      extraAdminFields.push({
+        label: "Recovery Email",
+        value: "-",
+      });
+    }
   }
 
   const rows = [
