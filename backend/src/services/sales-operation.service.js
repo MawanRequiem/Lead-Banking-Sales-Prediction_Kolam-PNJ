@@ -274,7 +274,7 @@ async function getMyAssignments(userId, query) {
     nama: item.nasabah.nama,
     pekerjaan: item.nasabah.pekerjaan || '-',
     nomorTelepon: item.nasabah.nomorTelepon || '-',
-    jenisKelamin: item.nasabah.jenisKelaminRel?.namaJenisKelamin === 'L' ? 'Laki-laki' : 'Perempuan',
+    jenisKelamin: item.nasabah.jenisKelaminRel?.namaJenisKelamin,
     umur: item.nasabah.umur,
     domisili: item.nasabah.domisili || '-',
     statusPernikahan: item.nasabah.statusPernikahan?.namaStatus || 'Unknown',
