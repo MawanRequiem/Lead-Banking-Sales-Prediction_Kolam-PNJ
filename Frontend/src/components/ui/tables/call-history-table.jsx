@@ -29,7 +29,7 @@ const historyColumns = (t, onOpenNote) => [
     cell: ({ row }) => row.original.nasabah?.nama,
   },
   {
-    accessorKey: "nasabah",
+    accessorKey: "skorPrediksi",
     header: t("table.call_History.columns.kategori"),
     cell: ({ row }) => (
       <div>
