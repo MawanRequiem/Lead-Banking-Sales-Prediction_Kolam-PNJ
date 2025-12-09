@@ -11,6 +11,7 @@ function getMyLeads(salesId, filters = {}) {
     sortOrder = 'desc',
     page = 1,
     limit = 20,
+    grade,
   } = filters;
 
   const skip = (page - 1) * limit;
@@ -41,6 +42,18 @@ function getMyLeads(salesId, filters = {}) {
       },
     },
   };
+
+  if (grade) {
+    let skorCondition;
+    if (grade === 'A') {skorCondition = { gte: 0.75 };}
+    if (grade === 'B') {skorCondition = { gte: 0.5, lt: 0.75 };}
+    if (grade === 'C') {skorCondition = { lt: 0.5 };}
+
+    where.nasabah.is = {
+      ...where.nasabah.is,
+      skorPrediksi: skorCondition,
+    };
+  }
 
   // 2. Jalankan Query Utama (Data) dan Count (Total Data) secara paralel
   return Promise.all([
@@ -421,63 +434,6 @@ async function updateDepositoStatus(salesId, nasabahId, newStatus) {
   });
 }
 
-async function getAssignedLeads(salesId, query) {
-  const { page = 1, limit = 10, search = '', grade } = query;
-  const skip = (page - 1) * limit;
-  const take = parseInt(limit);
-
-  const whereCondition = {
-    idSales: salesId,
-    isActive: true, // Hanya ambil assignment yang aktif
-    nasabah: {
-      is: {
-        deletedAt: null,
-        nama: {
-          contains: search,
-          mode: 'insensitive',
-        },
-      },
-    },
-  };
-
-  if (grade) {
-    let skorCondition;
-    if (grade === 'A') {skorCondition = { gte: 0.75 };}
-    if (grade === 'B') {skorCondition = { gte: 0.5, lt: 0.75 };}
-    if (grade === 'C') {skorCondition = { lt: 0.5 };}
-
-    whereCondition.nasabah.is = {
-      ...whereCondition.nasabah.is,
-      skorPrediksi: skorCondition,
-    };
-  }
-
-  const [count, assignments] = await prisma.$transaction([
-    prisma.salesNasabahAssignment.count({ where: whereCondition }),
-    prisma.salesNasabahAssignment.findMany({
-      where: whereCondition,
-      skip,
-      take,
-      orderBy: { tanggalAssignment: 'desc' },
-      include: {
-        nasabah: {
-          include: {
-            statusPernikahan: true,
-          },
-        },
-      },
-    }),
-  ]);
-
-  const pagination = {
-    page: parseInt(page),
-    total: count,
-    lastPage: Math.ceil(count / limit),
-  };
-
-  return { assignments, pagination };
-}
-
 /**
  * Get conversion (successful calls) aggregated by time bucket from histori_telepon
  * successSet: array of strings (e.g. ['SUKSES','DEPOSIT'])
@@ -709,13 +665,61 @@ async function getAllLeadsOverview({ month, year } = {}) {
   const y = year ? Number(year) : now.getFullYear();
   const cutoff = new Date(y, m - 1, 0);
 
-  const current = await prisma.nasabah.findMany({ include: { deposito: true } });
+  const current = await prisma.nasabah.findMany({
+    where: {
+      deletedAt: null,
+    },
+    include: { deposito: true },
+  });
   const last = await prisma.nasabah.findMany({
     where: {
       createdAt: { lte: cutoff },
+      deletedAt: null,
     },
     include: {
       deposito: true,
+    },
+  });
+
+  return { current, last };
+}
+
+async function getMyLeadsOverview(salesId, { month, year } = {}) {
+  const now = new Date();
+  const m = month ? Number(month) : now.getMonth() + 1;
+  const y = year ? Number(year) : now.getFullYear();
+  const cutoff = new Date(y, m - 1, 0);
+
+  const current = await prisma.salesNasabahAssignment.findMany({
+    where: {
+      idSales: salesId,
+      nasabah: {
+        deletedAt: null,
+      },
+    },
+    include: {
+      nasabah: {
+        include: {
+          deposito: true,
+        },
+      },
+    },
+  });
+
+  const last = await prisma.salesNasabahAssignment.findMany({
+    where: {
+      idSales: salesId,
+      createdAt: { lte: cutoff },
+      nasabah: {
+        deletedAt: null,
+      },
+    },
+    include: {
+      nasabah: {
+        include: {
+          deposito: true,
+        },
+      },
     },
   });
 
@@ -746,7 +750,7 @@ module.exports = {
   getDepositTypesAggregate,
   getCallHistory,
   updateDepositoStatus,
-  getAssignedLeads,
   getAllLeadsOverview,
+  getMyLeadsOverview,
   updateSalesAssignmentActiveStatus,
 };

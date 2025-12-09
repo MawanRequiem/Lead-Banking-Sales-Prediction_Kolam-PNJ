@@ -14,12 +14,14 @@ import axios from "@/lib/axios";
 import useProfile from "@/hooks/useProfile";
 import { Import, Plus } from "lucide-react";
 import { toast } from "sonner";
+import { useLang } from "@/hooks/useLang";
 
 function emptyRow() {
   return { nama: "", email: "", role: "sales", domisili: "", nomorTelepon: "" };
 }
 
 export default function AdminBulkAddTable() {
+  const { t } = useLang();
   const [rows, setRows] = useState([emptyRow()]);
   const [countInput, setCountInput] = useState(1);
   const [importOpen, setImportOpen] = useState(false);
@@ -103,15 +105,13 @@ export default function AdminBulkAddTable() {
     const hasAnyError = nextErrors.some((e) => Object.keys(e).length > 0);
     if (hasAnyError) {
       setErrors(nextErrors);
-      toast.error(
-        "Terdapat kolom kosong. Isi semua kolom yang wajib sebelum menambahkan user."
-      );
+      toast.error(t("table.admin.messages.requiredFieldsMissing"));
       return;
     }
 
     // Only allow admins to call admin endpoints
     if (!user || user.role !== "admin") {
-      toast.error("Hanya admin yang dapat menambahkan user melalui API");
+      toast.error(t("table.admin.messages.onlyAdminCanAdd"));
       return;
     }
 
@@ -135,7 +135,11 @@ export default function AdminBulkAddTable() {
             };
           });
           setErrors(nextErrors);
-          toast.error(`Terdapat ${phoneErrs.length} nomor telepon tidak valid`);
+          toast.error(
+            `${t("table.admin.messages.invalidPhonesPrefix")} ${
+              phoneErrs.length
+            } ${t("table.admin.messages.invalidPhonesSuffix")}`
+          );
           setSubmitting(false);
           return;
         }
@@ -163,9 +167,16 @@ export default function AdminBulkAddTable() {
           .map((res, idx) => ({ res, row: rows[idx] }))
           .filter((x) => x.res.status === "rejected");
 
-        if (successes) toast.success(`Added ${successes} users`);
+        if (successes)
+          toast.success(
+            `${t("table.admin.messages.addedPrefix")} ${successes} ${t(
+              "table.admin.messages.addedUsersSuffix"
+            )}`
+          );
         if (failures.length) {
-          toast.error(`${failures.length} row(s) failed to add`);
+          toast.error(
+            `${failures.length} ${t("table.admin.messages.rowsFailedSuffix")}`
+          );
           console.error("Bulk add failures", failures);
         }
 
@@ -176,7 +187,7 @@ export default function AdminBulkAddTable() {
         }
       } catch (e) {
         console.error("Bulk add error", e);
-        toast.error("Terjadi kesalahan saat menambahkan users");
+        toast.error(t("table.admin.messages.bulkAddError"));
       } finally {
         setSubmitting(false);
       }
@@ -186,13 +197,13 @@ export default function AdminBulkAddTable() {
   function handleImport(file) {
     (async () => {
       if (!file) {
-        toast.error("No file selected");
+        toast.error(t("table.admin.messages.noFileSelected"));
         return;
       }
 
       // Only allow admins to call import
       if (!user || user.role !== "admin") {
-        toast.error("Hanya admin yang dapat melakukan import");
+        toast.error(t("table.admin.messages.onlyAdminCanImport"));
         return;
       }
 
@@ -224,23 +235,30 @@ export default function AdminBulkAddTable() {
 
         if (createdCount > 0) {
           toast.success(
-            `Import selesai: ${createdCount} berhasil, ${failedCount} gagal`
+            `${t(
+              "table.admin.messages.importFinishedPrefix"
+            )} ${createdCount} ${t(
+              "table.admin.messages.importCreatedSuffix"
+            )}, ${failedCount} ${t("table.admin.messages.importFailedSuffix")}`
           );
           // Reset local rows if import created users
           setRows([emptyRow()]);
           setErrors([]);
         } else if (failedCount > 0) {
           toast.error(
-            `Import selesai: ${createdCount} berhasil, ${failedCount} gagal`
+            `${t(
+              "table.admin.messages.importFinishedPrefix"
+            )} ${createdCount} ${t(
+              "table.admin.messages.importCreatedSuffix"
+            )}, ${failedCount} ${t("table.admin.messages.importFailedSuffix")}`
           );
         } else {
-          toast.success("Import selesai");
+          toast.success(t("table.admin.messages.importFinished"));
         }
       } catch (err) {
         console.error("Import error", err);
-        const msg =
-          err?.response?.data?.message || err.message || "Import failed";
-        toast.error(msg);
+        const serverMsg = err?.response?.data?.message || err.message;
+        toast.error(serverMsg || t("table.admin.messages.importFailed"));
       } finally {
         setSubmitting(false);
         setImportOpen(false);
@@ -254,16 +272,18 @@ export default function AdminBulkAddTable() {
         <div className="flex items-center space-x-2">
           <Button
             variant="outline"
-            title="Import users"
+            title={t("table.admin.bulk.importTitle")}
             onClick={() => setImportOpen(true)}
           >
-            <Import className="w-4 h-4 mr-2" /> Import
+            <Import className="w-4 h-4 mr-2" /> {t("table.admin.bulk.import")}
           </Button>
         </div>
 
         <div className="flex items-center space-x-4">
           <div className="flex items-center">
-            <div className="text-sm font-medium mr-3">Jumlah Baris:</div>
+            <div className="text-sm font-medium mr-3">
+              {t("table.admin.bulk.rowCount")}
+            </div>
             <div className="flex items-center space-x-1">
               <Button
                 variant="outline"
@@ -293,7 +313,7 @@ export default function AdminBulkAddTable() {
           </div>
 
           <Button onClick={handleAddUsers} className="ml-2">
-            Tambah User
+            {t("table.admin.bulk.addUsers")}
           </Button>
         </div>
       </div>
@@ -302,11 +322,13 @@ export default function AdminBulkAddTable() {
         <table className="w-full table-auto border-collapse">
           <thead>
             <tr className="text-left">
-              <th className="p-2 border-b">Nama</th>
-              <th className="p-2 border-b">Email</th>
-              <th className="p-2 border-b">Role</th>
-              <th className="p-2 border-b">Domisili</th>
-              <th className="p-2 border-b">No. Telepon</th>
+              <th className="p-2 border-b">{t("table.admin.columns.nama")}</th>
+              <th className="p-2 border-b">{t("table.admin.columns.email")}</th>
+              <th className="p-2 border-b">{t("table.admin.columns.role")}</th>
+              <th className="p-2 border-b">
+                {t("table.admin.columns.domisili")}
+              </th>
+              <th className="p-2 border-b">{t("table.admin.columns.phone")}</th>
             </tr>
           </thead>
           <tbody>

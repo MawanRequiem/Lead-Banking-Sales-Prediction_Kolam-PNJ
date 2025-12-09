@@ -6,11 +6,13 @@ import axios from "@/lib/axios";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
+import { useLang } from "@/hooks/useLang";
 
 export default function VerifyCurrentDialog({
   open: openProp,
   onOpenChange,
 } = {}) {
+  const { t } = useLang();
   const [open, setOpen] = useState(Boolean(openProp));
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -55,7 +57,10 @@ export default function VerifyCurrentDialog({
         res?.data?.data?.verificationToken || res?.data?.verificationToken;
       if (!verificationToken) {
         toast.success(
-          "Password verified — redirecting to change password page"
+          t(
+            "dialog.verifyCurrent.verifiedRedirect",
+            "Password verified — redirecting to change password page"
+          )
         );
         handleOpenChange(false);
         navigate("/change-password");
@@ -71,13 +76,21 @@ export default function VerifyCurrentDialog({
       let msg;
 
       if (status === 400) {
-        msg = "Kata sandi salah, silahkan coba lagi";
+        msg = t(
+          "dialog.verifyCurrent.errorWrongPassword",
+          "Kata sandi salah, silahkan coba lagi"
+        );
       } else if (status >= 500 && status < 600) {
-        msg = "Terjadi masalah, silahkan coba beberapa saat lagi";
+        msg = t(
+          "dialog.verifyCurrent.errorServer",
+          "Terjadi masalah, silahkan coba beberapa saat lagi"
+        );
       } else if (serverMsg) {
         msg = serverMsg;
       } else {
-        msg = e?.message || "Verification failed";
+        msg =
+          e?.message ||
+          t("dialog.verifyCurrent.errorDefault", "Verification failed");
       }
 
       setError(msg);
@@ -92,18 +105,23 @@ export default function VerifyCurrentDialog({
       <Dialog.DialogContent>
         <Dialog.DialogHeader>
           <Dialog.DialogTitle>
-            Verifikasi Kata Sandi Saat Ini
+            {t("dialog.verifyCurrent.title", "Verifikasi Kata Sandi Saat Ini")}
           </Dialog.DialogTitle>
           <Dialog.DialogDescription>
-            Masukkan kata sandi saat ini untuk melanjutkan ke halaman
-            penggantian kata sandi.
+            {t(
+              "dialog.verifyCurrent.description",
+              "Masukkan kata sandi saat ini untuk melanjutkan ke halaman penggantian kata sandi."
+            )}
           </Dialog.DialogDescription>
         </Dialog.DialogHeader>
 
         <div className="py-4">
           <div>
             <label className="block text-sm text-muted-foreground mb-1">
-              Kata Sandi Saat Ini
+              {t(
+                "dialog.verifyCurrent.currentPasswordLabel",
+                "Kata Sandi Saat Ini"
+              )}
             </label>
             <div className="relative">
               <Input
@@ -113,7 +131,11 @@ export default function VerifyCurrentDialog({
               />
               <button
                 type="button"
-                aria-label={showPassword ? "Hide password" : "Show password"}
+                aria-label={
+                  showPassword
+                    ? t("dialog.verifyCurrent.hidePassword", "Hide password")
+                    : t("dialog.verifyCurrent.showPassword", "Show password")
+                }
                 onClick={() => setShowPassword((s) => !s)}
                 className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground"
               >
@@ -130,10 +152,12 @@ export default function VerifyCurrentDialog({
 
         <Dialog.DialogFooter>
           <Button variant="ghost" onClick={() => handleOpenChange(false)}>
-            Batal
+            {t("dialog.verifyCurrent.cancel", "Batal")}
           </Button>
           <Button onClick={verify} disabled={loading || !password}>
-            {loading ? "Memverifikasi..." : "Verifikasi"}
+            {loading
+              ? t("dialog.verifyCurrent.verifying", "Memverifikasi...")
+              : t("dialog.verifyCurrent.verify", "Verifikasi")}
           </Button>
         </Dialog.DialogFooter>
       </Dialog.DialogContent>

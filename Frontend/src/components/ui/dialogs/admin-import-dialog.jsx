@@ -2,12 +2,14 @@ import React, { useState } from "react";
 import * as Dialog from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useLang } from "@/hooks/useLang";
 
 export default function AdminImportDialog({
   open = false,
   onOpenChange,
   onImport,
 }) {
+  const { t } = useLang();
   const [file, setFile] = useState(null);
 
   function handleFile(e) {
@@ -26,17 +28,23 @@ export default function AdminImportDialog({
     <Dialog.Dialog open={open} onOpenChange={onOpenChange}>
       <Dialog.DialogContent>
         <Dialog.DialogHeader>
-          <Dialog.DialogTitle>Import Users</Dialog.DialogTitle>
+          <Dialog.DialogTitle>
+            {t("dialog.adminImport.title", "Import Users")}
+          </Dialog.DialogTitle>
           <Dialog.DialogDescription>
-            Unggah file CSV atau Excel berisi daftar user (kolom:
-            nama,email,role,domisili,nomorTelepon).
+            {t(
+              "dialog.adminImport.description",
+              "Unggah file CSV atau Excel berisi daftar user (kolom: nama,email,role,domisili,nomorTelepon)."
+            )}
           </Dialog.DialogDescription>
         </Dialog.DialogHeader>
 
         <div className="py-4">
           <Input type="file" accept=".csv,.xls,.xlsx" onChange={handleFile} />
           {file ? (
-            <div className="mt-2 text-sm">Selected: {file.name}</div>
+            <div className="mt-2 text-sm">
+              {t("dialog.adminImport.selected", "Selected:")} {file.name}
+            </div>
           ) : null}
         </div>
 
@@ -48,10 +56,10 @@ export default function AdminImportDialog({
               setFile(null);
             }}
           >
-            Batal
+            {t("dialog.adminImport.cancel", "Batal")}
           </Button>
           <Button onClick={handleImport} disabled={!file}>
-            Import
+            {t("dialog.adminImport.confirm", "Import")}
           </Button>
         </Dialog.DialogFooter>
       </Dialog.DialogContent>

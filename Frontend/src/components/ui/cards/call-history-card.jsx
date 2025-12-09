@@ -12,10 +12,12 @@ import { useNavigate } from "react-router-dom";
 import { ChevronDown } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { formatSecondsToHHMMSS } from "@/lib/date-utils";
+import { useLang } from "@/hooks/useLang";
 
 // entries: [{ id, nama (nasabah), time, agent, duration, result, note }]
 export default function CallHistoryCard({ data = [], loading = false }) {
   const navigate = useNavigate();
+  const { t } = useLang();
 
   function handleNavigate() {
     try {
@@ -54,10 +56,14 @@ export default function CallHistoryCard({ data = [], loading = false }) {
     <Card>
       <CardHeader>
         <div>
-          <CardTitle>Riwayat Telepon</CardTitle>
+          <CardTitle>
+            {t("card.callHistory.title", "Riwayat Telepon")}
+          </CardTitle>
         </div>
         <CardAction>
-          <Button onClick={handleNavigate}>Selengkapnya</Button>
+          <Button onClick={handleNavigate}>
+            {t("card.callHistory.more", "Selengkapnya")}
+          </Button>
         </CardAction>
       </CardHeader>
 
@@ -108,7 +114,7 @@ export default function CallHistoryCard({ data = [], loading = false }) {
                     <div className="grid grid-cols-1 gap-2 text-sm">
                       <div>
                         <div className="text-muted-foreground text-xs">
-                          Nama Nasabah
+                          {t("card.callHistory.nameLabel", "Nama Nasabah")}
                         </div>
                         <div className="text-foreground font-medium">
                           {e.nama || "—"}
@@ -116,20 +122,20 @@ export default function CallHistoryCard({ data = [], loading = false }) {
                       </div>
                       <div>
                         <div className="text-muted-foreground text-xs">
-                          Tanggal Telepon
+                          {t("card.callHistory.dateLabel", "Tanggal Telepon")}
                         </div>
                         <div className="text-foreground">{e.time}</div>
                       </div>
                       <div>
                         <div className="text-muted-foreground text-xs">
-                          Hasil Telepon
+                          {t("card.callHistory.resultLabel", "Hasil Telepon")}
                         </div>
                         <div className="text-foreground">{e.result || "-"}</div>
                       </div>
                       {e.note ? (
                         <div>
                           <div className="text-muted-foreground text-xs">
-                            Catatan
+                            {t("card.callHistory.noteLabel", "Catatan")}
                           </div>
                           <div className="text-foreground">{e.note}</div>
                         </div>
@@ -140,7 +146,7 @@ export default function CallHistoryCard({ data = [], loading = false }) {
               ))
             ) : (
               <div className="text-sm text-muted-foreground">
-                Tidak ada riwayat telepon.
+                {t("card.callHistory.empty", "Tidak ada riwayat telepon.")}
               </div>
             )}
           </div>

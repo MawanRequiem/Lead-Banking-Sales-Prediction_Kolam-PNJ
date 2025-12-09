@@ -6,8 +6,10 @@ import { Eye, EyeOff } from "lucide-react";
 import axios from "@/lib/axios";
 import { toast } from "sonner";
 import loginPic from "@/assets/login.png";
+import { useLang } from "@/hooks/useLang";
 
 export default function ChangePasswordPage() {
+  const { t } = useLang();
   const location = useLocation();
   const navigate = useNavigate();
   const passedToken = location?.state?.verificationToken || null;
@@ -35,10 +37,17 @@ export default function ChangePasswordPage() {
         setVerificationToken(verificationToken);
       }
       setStep(2);
-      toast.success("Current password verified — please enter new password");
+      toast.success(
+        t(
+          "page.changePassword.verifiedRedirect",
+          "Current password verified — please enter new password"
+        )
+      );
     } catch (err) {
       const msg =
-        err?.response?.data?.message || err.message || "Verification failed";
+        err?.response?.data?.message ||
+        err.message ||
+        t("page.changePassword.errorDefault", "Verification failed");
       setErrors({ currentPassword: msg });
       toast.error(msg);
     } finally {
@@ -58,7 +67,9 @@ export default function ChangePasswordPage() {
       // Force re-authentication after password change: redirect user to login
       // Tokens are stored in httpOnly cookies; no localStorage cleanup needed.
       navigate("/login", { replace: true });
-      toast.success("Password changed successfully");
+      toast.success(
+        t("page.changePassword.success", "Password changed successfully")
+      );
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
@@ -72,7 +83,10 @@ export default function ChangePasswordPage() {
         });
         setErrors(next);
       }
-      const msg = data?.message || err.message || "Change password failed";
+      const msg =
+        data?.message ||
+        err.message ||
+        t("page.changePassword.failed", "Change password failed");
       toast.error(msg);
     } finally {
       setLoading(false);
@@ -96,25 +110,32 @@ export default function ChangePasswordPage() {
       <div className="w-full md:w-1/2 flex items-center justify-center px-8 py-12">
         <div className="w-full p-8 max-w-lg">
           <h1 className="text-3xl font-bold text-primary mb-6">
-            Change Password
+            {t("page.changePassword.title", "Change Password")}
           </h1>
 
           {step === 1 ? (
             <div className="space-y-4">
               <div>
                 <label className="block text-sm text-muted-foreground mb-1">
-                  Current Password
+                  {t("page.changePassword.currentLabel", "Current Password")}
                 </label>
                 <div className="relative">
                   <Input
                     type={showCurrent ? "text" : "password"}
                     value={currentPassword}
                     onChange={(e) => setCurrentPassword(e.target.value)}
-                    placeholder="Masukkan Password Milikmu di Sini"
+                    placeholder={t(
+                      "page.changePassword.currentPlaceholder",
+                      "Enter your current password"
+                    )}
                   />
                   <button
                     type="button"
-                    aria-label={showCurrent ? "Hide password" : "Show password"}
+                    aria-label={
+                      showCurrent
+                        ? t("page.changePassword.hidePassword", "Hide password")
+                        : t("page.changePassword.showPassword", "Show password")
+                    }
                     onClick={() => setShowCurrent((s) => !s)}
                     className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground"
                   >
@@ -137,7 +158,9 @@ export default function ChangePasswordPage() {
                   onClick={verifyCurrent}
                   disabled={loading || !currentPassword}
                 >
-                  {loading ? "Memverifikasi..." : "Verify"}
+                  {loading
+                    ? t("page.changePassword.verifying", "Verifying...")
+                    : t("page.changePassword.verify", "Verify")}
                 </Button>
               </div>
             </div>
@@ -145,18 +168,25 @@ export default function ChangePasswordPage() {
             <div className="space-y-4">
               <div>
                 <label className="block text-sm text-muted-foreground mb-1">
-                  New Password
+                  {t("page.changePassword.newLabel", "New Password")}
                 </label>
                 <div className="relative">
                   <Input
                     type={showNew ? "text" : "password"}
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
-                    placeholder="Masukkan Password Baru di Sini"
+                    placeholder={t(
+                      "page.changePassword.newPlaceholder",
+                      "Enter your new password"
+                    )}
                   />
                   <button
                     type="button"
-                    aria-label={showNew ? "Hide password" : "Show password"}
+                    aria-label={
+                      showNew
+                        ? t("page.changePassword.hidePassword", "Hide password")
+                        : t("page.changePassword.showPassword", "Show password")
+                    }
                     onClick={() => setShowNew((s) => !s)}
                     className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground"
                   >
@@ -176,18 +206,25 @@ export default function ChangePasswordPage() {
 
               <div>
                 <label className="block text-sm text-muted-foreground mb-1">
-                  Confirm Password
+                  {t("page.changePassword.confirmLabel", "Confirm Password")}
                 </label>
                 <div className="relative">
                   <Input
                     type={showConfirm ? "text" : "password"}
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="Masukkan Password Baru di Sini"
+                    placeholder={t(
+                      "page.changePassword.confirmPlaceholder",
+                      "Confirm your new password"
+                    )}
                   />
                   <button
                     type="button"
-                    aria-label={showConfirm ? "Hide password" : "Show password"}
+                    aria-label={
+                      showConfirm
+                        ? t("page.changePassword.hidePassword", "Hide password")
+                        : t("page.changePassword.showPassword", "Show password")
+                    }
                     onClick={() => setShowConfirm((s) => !s)}
                     className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground"
                   >
@@ -207,13 +244,15 @@ export default function ChangePasswordPage() {
 
               <div className="flex items-center space-x-2">
                 <Button onClick={() => setStep(1)} variant="ghost">
-                  Back
+                  {t("page.changePassword.back", "Back")}
                 </Button>
                 <Button
                   onClick={submitChange}
                   disabled={loading || !newPassword || !confirmPassword}
                 >
-                  {loading ? "Menyimpan..." : "Change Password"}
+                  {loading
+                    ? t("page.changePassword.saving", "Saving...")
+                    : t("page.changePassword.submit", "Change Password")}
                 </Button>
               </div>
             </div>

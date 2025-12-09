@@ -18,9 +18,8 @@ import { formatDisplay, formatSecondsToHHMMSS } from "@/lib/date-utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Phone } from "lucide-react";
 import useLeadDetail from "@/hooks/useLeadDetail";
+import { useLang } from "@/hooks/useLang";
 
-// A focused dialog component for customer details. Keep presentation here
-// so callers can simply open/close and pass `karyawan` data.
 export default function CustomerDetailDialog({
   open,
   onOpenChange,
@@ -31,6 +30,7 @@ export default function CustomerDetailDialog({
   footerActions = null,
   openLogDialog, // optional handler for call action
 }) {
+  const { t } = useLang();
   const { data } = useLeadDetail(nasabah.id, open); //data has profil, metrik, and history
 
   // fallback to nasabah while loading
@@ -58,14 +58,14 @@ export default function CustomerDetailDialog({
           <div className="flex-1 min-w-0">
             <DialogHeader>
               <DialogTitle>
-                {title}: {profil.nama}
+                {t("dialog.customerDetail.titlePrefix")}: {profil.nama}
               </DialogTitle>
               {subtitle ? (
                 <p className="text-sm text-muted-foreground mt-1">{subtitle}</p>
               ) : null}
             </DialogHeader>
             <DialogDescription className="sr-only">
-              Detail informasi customer.
+              {t("dialog.customerDetail.description")}
             </DialogDescription>
           </div>
 
@@ -77,10 +77,10 @@ export default function CustomerDetailDialog({
                 variant="outline"
                 size="sm"
                 onClick={handleCallClick}
-                title={"Log Call"}
+                title={t("dialog.customerDetail.logCall")}
               >
                 <Phone className="h-4 w-4 mr-2" />
-                {"Log Call"}
+                {t("dialog.customerDetail.logCall")}
               </Button>
             )}
           </div>
@@ -95,17 +95,21 @@ export default function CustomerDetailDialog({
             <div className="w-[18rem] sm:w-1/3 min-w-0">
               <ScrollArea className="h-full whitespace-nowrap ps-px">
                 <section className="mb-4">
-                  <h3 className="text-sm font-semibold mb-2">Informasi Diri</h3>
+                  <h3 className="text-sm font-semibold mb-2">
+                    {t("dialog.customerDetail.sections.personalInfo")}
+                  </h3>
                   <div className="grid grid-cols-1 gap-3 text-sm">
                     <div>
-                      <div className="text-muted-foreground text-xs">ID</div>
+                      <div className="text-muted-foreground text-xs">
+                        {t("dialog.customerDetail.fields.id")}
+                      </div>
                       <div className="text-foreground font-medium">
                         {profil.id}
                       </div>
                     </div>
                     <div>
                       <div className="text-muted-foreground text-xs">
-                        Pekerjaan
+                        {t("dialog.customerDetail.fields.pekerjaan")}
                       </div>
                       <div className="text-foreground font-medium">
                         {profil.pekerjaan}
@@ -113,21 +117,24 @@ export default function CustomerDetailDialog({
                     </div>
                     <div>
                       <div className="text-muted-foreground text-xs">
-                        Jenis Kelamin
+                        {t("dialog.customerDetail.fields.jenisKelamin")}
                       </div>
                       <div className="text-foreground font-medium">
                         {profil.jenisKelamin}
                       </div>
                     </div>
                     <div>
-                      <div className="text-muted-foreground text-xs">Umur</div>
+                      <div className="text-muted-foreground text-xs">
+                        {t("dialog.customerDetail.fields.umur")}
+                      </div>
                       <div className="text-foreground font-medium">
-                        {profil.umur} tahun
+                        {profil.umur}{" "}
+                        {t("dialog.customerDetail.fields.umurSuffix")}
                       </div>
                     </div>
                     <div>
                       <div className="text-muted-foreground text-xs">
-                        Domisili
+                        {t("dialog.customerDetail.fields.domisili")}
                       </div>
                       <div className="text-foreground font-medium">
                         {profil.domisili}
@@ -135,7 +142,7 @@ export default function CustomerDetailDialog({
                     </div>
                     <div>
                       <div className="text-muted-foreground text-xs">
-                        Status Pernikahan
+                        {t("dialog.customerDetail.fields.statusPernikahan")}
                       </div>
                       <div className="text-foreground font-medium">
                         <MarriageBadge value={profil.statusPernikahan} />
@@ -153,7 +160,7 @@ export default function CustomerDetailDialog({
               <ScrollArea className="h-full rounded-md border p-4">
                 <section>
                   <h3 className="text-sm font-semibold mb-2">
-                    Riwayat Telepon Terakhir
+                    {t("dialog.customerDetail.sections.lastCalls")}
                   </h3>
                   {telepon.length ? (
                     <div className="space-y-3 text-sm pr-2">
@@ -168,7 +175,8 @@ export default function CustomerDetailDialog({
                                 {formatDisplay(c.tanggal) || "-"}
                               </div>
                               <div className="text-foreground font-medium">
-                                {c.hasil || "Panggilan"}
+                                {c.hasil ||
+                                  t("dialog.customerDetail.sections.lastCalls")}
                               </div>
                             </div>
                             <div className="text-muted-foreground text-xs ml-4">
@@ -185,7 +193,7 @@ export default function CustomerDetailDialog({
                     </div>
                   ) : (
                     <div className="text-sm text-muted-foreground">
-                      Tidak ada riwayat telepon.
+                      {t("dialog.customerDetail.noCalls")}
                     </div>
                   )}
                 </section>
@@ -198,7 +206,9 @@ export default function CustomerDetailDialog({
             {/* Right: deposits */}
             <div className="w-[18rem] sm:w-80 min-w-[18rem]">
               <section>
-                <h3 className="text-sm font-semibold mb-2">Daftar Deposito</h3>
+                <h3 className="text-sm font-semibold mb-2">
+                  {t("dialog.customerDetail.sections.deposits")}
+                </h3>
                 <div className="space-y-2">
                   {deposito.length ? (
                     <ScrollArea className="h-full">
@@ -210,7 +220,9 @@ export default function CustomerDetailDialog({
                           <div className="flex items-start justify-between">
                             <div className="min-w-0">
                               <div className="mt-2 text-xs text-muted-foreground">
-                                Jenis Deposito
+                                {t(
+                                  "dialog.customerDetail.fields.jenisDeposito"
+                                )}
                               </div>
                               <div className="mt-1">
                                 <DepositTypeBadge type={d.jenis} />
@@ -228,7 +240,7 @@ export default function CustomerDetailDialog({
                     </ScrollArea>
                   ) : (
                     <div className="text-sm text-muted-foreground">
-                      Tidak ada deposito.
+                      {t("dialog.customerDetail.noDeposits")}
                     </div>
                   )}
                 </div>
@@ -243,7 +255,7 @@ export default function CustomerDetailDialog({
         <DialogFooter className="mb-4">
           <DialogClose asChild>
             <Button variant="warning" className="w-full">
-              Tutup
+              {t("dialog.customerDetail.close")}
             </Button>
           </DialogClose>
           {footerActions}

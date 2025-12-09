@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CategoryBadge } from "@/components/ui/badges";
+import { useLang } from "@/hooks/useLang";
 
 export default function ContactPriorityCard({
   data,
@@ -13,15 +14,9 @@ export default function ContactPriorityCard({
   loading = false,
 }) {
   const navigate = useNavigate();
+  const { t } = useLang();
   const list = Array.isArray(data) ? data.slice(0, 5) : [];
   const finalLoading = loading;
-
-  function openCustomerDetail(id) {
-    if (typeof onOpenCustomer === "function") {
-      onOpenCustomer(id);
-      return;
-    }
-  }
 
   function getCategory(item) {
     // Prefer explicit category if provided
@@ -38,9 +33,14 @@ export default function ContactPriorityCard({
       <CardContent>
         <div className="flex items-start justify-between mb-3">
           <div className="flex flex-col">
-            <div className="text-sm font-semibold">Kontak Prioritas</div>
+            <div className="text-sm font-semibold">
+              {t("card.contactPriority.title", "Kontak Prioritas")}
+            </div>
             <div className="text-xs text-muted-foreground">
-              Nasabah prioritas anda hari ini
+              {t(
+                "card.contactPriority.subtitle",
+                "Nasabah prioritas anda hari ini"
+              )}
             </div>
           </div>
 
@@ -52,7 +52,7 @@ export default function ContactPriorityCard({
                 navigate("/assignments");
               }}
             >
-              Lihat Semua
+              {t("card.contactPriority.seeAll", "Lihat Semua")}
             </Button>
           </div>
         </div>
@@ -67,15 +67,20 @@ export default function ContactPriorityCard({
             ))
           ) : list && list.length === 0 ? (
             <div className="py-4 text-center text-sm text-muted-foreground">
-              Tidak ada kontak prioritas untuk ditampilkan hari ini.
+              {t(
+                "card.contactPriority.empty",
+                "Tidak ada kontak prioritas untuk ditampilkan hari ini."
+              )}
             </div>
           ) : (
             // Daftar kontak ditampilkan
             (list || []).map((item, idx) => {
               const id = item?.id ?? item?.userId ?? item?.customerId ?? idx;
               const name = item?.name ?? item?.nama ?? item?.email ?? "-";
-              const lastContact = item?.lastCall ?? '-';
-              const lastContactToLocale = new Date(lastContact).toLocaleString();
+              const lastContact = item?.lastCall ?? "-";
+              const lastContactToLocale = new Date(
+                lastContact
+              ).toLocaleString();
               const category = getCategory(item);
 
               return (
@@ -91,7 +96,11 @@ export default function ContactPriorityCard({
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="text-sm text-muted-foreground text-right">
-                      Terakhir dihubungi: {lastContactToLocale}
+                      {t(
+                        "card.contactPriority.lastContact",
+                        "Terakhir dihubungi:"
+                      )}{" "}
+                      {lastContactToLocale}
                     </div>
                   </div>
                 </div>

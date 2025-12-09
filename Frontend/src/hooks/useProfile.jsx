@@ -1,6 +1,7 @@
-import { useCallback, useState, useEffect, useContext } from "react";
+import { useCallback, useState, useEffect } from "react";
 import axios from "@/lib/axios";
 import { useProfileContext } from "@/contexts/profile-context";
+import { useLang } from "@/hooks/useLang";
 
 // Profile hook: prefer ProfileContext when available (single fetch). Fallback
 // to local behavior for components not wrapped by provider.
@@ -10,6 +11,7 @@ export default function useProfile(initial = null) {
 
   const [user, setUserState] = useState(initial);
   const [loading, setLoading] = useState(false);
+  const { lang, setLang } = useLang();
 
   // On mount, attempt to fetch authoritative profile from backend.
   useEffect(() => {
@@ -41,10 +43,18 @@ export default function useProfile(initial = null) {
     };
   }, []);
 
-  const changeLanguage = useCallback((lang) => {
-    // stub: replace with real implementation
-    console.log("Change language to", lang);
-  }, []);
+  const changeLanguage = useCallback(
+    (nextLang) => {
+      try {
+        setLang(nextLang);
+        return nextLang;
+      } catch (e) {
+        console.error("Failed to change language", e);
+        return lang;
+      }
+    },
+    [lang, setLang]
+  );
 
   const changePassword = useCallback(() => {
     try {

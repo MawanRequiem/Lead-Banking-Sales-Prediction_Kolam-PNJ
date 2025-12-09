@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/select";
 import { parseDurationToSeconds } from "@/lib/date-utils";
 import DateField from "../dropdown/date-field";
+import { useLang } from "@/hooks/useLang";
 
 export default function CallResultDialog({
   open,
@@ -19,20 +20,22 @@ export default function CallResultDialog({
   onSave,
   nasabah,
 }) {
+  const { t } = useLang();
   const [result, setResult] = useState("");
   const [note, setNote] = useState("");
   const [duration, setDuration] = useState(""); // HH:MM:SS
-  const [ durationSec, setDurationSec ] = useState(0); // seconds integer
-  const [followUpDate, setFollowUpDate] = useState(new Date().toISOString().slice(0, 10));
-
+  const [durationSec, setDurationSec] = useState(0); // seconds integer
+  const [followUpDate, setFollowUpDate] = useState(
+    new Date().toISOString().slice(0, 10)
+  );
 
   useEffect(() => {
     if (open) {
-      resetForm()
+      resetForm();
     }
   }, [open]);
 
-  function handleDurationChange (e) {
+  function handleDurationChange(e) {
     const value = e.target.value;
     setDuration(value);
 
@@ -49,7 +52,7 @@ export default function CallResultDialog({
       catatan: note,
       nasabahId: nasabah.id,
       lamaTelepon: durationSec,
-      nextFollowupDate: followUpDate
+      nextFollowupDate: followUpDate,
     };
     try {
       const res = await axios.post("/sales/log-call", payload);
@@ -76,59 +79,79 @@ export default function CallResultDialog({
         <Dialog.DialogOverlay />
         <Dialog.DialogContent className="w-full max-w-md">
           <Dialog.DialogHeader>
-            <Dialog.DialogTitle>Catatan Hasil Telepon</Dialog.DialogTitle>
+            <Dialog.DialogTitle>
+              {t("dialog.callResult.title")}
+            </Dialog.DialogTitle>
             <Dialog.DialogDescription>
-              Catat hasil panggilan dan tambahkan catatan singkat.
+              {t("dialog.callResult.description")}
             </Dialog.DialogDescription>
           </Dialog.DialogHeader>
 
           <div className="space-y-4 mt-2">
             <div>
-              <label className="block text-sm mb-1">Hasil Panggilan</label>
+              <label className="block text-sm mb-1">
+                {t("dialog.callResult.resultLabel")}
+              </label>
 
               <Select value={result} onValueChange={setResult}>
                 <SelectTrigger className="w-full rounded-md border bg-transparent px-3 py-2">
-                  <SelectValue placeholder="Pilih hasil..." />
+                  <SelectValue
+                    placeholder={t("dialog.callResult.resultPlaceholder")}
+                  />
                 </SelectTrigger>
 
                 <SelectContent>
-                  <SelectItem value="Tertarik">Tertarik</SelectItem>
-                  <SelectItem value="Tidak Tertarik">Tidak Tertarik</SelectItem>
-                  <SelectItem value="Voicemail">Voicemail</SelectItem>
+                  <SelectItem value="Tertarik">
+                    {t("dialog.callResult.results.interested")}
+                  </SelectItem>
+                  <SelectItem value="Tidak Tertarik">
+                    {t("dialog.callResult.results.notInterested")}
+                  </SelectItem>
+                  <SelectItem value="Voicemail">
+                    {t("dialog.callResult.results.voicemail")}
+                  </SelectItem>
                   <SelectItem value="Tidak Terangkat">
-                    Tidak Terangkat
+                    {t("dialog.callResult.results.notAnswered")}
                   </SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div>
-              <label className="block text-sm mb-1">Durasi (HH:MM:SS)</label>
+              <label className="block text-sm mb-1">
+                {t("dialog.callResult.durationLabel")}
+              </label>
               <input
                 type="text"
                 className="w-full border px-3 py-2 rounded-md"
-                placeholder="00:00:00"
+                placeholder={t("dialog.callResult.durationPlaceholder")}
                 value={duration}
                 onChange={handleDurationChange}
               />
             </div>
 
             <div>
-              <label className="block text-sm mb-1">Tanggal Follow-up</label>
-              <DateField value={followUpDate} onChange={setFollowUpDate}/>
+              <label className="block text-sm mb-1">
+                {t("dialog.callResult.followupLabel")}
+              </label>
+              <DateField value={followUpDate} onChange={setFollowUpDate} />
             </div>
 
             <div>
-              <label className="block text-sm mb-1">Catatan</label>
+              <label className="block text-sm mb-1">
+                {t("dialog.callResult.noteLabel")}
+              </label>
               <Textarea
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
-                placeholder="Tulis catatan singkat..."
+                placeholder={t("dialog.callResult.notePlaceholder")}
               />
             </div>
 
             <div className="flex justify-end gap-2">
-              <Button onClick={handleSave}>Simpan</Button>
+              <Button onClick={handleSave}>
+                {t("dialog.callResult.save")}
+              </Button>
             </div>
           </div>
         </Dialog.DialogContent>

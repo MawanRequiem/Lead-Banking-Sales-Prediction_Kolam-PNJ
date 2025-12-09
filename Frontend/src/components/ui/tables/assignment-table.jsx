@@ -1,36 +1,48 @@
 import React, { useMemo } from "react";
 import DataTable from "@/components/ui/tables/data-table";
-import { columns } from "@/components/ui/tables/assignment-column";
+import {
+  makeAssignmentColumns,
+  mockData,
+} from "@/components/ui/tables/assignment-column";
 import ActionCell from "@/components/ui/tables/detail-customer";
-import { useAssignments } from "@/hooks/useAssignment";
-import NasabahFilter from "../dropdown/nasabah-filter";
+import { useTable } from "@/hooks/useTable";
+import NasabahFilter from "@/components/ui/dropdown/nasabah-filter";
+import { useLang } from "@/hooks/useLang";
 
 export default function AssignmentTable() {
-  const cols = useMemo(() => columns, []);
+  const { t } = useLang();
+  const cols = useMemo(() => makeAssignmentColumns(t), [t]);
   const {
     data,
     loading,
-    total,
+    pagination,
+    setPagination,
     pageCount,
-    pagination, setPagination,
-    search, setSearch,
+    total,
+    search,
+    setSearch,
     setFilters,
-  } = useAssignments();
+  } = useTable({ apiUrl: "/sales/assignments", initial: mockData });
 
-  const toolbarRight = (<NasabahFilter className="mr-2" onApply={setFilters} />);
+  const toolbarRight = <NasabahFilter className="mr-2" onApply={setFilters} />;
 
   return (
     <DataTable
       columns={cols}
-      data={data}
+      data={data || mockData}
       loading={loading}
-      title="Customer List"
-      toolbarLeft={<div className="text-lg font-semibold">Customer List</div>}
+      title={t("table.assignment.title")}
+      toolbarLeft={
+        <div className="text-lg font-semibold">
+          {t("table.assignment.toolbarTitle")}
+        </div>
+      }
       toolbarRight={toolbarRight}
       options={{
         pagination,
         total,
-        pageCount,
+        pageCount:
+          pageCount || Math.ceil((data ? data.length : mockData.length) / 10),
         onPageChange: setPagination,
         search,
         onSearchChange: setSearch,

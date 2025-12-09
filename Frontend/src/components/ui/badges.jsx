@@ -21,9 +21,8 @@ export function StatusBadge({ status }) {
 }
 
 export function CategoryBadge({ category }) {
-  if (category == null) return null;
+  if (category === null) return null;
 
-  // Convert numeric score to category A/B/C
   const normalizedCategory = (() => {
     const num = Number(category);
 
@@ -42,11 +41,12 @@ export function CategoryBadge({ category }) {
 
   if (!normalizedCategory) return null;
 
-  const className = {
-    A: "bg-chart-1 text-white",
-    B: "bg-chart-2 text-white",
-    C: "bg-chart-3 text-white",
-  }[normalizedCategory] || "bg-muted text-muted-foreground";
+  const className =
+    {
+      A: "bg-chart-1 text-white",
+      B: "bg-chart-2 text-white",
+      C: "bg-chart-3 text-white",
+    }[normalizedCategory] || "bg-muted text-muted-foreground";
 
   return <Badge className={className}>Grade {normalizedCategory}</Badge>;
 }

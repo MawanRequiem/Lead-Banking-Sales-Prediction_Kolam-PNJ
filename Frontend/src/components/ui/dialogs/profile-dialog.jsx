@@ -4,8 +4,10 @@ import { Button } from "@/components/ui/button";
 import useProfile from "@/hooks/useProfile";
 import axios from "@/lib/axios";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useLang } from "@/hooks/useLang";
 
 export default function ProfileDialog({ open: openProp, onOpenChange } = {}) {
+  const { t } = useLang();
   const { user } = useProfile();
   const [open, setOpen] = useState(Boolean(openProp));
 
@@ -83,20 +85,34 @@ export default function ProfileDialog({ open: openProp, onOpenChange } = {}) {
   }
 
   const rows = [
-    { key: "name", label: "Nama", value: displayName },
-    { key: "email", label: "Email", value: email },
+    { key: "name", label: t("dialog.profile.fields.nama"), value: displayName },
+    { key: "email", label: t("dialog.profile.fields.email"), value: email },
   ];
 
-  if (phone) rows.push({ key: "phone", label: "No. Telepon", value: phone });
+  if (phone)
+    rows.push({
+      key: "phone",
+      label: t("dialog.profile.fields.phone"),
+      value: phone,
+    });
   if (domisili)
-    rows.push({ key: "domisili", label: "Domisili", value: domisili });
-  if (role) rows.push({ key: "role", label: "Role", value: role });
+    rows.push({
+      key: "domisili",
+      label: t("dialog.profile.fields.domisili"),
+      value: domisili,
+    });
+  if (role)
+    rows.push({
+      key: "role",
+      label: t("dialog.profile.fields.role"),
+      value: role,
+    });
   // Append any extra admin-specific fields
   if (extraAdminFields.length)
     rows.push(
       ...extraAdminFields.map((f, i) => ({
         key: `admin_${i}`,
-        label: f.label,
+        label: f.label || t("dialog.profile.fields.recoveryEmail"),
         value: f.value,
       }))
     );
@@ -105,9 +121,9 @@ export default function ProfileDialog({ open: openProp, onOpenChange } = {}) {
     <Dialog.Dialog open={open} onOpenChange={handleOpenChange}>
       <Dialog.DialogContent>
         <Dialog.DialogHeader>
-          <Dialog.DialogTitle>Profile</Dialog.DialogTitle>
+          <Dialog.DialogTitle>{t("dialog.profile.title")}</Dialog.DialogTitle>
           <Dialog.DialogDescription>
-            Informasi akun Anda
+            {t("dialog.profile.description")}
           </Dialog.DialogDescription>
         </Dialog.DialogHeader>
 
@@ -139,7 +155,7 @@ export default function ProfileDialog({ open: openProp, onOpenChange } = {}) {
               ))}
               {rows.length === 0 && (
                 <div className="text-sm text-muted-foreground">
-                  No profile information available.
+                  {t("dialog.profile.noInfo")}
                 </div>
               )}
             </div>
@@ -147,7 +163,9 @@ export default function ProfileDialog({ open: openProp, onOpenChange } = {}) {
         </div>
 
         <Dialog.DialogFooter>
-          <Button onClick={() => handleOpenChange(false)}>Close</Button>
+          <Button onClick={() => handleOpenChange(false)}>
+            {t("dialog.profile.close")}
+          </Button>
         </Dialog.DialogFooter>
       </Dialog.DialogContent>
     </Dialog.Dialog>

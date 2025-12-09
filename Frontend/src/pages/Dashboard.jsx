@@ -12,8 +12,10 @@ import SalesBarChartCard from "@/components/ui/cards/sales-bar-chart-card";
 import DepositPieChartCard from "@/components/ui/cards/deposit-pie-chart-card";
 import CallHistoryCard from "@/components/ui/cards/call-history-card";
 import useDashboardData from "@/hooks/useDashboardData";
+import { useLang } from "@/hooks/useLang";
 
 export default function Dashboard() {
+  const { t } = useLang();
   const [range, setRange] = useState("month");
   const now = new Date();
   const currentYear = now.getFullYear();
@@ -39,16 +41,16 @@ export default function Dashboard() {
     if (range === "year") {
       return {
         year: String(year),
-        month: undefined, // ✅ Tidak kirim month
+        month: undefined,
         wholeYear: true,
-        interval: "month", // ✅ Yearly data dengan interval bulanan
+        interval: "month",
       };
     } else {
       return {
         year: String(year),
-        month: String(month), // ✅ Kirim month
+        month: String(month),
         wholeYear: false,
-        interval: "week", // ✅ Monthly data dengan interval mingguan
+        interval: "week",
       };
     }
   }, [range, year, month]);
@@ -61,11 +63,13 @@ export default function Dashboard() {
   } = useDashboardData(backendParams);
 
   return (
-    <div className="p-6 space-y-6 min-h-[calc(100vh-var(--app-header-height,4rem))]">
+    <div className="px-6 space-y-6 min-h-[calc(100vh-var(--app-header-height,4rem))]">
       {/* Shared month/year selectors that align with backend filters */}
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-2">
-          <div className="text-sm font-medium">Tahun:</div>
+          <div className="text-sm font-medium">
+            {t("page.dashboard.year", "Tahun:")}
+          </div>
           <Select
             value={String(year)}
             onValueChange={(v) => setYear(Number(v))}
@@ -84,7 +88,9 @@ export default function Dashboard() {
         </div>
 
         <div className="flex items-center gap-2">
-          <div className="text-sm font-medium">Bulan:</div>
+          <div className="text-sm font-medium">
+            {t("page.dashboard.month", "Bulan:")}
+          </div>
           <Select
             value={String(month)}
             onValueChange={(v) => setMonth(Number(v))}
@@ -93,18 +99,18 @@ export default function Dashboard() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="1">Januari</SelectItem>
-              <SelectItem value="2">Februari</SelectItem>
-              <SelectItem value="3">Maret</SelectItem>
-              <SelectItem value="4">April</SelectItem>
-              <SelectItem value="5">Mei</SelectItem>
-              <SelectItem value="6">Juni</SelectItem>
-              <SelectItem value="7">Juli</SelectItem>
-              <SelectItem value="8">Agustus</SelectItem>
-              <SelectItem value="9">September</SelectItem>
-              <SelectItem value="10">Oktober</SelectItem>
-              <SelectItem value="11">November</SelectItem>
-              <SelectItem value="12">Desember</SelectItem>
+              <SelectItem value="1">{t("months.1", "Januari")}</SelectItem>
+              <SelectItem value="2">{t("months.2", "Februari")}</SelectItem>
+              <SelectItem value="3">{t("months.3", "Maret")}</SelectItem>
+              <SelectItem value="4">{t("months.4", "April")}</SelectItem>
+              <SelectItem value="5">{t("months.5", "Mei")}</SelectItem>
+              <SelectItem value="6">{t("months.6", "Juni")}</SelectItem>
+              <SelectItem value="7">{t("months.7", "Juli")}</SelectItem>
+              <SelectItem value="8">{t("months.8", "Agustus")}</SelectItem>
+              <SelectItem value="9">{t("months.9", "September")}</SelectItem>
+              <SelectItem value="10">{t("months.10", "Oktober")}</SelectItem>
+              <SelectItem value="11">{t("months.11", "November")}</SelectItem>
+              <SelectItem value="12">{t("months.12", "Desember")}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -114,13 +120,15 @@ export default function Dashboard() {
             checked={wholeYear}
             onCheckedChange={(v) => setWholeYear(Boolean(v))}
           />
-          <div className="text-sm">Filter sepanjang tahun</div>
+          <div className="text-sm">
+            {t("page.dashboard.wholeYear", "Filter sepanjang tahun")}
+          </div>
         </div>
       </div>
       {/* Top cards area: two-column layout
-          Left column: stacked ContactPriority + SalesBarChart
-          Right column: DepositPieChart spanning the height of the two left cards
-      */}
+            Left column: stacked ContactPriority + SalesBarChart
+            Right column: DepositPieChart spanning the height of the two left cards
+        */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 grid grid-rows-1 gap-6">
           <ContactPriorityCard

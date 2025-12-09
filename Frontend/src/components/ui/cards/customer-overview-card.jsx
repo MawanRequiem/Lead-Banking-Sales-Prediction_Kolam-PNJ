@@ -2,6 +2,7 @@ import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { Users, UserCheck, Monitor, ArrowUp, ArrowDown } from "lucide-react";
+import { useLang } from "@/hooks/useLang";
 
 function Metric({
   Icon,
@@ -9,6 +10,7 @@ function Metric({
   value,
   change,
   changeDirection,
+  monthLabel = "this month",
   loading = false,
 }) {
   if (loading) {
@@ -59,7 +61,7 @@ function Metric({
               <ArrowDown className="h-4 w-4" />
             )}
             <span>
-              {Math.abs(change)}% {positive ? "this month" : "this month"}
+              {Math.abs(change)}% {monthLabel}
             </span>
           </div>
         ) : null}
@@ -87,6 +89,7 @@ export default function CustomerOverviewCard({
   className = "",
   isLoading = false,
 }) {
+  const { t } = useLang();
   const defaults = {
     totalCustomers: 5423,
     totalChange: 16,
@@ -107,28 +110,31 @@ export default function CustomerOverviewCard({
         <div className="flex items-stretch divide-x divide-border bg-card text-card-foreground">
           <Metric
             Icon={Users}
-            title="Total Customers"
+            title={t("card.totalCustomers", "Total Customers")}
             value={merged.totalCustomers}
             change={merged.totalChange}
             changeDirection={merged.totalDirection}
+            monthLabel={t("card.thisMonth", "this month")}
             loading={isLoading}
           />
 
           <Metric
             Icon={UserCheck}
-            title="Deposito Members"
+            title={t("card.depositoMembers", "Deposito Members")}
             value={merged.depositoMembers}
             change={merged.depositoMembersChange}
             changeDirection={merged.depositoMembersDirection}
+            monthLabel={t("card.thisMonth", "this month")}
             loading={isLoading}
           />
 
           <Metric
             Icon={Monitor}
-            title="Deposito Active"
+            title={t("card.depositoActive", "Deposito Active")}
             value={merged.depositoActive}
             change={merged.depositoActiveChange}
             changeDirection={merged.depositoActiveDirection}
+            monthLabel={t("card.thisMonth", "this month")}
             loading={isLoading}
           />
         </div>

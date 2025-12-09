@@ -23,9 +23,8 @@ export function Header({
     >
       {/* KIRI: Logo dan Nama Aplikasi */}
       <div className="flex items-center space-x-4">
-        <img src={logoUrl} alt="Lead Banking Logo" className="h-8 w-8" />
-        <h1 className="text-xl font-semibold text-foreground hidden sm:block">
-          Lead Banking App
+        <h1 className="text-xl font-semibold text-primary hidden sm:block">
+          SalesCRM
         </h1>
       </div>
 

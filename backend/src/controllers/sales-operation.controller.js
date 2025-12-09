@@ -68,7 +68,7 @@ const logCall = asyncHandler(async (req, res) => {
 
 /**
  * Export Call History (server-side CSV)
- * GET /api/sales/call-history/export
+ * GET /api/sales/export
  */
 const exportCallHistory = asyncHandler(async (req, res) => {
   const { from: startDate, to: endDate, limit } = req.query;
@@ -114,7 +114,12 @@ const getLeadDetail = asyncHandler(async (req, res) => {
  */
 const getAssignments = asyncHandler(async (req, res) => {
   const { assignments, pagination } = await salesOpService.getMyAssignments(req.user.userId, req.query);
-  return successResponse(res, assignments, 'Assigned leads retrieved successfully', { pagination });
+  return successResponse(
+    res,
+    assignments,
+    'Assigned Leads data retrieved successfully',
+    { pagination },
+  );
 });
 
 /**
@@ -227,6 +232,11 @@ const getAllLeadsOverview = asyncHandler(async (req, res) => {
   return successResponse(res, result, 'Leads overview retrieved successfully');
 });
 
+const getMyLeadsOverview = asyncHandler(async (req, res) => {
+  const result = await salesOpService.getMyLeadsOverview(req.user.id, req.query);
+  return successResponse(res, result, 'Assignments overview retrieved successfully');
+});
+
 module.exports = {
   getAllLeads,
   getCallHistory,
@@ -236,6 +246,7 @@ module.exports = {
   getLeadDetail,
   getAssignments,
   getAllLeadsOverview,
+  getMyLeadsOverview,
   // controller for all dashboard endpoint
   getDashboardCallHistory,
   getDashboardAssignments,
