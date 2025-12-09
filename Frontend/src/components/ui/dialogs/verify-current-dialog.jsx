@@ -6,7 +6,7 @@ import axios from "@/lib/axios";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
-import { useLang } from "@/contexts/theme-context.jsx";
+import { useLang } from "@/hooks/useLang";
 
 export default function VerifyCurrentDialog({
   open: openProp,

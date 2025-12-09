@@ -95,19 +95,6 @@ export default function LoginForm({ onSignIn }) {
           {loading ? "Signing..." : "Sign In"}
         </Button>
       </div>
-
-      <div className="mt-4 text-center">
-        <p className="text-sm text-muted-foreground">
-          Lupa Password akun?{" "}
-          <a
-            href="/forgot-password"
-            className="text-primary hover:underline"
-            onClick={(e) => e.preventDefault()}
-          >
-            <span className="text-primary">Ajukan Reset Password</span>
-          </a>
-        </p>
-      </div>
     </form>
   );
 }

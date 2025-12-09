@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import * as Dialog from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useLang } from "@/contexts/theme-context.jsx";
+import { useLang } from "@/hooks/useLang";
 
 export default function AdminImportDialog({
   open = false,

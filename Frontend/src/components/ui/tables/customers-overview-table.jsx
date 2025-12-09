@@ -6,7 +6,7 @@ import {
 } from "@/components/ui/tables/customers-overview-column";
 import ActionCell from "@/components/ui/tables/detail-customer";
 import { useTable } from "@/hooks/useTable";
-import { set } from "date-fns";
+import NasabahFilter from "../dropdown/nasabah-filter";
 import { useLang } from "@/hooks/useLang";
 
 // Accept `data` and `loading` as props (page can pass API results). If not
@@ -22,10 +22,13 @@ export default function CustomersOverviewTable() {
     total,
     search,
     setSearch,
+    setFilters,
   } = useTable({ apiUrl: "/sales/leads", initial: mockData });
 
   const { t } = useLang();
   const cols = useMemo(() => makeCustomersOverviewColumns(t), [t]);
+
+  const toolbarRight = <NasabahFilter className="mr-2" onApply={setFilters} />;
 
   return (
     <DataTable
@@ -38,11 +41,12 @@ export default function CustomersOverviewTable() {
           {t("table.customersOverview.toolbarTitle")}
         </div>
       }
+      toolbarRight={toolbarRight}
       options={{
-        pagination: pagination,
+        pagination,
         pageCount:
           pageCount || Math.ceil((data ? data.length : mockData.length) / 10),
-        total: total,
+        total,
         onPageChange: setPagination,
         search,
         onSearchChange: setSearch,

@@ -6,6 +6,7 @@ import {
 } from "@/components/ui/tables/assignment-column";
 import ActionCell from "@/components/ui/tables/detail-customer";
 import { useTable } from "@/hooks/useTable";
+import NasabahFilter from "@/components/ui/dropdown/nasabah-filter";
 import { useLang } from "@/hooks/useLang";
 
 export default function AssignmentTable() {
@@ -20,7 +21,10 @@ export default function AssignmentTable() {
     total,
     search,
     setSearch,
+    setFilters,
   } = useTable({ apiUrl: "/sales/assignments", initial: mockData });
+
+  const toolbarRight = <NasabahFilter className="mr-2" onApply={setFilters} />;
 
   return (
     <DataTable
@@ -33,9 +37,10 @@ export default function AssignmentTable() {
           {t("table.assignment.toolbarTitle")}
         </div>
       }
+      toolbarRight={toolbarRight}
       options={{
-        pagination: pagination,
-        total: total,
+        pagination,
+        total,
         pageCount:
           pageCount || Math.ceil((data ? data.length : mockData.length) / 10),
         onPageChange: setPagination,

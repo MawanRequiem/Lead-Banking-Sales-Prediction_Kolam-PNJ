@@ -1,7 +1,7 @@
 import React from "react";
 import DataTableColumnHeader from "@/components/ui/tables/data-table-header";
 import { mockData } from "@/hooks/useTable";
-import { MarriageBadge } from "@/components/ui/badges";
+import { CategoryBadge, MarriageBadge } from "@/components/ui/badges";
 
 // kolom kolom yang digunakan di DataTable untuk Customers
 export const makeAssignmentColumns = (t) => [
@@ -53,6 +53,19 @@ export const makeAssignmentColumns = (t) => [
         <MarriageBadge value={row.original.statusPernikahan} />
       </div>
     ),
+  },
+  {
+    accessorKey: "kategori",
+    header: t("table.assignment.columns.kategori"),
+    cell: ({ row }) => {
+      const s = parseFloat(row.original.skor || row.original.skorPrediksi || 0);
+      const cat = s >= 0.75 ? "A" : s >= 0.5 ? "B" : "C";
+      return (
+        <div>
+          <CategoryBadge category={cat} />
+        </div>
+      );
+    },
   },
   // Note: action cell is rendered by the DataTable via `renderRowActions`.
 ];

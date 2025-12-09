@@ -127,6 +127,7 @@ async function getAllLeads(query) {
     needFollowUp: item.historiTelepon[0]?.nextFollowupDate
       ? new Date(item.historiTelepon[0].nextFollowupDate) <= new Date()
       : false,
+    isAssigned: item.assignments.length > 0 ? true : false,
   }));
 
   return {
@@ -156,9 +157,12 @@ async function logActivity(salesId, data) {
     throw new NotFoundError('Nasabah not found');
   }
 
+  //This just deactivate assignment between that sales and nasabah
+  await salesOpRepo.updateSalesAssignmentActiveStatus(lead.idNasabah, salesId, false);
+
   return salesOpRepo.createCallLog({
     ...data,
-    idNasabah: data.nasabahId, // why are we mangling this?
+    idNasabah: data.nasabahId,
     idSales: salesId,
   });
 }

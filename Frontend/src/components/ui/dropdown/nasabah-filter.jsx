@@ -15,47 +15,29 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
-import DateField from "@/components/ui/dropdown/date-field";
-import { useLang } from "@/hooks/useLang";
 
 // FilterDropdown uses your Radix-based DropdownMenu primitives.
 // Pass a `trigger` prop (React node) to render a custom trigger inside the
 // DropdownMenuTrigger. If omitted, a default button is rendered.
-export default function FilterDropdown({ className, trigger = null, onApply }) {
-  const { t } = useLang();
-  const [from, setFrom] = useState(null);
-  const [to, setTo] = useState(() => {
-    const d = new Date();
-    return d.toISOString().slice(0, 10);
-  });
+export default function NasabahFilter({ className, trigger = null, onApply }) {
   const [grade, setGrade] = useState("all");
-  const [status, setStatus] = useState("any");
   const [search, setSearch] = useState("");
 
   function resetSection(section) {
-    if (section === "date") {
-      const d1 = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-      const d2 = new Date();
-      setFrom(null);
-      setTo(d2.toISOString().slice(0, 10));
-    } else if (section === "grade") {
+    if (section === "grade") {
       setGrade("all");
-    } else if (section === "status") {
-      setStatus("any");
     } else if (section === "keyword") {
       setSearch("");
     }
   }
 
   function resetAll() {
-    resetSection("date");
     resetSection("grade");
-    resetSection("status");
     resetSection("keyword");
   }
 
   function apply(close) {
-    const payload = { from, to, grade, status, search };
+    const payload = { grade, search };
     // NOTE: jika mau berganti ke server-side filtering, ini adalah tempatnya
     // bisa menggunakan (A) panggil backend langsung dari dropdown (kurang
     // direkomendasikan), atau (B) kirim payload ke parent melalui `onApply`
@@ -88,55 +70,20 @@ export default function FilterDropdown({ className, trigger = null, onApply }) {
             className="ml-auto hidden h-8 lg:flex"
           >
             <Sliders className="h-5 w-5" />
-            <span className="text-sm font-medium hidden lg:block">
-              {t("dropdown.filter.title", "Filter")}
-            </span>
+            <span className="text-sm font-medium hidden lg:block">Filter</span>
           </Button>
         )}
       </DropdownMenuTrigger>
 
       <DropdownMenuContent className={cn("w-80 p-0", className)} sideOffset={8}>
         <div className="px-4 py-3 flex items-center justify-between">
-          <div className="font-medium">
-            {t("dropdown.filter.title", "Filter")}
-          </div>
+          <div className="font-medium">Filter</div>
           <button
             className="text-sm text-foreground underline"
             onClick={() => resetAll()}
           >
-            {t("dropdown.filter.resetAll", "Reset Semua")}
+            Reset Semua
           </button>
-        </div>
-
-        <DropdownMenuSeparator />
-
-        {/* Date range */}
-        <div className="px-4 py-3">
-          <div className="flex items-center justify-between">
-            <div className="font-medium">
-              {t("dropdown.filter.dateRange", "Rentang Waktu")}
-            </div>
-            <button
-              className="text-xs text-foreground underline"
-              onClick={() => resetSection("date")}
-            >
-              {t("dropdown.filter.reset", "Reset")}
-            </button>
-          </div>
-          <div className="mt-2 grid grid-cols-2 gap-2">
-            <DateField
-              id="filter-from"
-              value={from}
-              onChange={setFrom}
-              placeholder={t("dropdown.filter.from", "Dari")}
-            />
-            <DateField
-              id="filter-to"
-              value={to}
-              onChange={setTo}
-              placeholder={t("dropdown.filter.to", "Sampai")}
-            />
-          </div>
         </div>
 
         <DropdownMenuSeparator />
@@ -144,9 +91,7 @@ export default function FilterDropdown({ className, trigger = null, onApply }) {
         {/* Grade */}
         <div className="px-4 py-3">
           <div className="flex items-center justify-between">
-            <div className="font-medium">
-              {t("dropdown.filter.grade", "Grade")}
-            </div>
+            <div className="font-medium">Grade</div>
             <button
               className="text-xs text-foreground underline"
               onClick={() => resetSection("grade")}
@@ -160,9 +105,7 @@ export default function FilterDropdown({ className, trigger = null, onApply }) {
                 <SelectValue placeholder="Pilih grade" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">
-                  {t("dropdown.filter.all", "Semua")}
-                </SelectItem>
+                <SelectItem value="all">Semua</SelectItem>
                 <SelectItem value="A">A</SelectItem>
                 <SelectItem value="B">B</SelectItem>
                 <SelectItem value="C">C</SelectItem>
@@ -173,50 +116,22 @@ export default function FilterDropdown({ className, trigger = null, onApply }) {
 
         <DropdownMenuSeparator />
 
-        {/* Status */}
-        {/*<div className="px-4 py-3">
-          <div className="flex items-center justify-between">
-            <div className="font-medium">Status</div>
-            <button className="text-xs text-foreground underline" onClick={() => resetSection('status')}>Reset</button>
-          </div>
-          <div className="mt-2">
-            <Select value={status} onValueChange={(v) => setStatus(v)}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Pilih status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="any">Semua</SelectItem>
-                <SelectItem value="open">Open</SelectItem>
-                <SelectItem value="closed">Closed</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
-              </SelectContent>
-          </Select>
-          </div>
-        </div>
-
-        <DropdownMenuSeparator />*/}
-
         {/* Keyword */}
         <div className="px-4 py-3">
           <div className="flex items-center justify-between">
-            <div className="font-medium">
-              {t("dropdown.filter.keyword", "Cari Keyword")}
-            </div>
+            <div className="font-medium">Cari Keyword</div>
             <button
               className="text-xs text-foreground underline"
               onClick={() => resetSection("keyword")}
             >
-              {t("dropdown.filter.reset", "Reset")}
+              Reset
             </button>
           </div>
           <div className="mt-2">
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder={t(
-                "dropdown.filter.keywordPlaceholder",
-                "Ketik kata kunci..."
-              )}
+              placeholder="Ketik kata kunci..."
               className="w-full rounded-md border px-2 py-1"
             />
           </div>
@@ -230,13 +145,13 @@ export default function FilterDropdown({ className, trigger = null, onApply }) {
             className="rounded-md px-3 py-1 border"
             onClick={() => resetAll()}
           >
-            {t("dropdown.filter.resetAll", "Reset Semua")}
+            Reset Semua
           </button>
           <button
             className="rounded-md px-3 py-1 bg-primary text-white"
             onClick={() => apply()}
           >
-            {t("dropdown.filter.apply", "Terapkan")}
+            Terapkan
           </button>
         </div>
       </DropdownMenuContent>

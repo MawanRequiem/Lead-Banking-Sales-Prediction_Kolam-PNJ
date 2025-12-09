@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef, startTransition } from "react";
 import * as Dialog from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useLang } from "@/contexts/theme-context.jsx";
+import { useLang } from "@/hooks/useLang";
 import {
   Select,
   SelectTrigger,

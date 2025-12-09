@@ -2,7 +2,7 @@ import React from "react";
 import * as Dialog from "@/components/ui/dialog";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { useLang } from "@/contexts/theme-context.jsx";
+import { useLang } from "@/hooks/useLang";
 
 export default function AuthExpiredDialog({ open = false, onOpenChange }) {
   const navigate = useNavigate();

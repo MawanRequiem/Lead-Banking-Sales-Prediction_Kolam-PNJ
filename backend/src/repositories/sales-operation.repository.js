@@ -11,6 +11,7 @@ function getMyLeads(salesId, filters = {}) {
     sortOrder = 'desc',
     page = 1,
     limit = 20,
+    grade,
   } = filters;
 
   const skip = (page - 1) * limit;
@@ -41,6 +42,18 @@ function getMyLeads(salesId, filters = {}) {
       },
     },
   };
+
+  if (grade) {
+    let skorCondition;
+    if (grade === 'A') {skorCondition = { gte: 0.75 };}
+    if (grade === 'B') {skorCondition = { gte: 0.5, lt: 0.75 };}
+    if (grade === 'C') {skorCondition = { lt: 0.5 };}
+
+    where.nasabah.is = {
+      ...where.nasabah.is,
+      skorPrediksi: skorCondition,
+    };
+  }
 
   // 2. Jalankan Query Utama (Data) dan Count (Total Data) secara paralel
   return Promise.all([
@@ -94,6 +107,7 @@ function getAllLeads(filters = {}) {
     sortOrder = 'desc',
     page = 1,
     limit = 20,
+    grade,
   } = filters;
 
   const skip = (page - 1) * limit;
@@ -109,6 +123,21 @@ function getAllLeads(filters = {}) {
     }),
   };
 
+  switch (grade) {
+    case 'A':
+      where.skorPrediksi = { gte: 0.75 };
+      break;
+    case 'B':
+      where.skorPrediksi = { gte: 0.5, lt: 0.75 };
+      break;
+    case 'C':
+      where.skorPrediksi = { lt: 0.5 };
+      break;
+    default:
+      // No grade filter
+      break;
+  }
+
   return Promise.all([
     prisma.nasabah.findMany({
       where,
@@ -123,6 +152,10 @@ function getAllLeads(filters = {}) {
         },
         historiTelepon: {
           orderBy: { createdAt: 'desc' },
+          take: 1,
+        },
+        assignments: {
+          where: { isActive: true },
           take: 1,
         },
       },
@@ -296,6 +329,7 @@ function getCallHistory(filters = {}) {
     limit = 20,
     from,
     to,
+    grade,
   } = filters;
 
   const skip = (page - 1) * limit;
@@ -307,7 +341,7 @@ function getCallHistory(filters = {}) {
   }
   if (search) {
     where.OR = [
-      { hasilTelepon: { contains: search, mode: 'sensitive' } },
+      { hasilTelepon: { contains: search, mode: 'default' } },
       { catatan: { contains: search, mode: 'insensitive' } },
       { sales:
         { nama: { contains: search, mode: 'insensitive' } },
@@ -324,6 +358,18 @@ function getCallHistory(filters = {}) {
     if (to) {where.tanggalTelepon.lte = new Date(to);}
   }
 
+  if (grade) {
+    let skorCondition;
+    if (grade === 'A') {skorCondition = { gte: 0.75 };}
+    if (grade === 'B') {skorCondition = { gte: 0.5, lt: 0.75 };}
+    if (grade === 'C') {skorCondition = { lt: 0.5 };}
+
+    where.nasabah = {
+      ...where.nasabah,
+      skorPrediksi: skorCondition,
+    };
+  }
+
   return Promise.all([
     prisma.historiTelepon.findMany({
       where,
@@ -334,6 +380,7 @@ function getCallHistory(filters = {}) {
           select: {
             nama: true,
             nomorTelepon: true,
+            skorPrediksi: true,
           },
         },
         sales: {
@@ -679,6 +726,20 @@ async function getMyLeadsOverview(salesId, { month, year } = {}) {
   return { current, last };
 }
 
+async function updateSalesAssignmentActiveStatus(nasabahId, salesId, isActive) {
+  const result = await prisma.salesNasabahAssignment.updateMany({
+    where: {
+      idNasabah: nasabahId,
+      idSales: salesId,
+      isActive: true,
+    },
+    data: {
+      isActive,
+    },
+  });
+  return result;
+}
+
 module.exports = {
   getMyLeads,
   getAllLeads,
@@ -691,4 +752,5 @@ module.exports = {
   updateDepositoStatus,
   getAllLeadsOverview,
   getMyLeadsOverview,
+  updateSalesAssignmentActiveStatus,
 };

@@ -101,17 +101,17 @@ export default function CallResultDialog({
                 </SelectTrigger>
 
                 <SelectContent>
-                  <SelectItem value="Terkoneksi">
-                    {t("dialog.callResult.results.connected")}
+                  <SelectItem value="Tertarik">
+                    {t("dialog.callResult.results.interested")}
+                  </SelectItem>
+                  <SelectItem value="Tidak Tertarik">
+                    {t("dialog.callResult.results.notInterested")}
                   </SelectItem>
                   <SelectItem value="Voicemail">
                     {t("dialog.callResult.results.voicemail")}
                   </SelectItem>
                   <SelectItem value="Tidak Terangkat">
                     {t("dialog.callResult.results.notAnswered")}
-                  </SelectItem>
-                  <SelectItem value="Tidak Tertarik">
-                    {t("dialog.callResult.results.notInterested")}
                   </SelectItem>
                 </SelectContent>
               </Select>

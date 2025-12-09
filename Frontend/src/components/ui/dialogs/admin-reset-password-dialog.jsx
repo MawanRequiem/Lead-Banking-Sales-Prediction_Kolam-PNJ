@@ -10,8 +10,7 @@ import {
   AlertDialogCancel,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { useLang } from "@/contexts/theme-context.jsx";
-
+import { useLang } from "@/hooks/useLang";
 export default function AdminResetPasswordDialog({
   open = false,
   onOpenChange,

@@ -7,6 +7,7 @@ import useCallHistory from "@/hooks/useCallHistory";
 import axios from "@/lib/axios";
 import FilterDropdown from "../dropdown/filter-dropdown";
 import CallNoteDialog from "@/components/ui/dialogs/call-note-dialog";
+import { CategoryBadge } from "../badges";
 import { useLang } from "@/hooks/useLang";
 
 const historyColumns = (t, onOpenNote) => [
@@ -26,6 +27,15 @@ const historyColumns = (t, onOpenNote) => [
     accessorKey: "nasabah",
     header: t("table.call_History.columns.nasabah"),
     cell: ({ row }) => row.original.nasabah?.nama,
+  },
+  {
+    accessorKey: "nasabah",
+    header: t("table.call_History.columns.kategori"),
+    cell: ({ row }) => (
+      <div>
+        <CategoryBadge category={row.original.nasabah?.skorPrediksi} />
+      </div>
+    ),
   },
   {
     accessorKey: "hasilTelepon",
@@ -75,13 +85,9 @@ export default function CallHistoryTable() {
     [t]
   );
 
-  function applyFilter(payload) {
-    setFilters(payload);
-  }
-
   const toolbarRight = (
     <>
-      <FilterDropdown className="mr-2" onApply={applyFilter} />
+      <FilterDropdown className="mr-2" onApply={setFilters} />
       <Button onClick={() => setOpenExport(true)}>
         {t("table.call_History.actions.export")}
       </Button>
