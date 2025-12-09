@@ -1,15 +1,21 @@
 const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcrypt');
+const { encryptSensitiveFields } = require('../src/utils/prismaEncryption.util');
 
 const prisma = new PrismaClient();
 
-async function main() {
-  console.log('🌱 Starting database seeding...\n');
+function generatePhoneNumber() {
+  let phone = '08';
+  for (let i = 0; i < 10; i++) {
+    phone += Math.floor(Math.random() * 10); // 0-9
+  }
+  return phone;
+}
 
-  // ==========================================
-  // 1. JENIS KELAMIN
-  // ==========================================
-  console.log('📝 Seeding Jenis Kelamin...');
+async function main() {
+  console.log('Starting database seeding...\n');
+  // Jenis Kelamin Keys: 'L' = Laki-laki, 'P' = Perempuan
+  console.log('Seeding Jenis Kelamin...');
 
   await prisma.jenisKelamin.upsert({
     where: { idJenisKelamin: 'L' },
@@ -29,13 +35,10 @@ async function main() {
     },
   });
 
-  console.log('✅ Jenis Kelamin seeded (2 records)\n');
+  console.log('Jenis Kelamin seeded (2 records)\n');
 
-  // ==========================================
-  // 2. STATUS PERNIKAHAN
-  // ==========================================
-  console.log('📝 Seeding Status Pernikahan...');
-
+  console.log('Seeding Status Pernikahan...');
+  // Status Pernikahan
   const statusPernikahanData = [
     { id: 'BELUM_MENIKAH', nama: 'Belum Menikah' },
     { id: 'MENIKAH', nama: 'Menikah' },
@@ -54,12 +57,9 @@ async function main() {
     });
   }
 
-  console.log('✅ Status Pernikahan seeded (4 records)\n');
-
-  // ==========================================
-  // 3. STATUS DEPOSITO
-  // ==========================================
-  console.log('📝 Seeding Status Deposito...');
+  console.log('Status Pernikahan seeded (4 records)\n');
+  // Status Deposito
+  console.log('Seeding Status Deposito...');
 
   const statusDepositoData = [
     { id: 'PROSPEK', nama: 'Prospek', deskripsi: 'Nasabah potensial yang belum dihubungi' },
@@ -83,18 +83,17 @@ async function main() {
     });
   }
 
-  console.log('✅ Status Deposito seeded (7 records)\n');
+  console.log('Status Deposito seeded (7 records)\n');
 
-  // ==========================================
-  // 4. ADMIN DEFAULT
-  // ==========================================
-  console.log('📝 Seeding Admin...');
+  // User Accounts
+  // Default Admin Account
+  console.log('Seeding Admin...');
 
   const adminEmail = 'admin@telesales.com';
   const adminPassword = 'Admin123!';
   const hashedPassword = await bcrypt.hash(adminPassword, 12);
 
-  const admin = await prisma.admin.upsert({
+  const adminUser = await prisma.user.upsert({
     where: { email: adminEmail },
     update: {},
     create: {
@@ -104,12 +103,23 @@ async function main() {
     },
   });
 
-  console.log(`✅ Admin created: ${adminEmail} / ${adminPassword}\n`);
+  const existingAdmin = await prisma.admin.findFirst({
+    where: { idUser: adminUser.idUser },
+  });
 
-  // ==========================================
-  // 5. SALES ACCOUNTS (10 sales)
-  // ==========================================
-  console.log('📝 Seeding Sales...');
+  if (!existingAdmin) {
+    await prisma.admin.create({
+      data: {
+        user: { connect: { idUser: adminUser.idUser } },
+      },
+    });
+  }
+
+
+  console.log(`Admin created: ${adminEmail} / ${adminPassword}\n`);
+
+  // Sales Accounts (10 records)
+  console.log('Seeding Sales...');
 
   const salesData = [
     { nama: 'Budi Santoso', email: 'budi@telesales.com', nomorTelepon: '081234567890', domisili: 'Jakarta' },
@@ -129,25 +139,38 @@ async function main() {
 
   const createdSales = [];
   for (const sales of salesData) {
-    const salesRecord = await prisma.sales.upsert({
+    const user = await prisma.user.upsert({
       where: { email: sales.email },
       update: {},
       create: {
-        ...sales,
+        email: sales.email,
         passwordHash: salesHashedPassword,
         isActive: true,
       },
     });
-    createdSales.push(salesRecord);
+    const existingSales = await prisma.sales.findFirst({
+      where: { idUser: user.idUser },
+    });
+
+    if (!existingSales) {
+      const encrypted = encryptSensitiveFields(sales); // if you encrypt any field
+      await prisma.sales.create({
+        data: {
+          user: { connect: { idUser: user.idUser } },
+          nama: sales.nama,
+          nomorTelepon: encrypted.nomorTelepon,
+          domisili: encrypted.domisili,
+        },
+      });
+    }
+    createdSales.push(user);
   }
 
-  console.log(`✅ Sales accounts created (${createdSales.length} records)`);
+  console.log(`Sales accounts created (${createdSales.length} records)`);
   console.log(`   Password for all: ${salesPassword}\n`);
 
-  // ==========================================
-  // 6. NASABAH (100 records)
-  // ==========================================
-  console.log('📝 Seeding Nasabah...');
+  // NASABAH
+  console.log('Seeding Nasabah...');
 
   const namaList = [
     'Andi Pratama', 'Ani Susanti', 'Arief Budiman', 'Ayu Wijaya', 'Bambang Sutrisno',
@@ -192,8 +215,7 @@ async function main() {
         gaji: Math.floor(Math.random() * (50000000 - 3000000) + 3000000),
         idStatusPernikahan: statusPernikahanList[Math.floor(Math.random() * statusPernikahanList.length)],
         jenisKelamin: jenisKelaminList[Math.floor(Math.random() * jenisKelaminList.length)],
-        skorPrediksi: parseFloat((Math.random() * 0.5 + 0.5).toFixed(4)), // 0.5 - 1.0
-        lastScoredAt: new Date(),
+        nomorTelepon: generatePhoneNumber(),
       });
     }
 
@@ -203,7 +225,7 @@ async function main() {
     });
 
     createdNasabah = await prisma.nasabah.findMany();
-    console.log(`✅ Nasabah created (${createdNasabah.length} records)\n`);
+    console.log(` Nasabah created (${createdNasabah.length} records)\n`);
   } else {
     createdNasabah = await prisma.nasabah.findMany();
     console.log(`ℹ️  Nasabah already exists (${nasabahCount} records)\n`);
@@ -241,7 +263,7 @@ async function main() {
   } else {
     console.log(`ℹ️  Deposito already exists (${depositoCount} records)\n`);
   }
-
+  /*
   // ==========================================
   // 8. ASSIGNMENTS (assign nasabah to sales)
   // ==========================================
@@ -277,7 +299,7 @@ async function main() {
   } else {
     console.log(`ℹ️  Assignments already exist (${assignmentCount} records)\n`);
   }
-
+  */
   // ==========================================
   // 9. HISTORI TELEPON (create some call history)
   // ==========================================
@@ -287,13 +309,10 @@ async function main() {
 
   if (historiCount === 0) {
     const hasilTeleponList = [
-      'Berhasil dihubungi, tertarik',
-      'Tidak diangkat',
-      'Nomor sibuk',
-      'Berhasil dihubungi, tidak tertarik',
-      'Minta follow up minggu depan',
-      'Sudah punya deposito di bank lain',
-      'Tertarik, minta dikirim proposal',
+      'Tertarik',
+      'Tidak Tertarik',
+      'Voicemail',
+      'Tidak Terangkat',
     ];
 
     const historiData = [];
@@ -318,7 +337,6 @@ async function main() {
           historiData.push({
             idNasabah: nasabah.idNasabah,
             idSales: assignment.idSales,
-            nomorTelepon: `0812345678${Math.floor(Math.random() * 100)}`,
             tanggalTelepon: tanggal,
             lamaTelepon: Math.floor(Math.random() * 600) + 60, // 1-10 minutes
             hasilTelepon: hasilTeleponList[Math.floor(Math.random() * hasilTeleponList.length)],
