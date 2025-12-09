@@ -1,7 +1,8 @@
-import React from "react";
+import React, { useState } from "react";
 import DataTableColumnHeader from "@/components/ui/tables/data-table-header";
 import { mockData } from "@/hooks/useTable";
 import { CategoryBadge, MarriageBadge } from "@/components/ui/badges";
+
 
 // kolom kolom yang digunakan di DataTable untuk Customers
 export const makeAssignmentColumns = (t) => [
@@ -58,11 +59,16 @@ export const makeAssignmentColumns = (t) => [
     accessorKey: "kategori",
     header: t("table.assignment.columns.kategori"),
     cell: ({ row }) => {
+      const [showRaw, setShowRaw] = useState(false);
       const s = parseFloat(row.original.skor || row.original.skorPrediksi || 0);
       const cat = s >= 0.75 ? "A" : s >= 0.5 ? "B" : "C";
+
       return (
-        <div>
-          <CategoryBadge category={cat} />
+        <div
+          onClick={() => setShowRaw(!showRaw)}
+          style={{ cursor: "pointer" }}
+        >
+          {showRaw ? s.toFixed(2) : <CategoryBadge category={cat} />}
         </div>
       );
     },

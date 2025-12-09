@@ -10,7 +10,7 @@ function getMyLeads(salesId, filters = {}) {
     sortBy = 'skorPrediksi',
     sortOrder = 'desc',
     page = 1,
-    limit = 20,
+    limit = 10,
     grade,
   } = filters;
 
@@ -106,7 +106,7 @@ function getAllLeads(filters = {}) {
     sortBy = 'skorPrediksi',
     sortOrder = 'desc',
     page = 1,
-    limit = 20,
+    limit = 10,
     grade,
   } = filters;
 
@@ -326,7 +326,7 @@ function getCallHistory(filters = {}) {
     sortBy = 'tanggalTelepon',
     sortOrder = 'desc',
     page = 1, // default is for call-history page but for peeks request should give smaller limits.
-    limit = 20,
+    limit = 10,
     from,
     to,
     grade,

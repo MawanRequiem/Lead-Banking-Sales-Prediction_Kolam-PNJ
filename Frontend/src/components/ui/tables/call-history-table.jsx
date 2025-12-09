@@ -31,11 +31,19 @@ const historyColumns = (t, onOpenNote) => [
   {
     accessorKey: "skorPrediksi",
     header: t("table.call_History.columns.kategori"),
-    cell: ({ row }) => (
-      <div>
-        <CategoryBadge category={row.original.nasabah?.skorPrediksi} />
-      </div>
-    ),
+    cell: ({ row }) => {
+      const [showRaw, setShowRaw] = useState(false);
+      const s = row.original.nasabah?.skorPrediksi ?? 0;
+
+      return (
+        <div
+          onClick={() => setShowRaw(!showRaw)}
+          style={{ cursor: "pointer" }}
+        >
+          {showRaw ? parseFloat(s).toFixed(2) : <CategoryBadge category={s} />}
+        </div>
+      );
+    },
   },
   {
     accessorKey: "hasilTelepon",
