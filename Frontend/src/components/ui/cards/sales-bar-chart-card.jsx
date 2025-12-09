@@ -151,6 +151,7 @@ export default function SalesBarChartCard({
           return b.pct - a.pct;
         default:
           return b.value - a.value;
+          return b.value - a.value;
       }
     });
 

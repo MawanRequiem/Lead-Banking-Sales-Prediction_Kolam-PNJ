@@ -18,22 +18,12 @@ export default function ContactPriorityCard({
   const list = Array.isArray(data) ? data.slice(0, 5) : [];
   const finalLoading = loading;
 
-  function openCustomerDetail(id) {
-    if (typeof onOpenCustomer === "function") {
-      onOpenCustomer(id);
-      return;
-    }
-  }
-
   function getCategory(item) {
     // Prefer explicit category if provided
     if (item && item.category) return item.category;
     // Otherwise try to derive from numeric score if available
     const score = Number(item?.skor);
-    if (!Number.isFinite(score)) return null;
-    if (score >= 80) return "Grade A";
-    if (score >= 50) return "Grade B";
-    return "Grade C";
+    return score;
   }
 
   // CategoryBadge component is used for rendering grade badges
@@ -87,13 +77,11 @@ export default function ContactPriorityCard({
             (list || []).map((item, idx) => {
               const id = item?.id ?? item?.userId ?? item?.customerId ?? idx;
               const name = item?.name ?? item?.nama ?? item?.email ?? "-";
-              const lastContact =
-                item?.lastContact ?? item?.last_contact ?? "-";
+              const lastContact = item?.lastCall ?? "-";
+              const lastContactToLocale = new Date(
+                lastContact
+              ).toLocaleString();
               const category = getCategory(item);
-              const badgeLabel =
-                typeof category === "string"
-                  ? category.replace(/^Grade\s*/i, "")
-                  : null;
 
               return (
                 <div
@@ -103,7 +91,7 @@ export default function ContactPriorityCard({
                   <div>
                     <div className="flex items-center gap-2">
                       <div className="text-sm font-medium">{name}</div>
-                      {badgeLabel && <CategoryBadge category={badgeLabel} />}
+                      <CategoryBadge category={category} />
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
@@ -112,7 +100,7 @@ export default function ContactPriorityCard({
                         "card.contactPriority.lastContact",
                         "Terakhir dihubungi:"
                       )}{" "}
-                      {lastContact}
+                      {lastContactToLocale}
                     </div>
                   </div>
                 </div>

@@ -30,6 +30,15 @@ export default function ProfileDropdown(props) {
     }
   }
 
+  function logoutHandler() {
+    try {
+      logout();
+      navigate("/login");
+    } catch (e) {
+      console.error("Logout failed", e);
+    }
+  }
+
   const displayUser = {
     name: props.userName ?? user.name,
     email: props.userEmail ?? user.email,
