@@ -12,6 +12,17 @@ function generatePhoneNumber() {
   return phone;
 }
 
+function randomRange(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function getKprProbability(gaji) {
+  if (gaji < 6000000) {return 0.15;}
+  if (gaji < 12000000) {return 0.35;}
+  if (gaji < 20000000) {return 0.55;}
+  return 0.7;
+}
+
 async function main() {
   console.log('Starting database seeding...\n');
   // Jenis Kelamin Keys: 'L' = Laki-laki, 'P' = Perempuan
@@ -199,6 +210,18 @@ async function main() {
   const domisiliList = ['Jakarta', 'Bandung', 'Surabaya', 'Medan', 'Semarang', 'Yogyakarta', 'Makassar', 'Bali', 'Solo', 'Malang'];
   const statusPernikahanList = ['BELUM_MENIKAH', 'MENIKAH', 'CERAI_HIDUP', 'CERAI_MATI'];
   const jenisKelaminList = ['L', 'P'];
+  const pendidikanList = ['SD', 'SMP', 'SMA', 'D3', 'S1', 'S2', 'S3'];
+  const salaryRanges = {
+    'PNS': [5000000, 15000000],
+    'Karyawan Swasta': [4000000, 30000000],
+    'Wiraswasta': [3000000, 100000000],
+    'Pegawai BUMN': [7000000, 25000000],
+    'Profesional': [10000000, 50000000],
+    'Guru': [3000000, 10000000],
+    'Dokter': [15000000, 80000000],
+    'Engineer': [8000000, 40000000],
+  };
+
 
   const nasabahCount = await prisma.nasabah.count();
 
@@ -207,15 +230,31 @@ async function main() {
     const nasabahDataBulk = [];
 
     for (let i = 0; i < 100; i++) {
+      const pekerjaan = pekerjaanList[Math.floor(Math.random() * pekerjaanList.length)];
+      const [minGaji, maxGaji] = salaryRanges[pekerjaan];
+
+      // Generate realistic salary
+      const gaji = Math.round(randomRange(minGaji, maxGaji) / 1_000_000) * 1_000_000;
+
+      // More realistic saldo
+      const saldo = randomRange(gaji * 1, gaji * 6);
+
       nasabahDataBulk.push({
         nama: namaList[i],
-        umur: Math.floor(Math.random() * (65 - 25) + 25),
-        pekerjaan: pekerjaanList[Math.floor(Math.random() * pekerjaanList.length)],
+        umur: randomRange(25, 65),
+        pekerjaan,
         domisili: domisiliList[Math.floor(Math.random() * domisiliList.length)],
-        gaji: Math.floor(Math.random() * (50000000 - 3000000) + 3000000),
+        gaji,
         idStatusPernikahan: statusPernikahanList[Math.floor(Math.random() * statusPernikahanList.length)],
         jenisKelamin: jenisKelaminList[Math.floor(Math.random() * jenisKelaminList.length)],
         nomorTelepon: generatePhoneNumber(),
+        saldo,
+        pendidikan: pendidikanList[Math.floor(Math.random() * pendidikanList.length)],
+
+        // Probabilities based on salary
+        hasKpr: Math.random() < getKprProbability(gaji),
+        hasPinjaman: Math.random() < (gaji > 10_000_000 ? 0.35 : 0.2),
+        hasDefaulted: Math.random() < 0.05,
       });
     }
 
