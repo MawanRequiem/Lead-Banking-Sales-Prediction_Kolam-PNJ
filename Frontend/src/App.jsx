@@ -26,11 +26,6 @@ function App() {
       <LangProvider storageKey="app_lang" defaultLang="id">
         <SidebarProvider>
           {/* Dev debug badge: shows current pathname and login branch (only in dev) */}
-          {process.env.NODE_ENV !== "production" ? (
-            <div className="fixed top-3 right-3 z-50 text-xs px-2 py-1 rounded bg-white/80 text-black shadow">
-              {location.pathname}
-            </div>
-          ) : null}
           <Routes>
             <Route path="/" element={<Navigate to="/login" replace />} />
             <Route path="/login" element={<LoginPage />} />

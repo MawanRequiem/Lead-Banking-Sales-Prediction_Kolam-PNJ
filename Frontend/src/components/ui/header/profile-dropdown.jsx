@@ -82,6 +82,15 @@ export default function ProfileDropdown(props) {
               {t("header.profileDropdown.personalInfo", "Informasi Personal")}
             </button>
           </li>
+          <li>
+            <button
+              className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-muted"
+              onClick={changePassword}
+            >
+              <Key className="h-4 w-4" />
+              Ganti Password
+            </button>
+          </li>
           <li className="px-4 py-2 flex items-center justify-between">
             {" "}
             <div className="flex items-center gap-2">
