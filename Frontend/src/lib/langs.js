@@ -470,6 +470,7 @@ export const dictionaries = {
       profileDropdown: {
         openMenuAria: "Buka menu profil",
         personalInfo: "Informasi Personal",
+        changePassword: "Ganti Kata Sandi",
         changeLanguage: "Bahasa (ID/EN)",
         toggleLanguageAria: "Bahasa",
         changeTheme: "Ubah Tema",
@@ -933,6 +934,7 @@ export const dictionaries = {
       profileDropdown: {
         openMenuAria: "Open profile menu",
         personalInfo: "Personal Information",
+        changePassword: "Change Password",
         changeLanguage: "Language (ID/EN)",
         toggleLanguageAria: "language",
         changeTheme: "Change Theme",

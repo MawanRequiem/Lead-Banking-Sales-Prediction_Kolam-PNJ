@@ -9,13 +9,7 @@ import { useNavigate } from "react-router-dom";
 import { useLang } from "@/hooks/useLang";
 
 export default function ProfileDropdown(props) {
-  const {
-    user,
-    changeLanguage,
-    changePassword,
-    openPersonalInfo,
-    openNotifications,
-  } = useProfile();
+  const { user, changePassword, openPersonalInfo } = useProfile();
   const { logout } = useAuth();
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
@@ -88,7 +82,7 @@ export default function ProfileDropdown(props) {
               onClick={changePassword}
             >
               <Key className="h-4 w-4" />
-              Ganti Password
+              {t("header.profileDropdown.changePassword", "Ganti Kata Sandi")}
             </button>
           </li>
           <li className="px-4 py-2 flex items-center justify-between">
