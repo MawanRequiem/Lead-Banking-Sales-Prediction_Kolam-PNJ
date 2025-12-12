@@ -2,6 +2,16 @@
 
 SalesCRM is a full-stack application consisting of a Vite + React frontend and an Express + Prisma backend. It provides dashboards, customer overview, call history, admin management, authentication, and localized UI (ID/EN).
 
+## Team
+
+| Bangkit-ID  | Name                            | Path                     | Status |
+| ----------- | ------------------------------- | ------------------------ | ------ |
+| R128D5Y1308 | Muhammad Kemal Syah Rafi        | React & Back-End with AI | Aktif  |
+| R128D5Y0470 | Dharmawan Surya Kusuma          | React & Back-End with AI | Aktif  |
+| M128D5Y1294 | Muhammad Ikhlas Hilmi Nurrabban | Machine Learning         | Aktif  |
+| R128D5Y1057 | Mahdi Shidqi                    | Machine Learning         | Aktif  |
+| R128D5Y1206 | Muhammad Akram Daffa            | React & Back-End with AI | Aktif  |
+
 ## Repository Structure
 
 ```
@@ -142,18 +152,26 @@ Common endpoints:
 Frontend (`Frontend/package.json`): `dev`, `build`, `preview`.
 Backend (`backend/package.json`): `dev`, `prisma:generate`, `prisma:migrate`, `seed`, `test`.
 
-## Screenshots
+## 📸 Screenshots
 
-- Dashboard
-  - ![Dashboard](assets/screenshots/dashboard.png)
-- Login
-  - ![Login](assets/screenshots/login.png)
-- Customer Overview
-  - ![Customer Overview](assets/screenshots/customers-overview.png)
-- Call History
-  - ![Call History](assets/screenshots/call-history.png)
-- Admin Management
-  - ![Admin](assets/screenshots/admin.png)
+|                                                            |                                                            |
+| :--------------------------------------------------------: | :--------------------------------------------------------: | :----------------------------------------------------: |
+|    ![Dashboard](assets/screenshots/sales-dashboard.png)    |           ![Login](assets/screenshots/login.png)           | ![Customer List](assets/screenshots/customer-list.png) |
+| ![Assignment List](assets/screenshots/assignment-list.png) |    ![Call History](assets/screenshots/call-history.png)    |         ![Admin](assets/screenshots/admin.png)         |
+|        ![Add User](assets/screenshots/add-user.png)        | ![Change Password](assets/screenshots/change-password.png) |                                                        |
+
+### Screenshots Index
+
+| Name             | File                                   |
+| ---------------- | -------------------------------------- |
+| Dashboard        | assets/screenshots/sales-dashboard.png |
+| Login            | assets/screenshots/login.png           |
+| Customer List    | assets/screenshots/customer-list.png   |
+| Assignment List  | assets/screenshots/assignment-list.png |
+| Call History     | assets/screenshots/call-history.png    |
+| Admin Management | assets/screenshots/admin.png           |
+| Admin Add User   | assets/screenshots/add-user.png        |
+| Change Password  | assets/screenshots/change-password.png |
 
 ## License
 
