@@ -4,7 +4,7 @@ SalesCRM is a full-stack application consisting of a Vite + React frontend and a
 
 ## Team
 
-| Bangkit-ID  | Name                            | Path                     | Status |
+| Student-ID  | Name                            | Path                     | Status |
 | ----------- | ------------------------------- | ------------------------ | ------ |
 | R128D5Y1308 | Muhammad Kemal Syah Rafi        | React & Back-End with AI | Aktif  |
 | R128D5Y0470 | Dharmawan Surya Kusuma          | React & Back-End with AI | Aktif  |
@@ -154,7 +154,7 @@ Backend (`backend/package.json`): `dev`, `prisma:generate`, `prisma:migrate`, `s
 
 ## 📸 Screenshots
 
-|                                                            |                                                            |
+|                                                            |                                                            |                                                        |
 | :--------------------------------------------------------: | :--------------------------------------------------------: | :----------------------------------------------------: |
 |    ![Dashboard](assets/screenshots/sales-dashboard.png)    |           ![Login](assets/screenshots/login.png)           | ![Customer List](assets/screenshots/customer-list.png) |
 | ![Assignment List](assets/screenshots/assignment-list.png) |    ![Call History](assets/screenshots/call-history.png)    |         ![Admin](assets/screenshots/admin.png)         |
