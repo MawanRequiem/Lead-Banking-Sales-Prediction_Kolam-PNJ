@@ -52,7 +52,7 @@ export default function CustomerDetailDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[70vw] max-w-[95vw]">
+      <DialogContent className="sm:max-w-[70vw] max-w-[95vw] max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1 min-w-0">
