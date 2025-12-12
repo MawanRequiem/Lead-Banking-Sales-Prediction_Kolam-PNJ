@@ -5,6 +5,7 @@
 
 const helmet = require('helmet');
 const cors = require('cors');
+const env = require('./env');
 
 /**
  * Helmet Configuration (Security Headers)
@@ -78,10 +79,15 @@ const helmetConfig = helmet({
 /**
  * CORS Configuration (Cross-Origin Resource Sharing)
  */
-const rawOrigins = process.env.ALLOWED_ORIGINS || process.env.CORS_ORIGIN || '';
+const rawOrigins = env.config.cors.origin;
+
+console.log('Raw ALLOWED_ORIGINS/CORS_ORIGIN:', rawOrigins);
+
 const allowedOrigins = rawOrigins
   ? rawOrigins.split(',').map((s) => s.trim()).filter(Boolean)
   : ['http://localhost:3000', 'http://localhost:5173'];
+
+console.log('Allowed Origins for CORS:', allowedOrigins);
 
 const corsConfig = cors({
   origin: (origin, callback) => {

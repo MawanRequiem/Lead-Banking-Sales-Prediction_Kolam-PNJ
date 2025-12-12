@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import DataTableColumnHeader from "@/components/ui/tables/data-table-header";
 import { mockData } from "@/hooks/useTable";
 
@@ -74,9 +74,18 @@ export const makeCustomersOverviewColumns = (t) => [
     accessorKey: "skor",
     header: t("table.customersOverview.columns.skor"),
     cell: ({ row }) => {
+      const [showRaw, setShowRaw] = useState(false);
       const s = parseFloat(row.original.skor || row.original.skorPrediksi || 0);
       const cat = s >= 0.75 ? "A" : s >= 0.5 ? "B" : "C";
-      return <CategoryBadge category={cat} />;
+
+      return (
+        <div
+          onClick={() => setShowRaw(!showRaw)}
+          style={{ cursor: "pointer" }}
+        >
+          {showRaw ? s.toFixed(2) : <CategoryBadge category={cat} />}
+        </div>
+      );
     },
   },
 ];

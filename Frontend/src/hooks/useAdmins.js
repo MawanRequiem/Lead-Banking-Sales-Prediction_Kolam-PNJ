@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import axios from '../lib/axios'
 
 // Hook that fetches users which are either admin or sales from the backend
-export function useAdmins({ page = 1, limit = 5 } = {}) {
+export function useAdmins({ page = 1, limit = 10 } = {}) {
   const [data, setData] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)

@@ -4,7 +4,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+  url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
 }
 
@@ -212,25 +212,29 @@ model PasswordVerification {
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model Nasabah {
-  idNasabah          String              @id @default(dbgenerated("uuid_generate_v4()")) @map("id_nasabah") @db.Uuid
-  nama               String              @db.VarChar(255)
-  umur               Int?                @db.SmallInt
-  pekerjaan          String?             @db.VarChar(255)
+  idNasabah          String                   @id @default(dbgenerated("uuid_generate_v4()")) @map("id_nasabah") @db.Uuid
+  nama               String                   @db.VarChar(255)
+  umur               Int?                     @db.SmallInt
+  pekerjaan          String?                  @db.VarChar(255)
   domisili           String?
-  gaji               Decimal?            @db.Decimal(15, 2)
-  idStatusPernikahan String?             @map("id_status_pernikahan") @db.VarChar(20)
-  jenisKelamin       String?             @map("jenis_kelamin") @db.VarChar(10)
-  skorPrediksi       Decimal?            @map("skor_prediksi") @db.Decimal(5, 4)
-  lastScoredAt       DateTime?           @map("last_scored_at") @db.Timestamptz(6)
-  createdAt          DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt          DateTime            @updatedAt @map("updated_at") @db.Timestamptz(6)
-  deletedAt          DateTime?           @map("deleted_at") @db.Timestamptz(6)
-  nomorTelepon       String?             @map("nomor_telepon")
-
+  gaji               Decimal?                 @db.Decimal(15, 2)
+  idStatusPernikahan String?                  @map("id_status_pernikahan") @db.VarChar(20)
+  jenisKelamin       String?                  @map("jenis_kelamin") @db.VarChar(10)
+  skorPrediksi       Decimal?                 @map("skor_prediksi") @db.Decimal(5, 4)
+  lastScoredAt       DateTime?                @map("last_scored_at") @db.Timestamptz(6)
+  createdAt          DateTime                 @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime                 @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt          DateTime?                @map("deleted_at") @db.Timestamptz(6)
+  nomorTelepon       String?                  @map("nomor_telepon")
+  saldo              Decimal?                 @db.Decimal(15, 2)
+  pendidikan         String?
+  hasPinjaman        Boolean                  @default(false) @map("has_pinjaman")
+  hasKpr             Boolean                  @default(false) @map("has_kpr")
+  hasDefaulted       Boolean                  @default(false) @map("has_defaulted")
   deposito           Deposito[]
   historiTelepon     HistoriTelepon[]
-  jenisKelaminRel    JenisKelamin?       @relation("nasabah_jenis_kelaminTojenis_kelamin", fields: [jenisKelamin], references: [idJenisKelamin], map: "fk_nasabah_jenis_kelamin")
-  statusPernikahan   StatusPernikahan?   @relation(fields: [idStatusPernikahan], references: [idStatusPernikahan], map: "fk_nasabah_status_pernikahan")
+  jenisKelaminRel    JenisKelamin?            @relation("nasabah_jenis_kelaminTojenis_kelamin", fields: [jenisKelamin], references: [idJenisKelamin], map: "fk_nasabah_jenis_kelamin")
+  statusPernikahan   StatusPernikahan?        @relation(fields: [idStatusPernikahan], references: [idStatusPernikahan], map: "fk_nasabah_status_pernikahan")
   assignments        SalesNasabahAssignment[]
 
   @@map("nasabah")
