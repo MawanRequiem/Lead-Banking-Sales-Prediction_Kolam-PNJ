@@ -88,7 +88,7 @@ export default function ProfileDropdown(props) {
               onClick={changePassword}
             >
               <Key className="h-4 w-4" />
-              Ganti Password
+              {t("header.profileDropdown.changePassword", "Ganti Password")}
             </button>
           </li>
           <li className="px-4 py-2 flex items-center justify-between">
