@@ -1,6 +1,0 @@
-.env
-
-*.pkl
-
-Dockerfile
-docker-compose.yml
