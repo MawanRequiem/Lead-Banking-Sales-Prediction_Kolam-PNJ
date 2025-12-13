@@ -93,7 +93,7 @@ def prepare_features_from_db(rows):
         # --- safe casting ---
         IDR_TO_EUR_RATE = 14000  # fixed, era 2008–2010
 
-        saldo_idr = float(data.saldo) if isinstance(data.saldo, (int, float, Decimal)) else 0.0
+        saldo_idr = float(saldo) if isinstance(saldo, (int, float, Decimal)) else 0.0
         saldo_eur = saldo_idr / IDR_TO_EUR_RATE # Menyesuaikan ke data training asli dalam Euro
         campaign_val = int(campaign or 0)
         previous_val = int(previous or 0)
