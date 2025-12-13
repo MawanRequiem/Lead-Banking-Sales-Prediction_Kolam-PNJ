@@ -5,6 +5,7 @@ import joblib
 import pandas as pd
 import datetime as dt
 import re
+from decimal import Decimal
 from dotenv import load_dotenv
 
 from fastapi import FastAPI, HTTPException, Request
@@ -131,7 +132,7 @@ def prepare_features(data: NasabahPayload) -> pd.DataFrame:
         "S1": "tertiary", "S2": "tertiary", "S3": "tertiary",
     }
     poutcome_map = {
-        "Tertarik": "success", "Tidak Tertarik": "failure",
+        "TERTARIK": "success", "TIDAK TERTARIK": "failure",
     }
 
     contact_type = detect_contact_type(data.nomor_telepon)
@@ -143,11 +144,16 @@ def prepare_features(data: NasabahPayload) -> pd.DataFrame:
         day = data.last_call_date.day
         month = data.last_call_date.strftime("%b").lower()
 
+    IDR_TO_EUR_RATE = 14000  # fixed, era 2008–2010
+
+    saldo_idr = float(data.saldo) if isinstance(data.saldo, (int, float, Decimal)) else 0.0
+    saldo_eur = saldo_idr / IDR_TO_EUR_RATE # Menyesuaikan ke data training asli dalam Euro
+
     df_raw = pd.DataFrame([{
         "age": data.umur,
         "job": job_map.get(data.pekerjaan, "unknown"),
         "marital": marital_map.get(data.status_pernikahan, "single"),
-        "balance": data.saldo,
+        "balance": saldo_eur,
         "education": education_map.get(data.pendidikan, "unknown"),
         "default": "yes" if data.has_defaulted else "no",
         "housing": "yes" if data.has_kpr else "no",

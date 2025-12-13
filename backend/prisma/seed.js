@@ -348,10 +348,10 @@ async function main() {
 
   if (historiCount === 0) {
     const hasilTeleponList = [
-      'Tertarik',
-      'Tidak Tertarik',
-      'Voicemail',
-      'Tidak Terangkat',
+      'TERTARIK',
+      'TIDAK TERTARIK',
+      'VOICEMAIL',
+      'TIDAK TERANGKAT',
     ];
 
     const historiData = [];

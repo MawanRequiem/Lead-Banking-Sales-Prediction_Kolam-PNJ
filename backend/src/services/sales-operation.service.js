@@ -58,9 +58,9 @@ async function getAssignmentsForDash(salesId, limit = 5) {
 /**
  * Dashboard helper: deposit conversion aggregates (date_trunc)
  */
-async function getCallsConversionForDash({ startDate, endDate, interval = 'month', successSet = 'VOICEMAIL', salesId } = {}) {
+async function getCallsConversionForDash({ startDate, endDate, interval = 'month', successSet = 'TERTARIK', salesId } = {}) {
   // Delegate DB query to repository layer: conversion = successful calls in histori_telepon
-  const defaultSuccessSet = 'VOICEMAIL';
+  const defaultSuccessSet = 'TERTARIK';
   const finalsuccessSet = (typeof successSet === 'string' && successSet.trim().length > 0)
     ? successSet.trim().toUpperCase()
     : defaultSuccessSet.toUpperCase();

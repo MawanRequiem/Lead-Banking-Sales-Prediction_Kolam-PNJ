@@ -460,7 +460,7 @@ async function getCallConversionByBucket({ startDate, endDate, interval = 'month
   if (!Array.isArray(successSet)) {
     successSet = typeof successSet === 'string' && successSet.trim().length > 0
       ? [successSet.trim().toUpperCase()]
-      : ['VOICEMAIL'];
+      : ['TERTARIK'];
     console.log('Normalized successSet to array:', successSet);
   }
 

@@ -76,7 +76,7 @@ def prepare_features_from_db(rows):
         "S1": "tertiary", "S2": "tertiary", "S3": "tertiary",
     }
     poutcome_map = {
-        "Tertarik": "success", "Tidak Tertarik": "failure",
+        "TERTARIK": "success", "TIDAK TERTARIK": "failure",
     }
 
     data = []
@@ -91,7 +91,10 @@ def prepare_features_from_db(rows):
         ) = row
 
         # --- safe casting ---
-        saldo_val = float(saldo) if isinstance(saldo, (float, int, Decimal)) else 0.0
+        IDR_TO_EUR_RATE = 14000  # fixed, era 2008–2010
+
+        saldo_idr = float(data.saldo) if isinstance(data.saldo, (int, float, Decimal)) else 0.0
+        saldo_eur = saldo_idr / IDR_TO_EUR_RATE # Menyesuaikan ke data training asli dalam Euro
         campaign_val = int(campaign or 0)
         previous_val = int(previous or 0)
         pdays_val = int(pdays) if pdays is not None else -1
@@ -110,7 +113,7 @@ def prepare_features_from_db(rows):
             "age": int(umur or 0),
             "job": job_map.get(pekerjaan, "unknown"),
             "marital": marital_map.get(id_status_pernikahan, "single"),
-            "balance": saldo_val,
+            "balance": saldo_eur,
             "education": education_map.get(pendidikan, "unknown"),
             "default": "yes" if has_defaulted else "no",
             "housing": "yes" if has_kpr else "no",

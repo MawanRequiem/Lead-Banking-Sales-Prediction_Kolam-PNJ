@@ -156,7 +156,7 @@ const getDashboardDepositsTypes = asyncHandler(async (req, res) => {
  */
 const getDashboardSummary = asyncHandler(async (req, res) => {
   let { startDate, endDate, year, month } = req.query;
-  const { interval = 'month', successSet = 'VOICEMAIL', callsLimit = '10', assignmentsLimit = '5' } = req.query;
+  const { interval = 'month', successSet = 'TERTARIK', callsLimit = '10', assignmentsLimit = '5' } = req.query;
 
   let wholeYear = false;
   // If frontend provided year/month but not explicit startDate/endDate,

@@ -77,10 +77,10 @@ export default function ContactPriorityCard({
             (list || []).map((item, idx) => {
               const id = item?.id ?? item?.userId ?? item?.customerId ?? idx;
               const name = item?.name ?? item?.nama ?? item?.email ?? "-";
-              const lastContact = item?.lastCall ?? "-";
-              const lastContactToLocale = new Date(
-                lastContact
-              ).toLocaleString();
+              const lastContact = new Date(item?.lastCall) ?? "-";
+              const lastContactToLocale = item?.lastCall
+                ? new Date(item.lastCall).toLocaleString()
+                : "-";
               const category = getCategory(item);
 
               return (
