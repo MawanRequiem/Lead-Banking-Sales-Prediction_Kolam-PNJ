@@ -17,21 +17,19 @@ const { generateAccessToken } = require('../services/authentication.service');
  * Extract JWT from Authorization header
  */
 function extractToken(req) {
-  const authHeader = req.headers.authorization;
-
-  if (!authHeader) {
-    return null;
+  // Priority: Authorization header, then cookies (accessToken or token)
+  const authHeader = req.headers && req.headers.authorization;
+  if (authHeader) {
+    const parts = authHeader.split(' ');
+    if (parts.length === 2 && parts[0] === 'Bearer') {return parts[1];}
+    if (parts.length === 1) {return parts[0];}
   }
 
-  // Support both "Bearer TOKEN" and "TOKEN"
-  const parts = authHeader.split(' ');
-
-  if (parts.length === 2 && parts[0] === 'Bearer') {
-    return parts[1];
-  }
-
-  if (parts.length === 1) {
-    return parts[0];
+  // cookie-parser must be enabled in app.js for req.cookies to exist
+  if (req.cookies) {
+    // common cookie names used across frontend/backends
+    const cookieToken = req.cookies.accessToken || req.cookies.token || req.cookies.authToken;
+    if (cookieToken) {return cookieToken;}
   }
 
   return null;
@@ -97,9 +95,14 @@ async function verifyToken(token) {
 }
 
 async function handleRefreshFlow(oldToken, req, res, next){
-  const refreshToken = req.headers['x-refresh-token']; // Custom header for refresh token, check for cookies in production.
+  // Accept refresh token from header or cookie
+  let refreshToken = req.headers['x-refresh-token'] || req.headers['x-refresh-token'.toLowerCase()];
+  if (!refreshToken && req.cookies) {
+    refreshToken = req.cookies.refreshToken || req.cookies.refresh_token || req.cookies.refresh;
+  }
+
   if (!refreshToken) {
-    throw new UnauthorizedError('Access token invalid and refresh token missing from request header', 'TOKEN_REQUIRED');
+    throw new UnauthorizedError('Access token invalid and refresh token missing from request', 'TOKEN_REQUIRED');
   }
 
   const validToken = await tokenService.validateRefreshToken(refreshToken);
@@ -127,8 +130,14 @@ async function handleRefreshFlow(oldToken, req, res, next){
 
   const verified = { ...decoded, userId: decoded.userId, user: stillValidUser };
 
-  res.setHeader('x-new-access-Token', accessToken);
-  res.setHeader('x-new-refresh-Token', newRefreshToken);
+  // Set cookies for new tokens
+  try {
+    const isProd = process.env.NODE_ENV === 'production';
+    res.cookie('accessToken', accessToken, { httpOnly: true, secure: isProd, sameSite: 'lax', path: '/' });
+    res.cookie('refreshToken', newRefreshToken, { httpOnly: true, secure: isProd, sameSite: 'lax', path: '/' });
+  } catch (e) {
+    logger.warn('Failed to set refreshed auth cookies', e);
+  }
 
   req.user = verified;
   res.locals.userId = verified.userId;
@@ -143,6 +152,17 @@ async function handleRefreshFlow(oldToken, req, res, next){
   });
 
   return next();
+}
+
+function getTokenMaxAge() {
+  const expiresIn = process.env.JWT_EXPIRES_IN || '15m';
+  if (typeof expiresIn === 'string') {
+    if (expiresIn.endsWith('m')) {return parseInt(expiresIn) * 60;}
+    if (expiresIn.endsWith('h')) {return parseInt(expiresIn) * 3600;}
+    if (expiresIn.endsWith('d')) {return parseInt(expiresIn) * 86400;}
+  }
+  const n = parseInt(expiresIn, 10);
+  return Number.isFinite(n) ? n : 900;
 }
 
 async function buildJwtPayload(userId, role) {

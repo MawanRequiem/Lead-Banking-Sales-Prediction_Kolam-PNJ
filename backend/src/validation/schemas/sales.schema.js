@@ -190,23 +190,67 @@ const salesQuerySchema = Joi.object({
   stripUnknown: true,
 });
 
-const logCallSchema = Joi.object({
+const callsQuerySchema = Joi.object({
   nasabahId: Joi.string()
+    .uuid({ version: 'uuidv4' })
+    .messages({
+      'string.guid': 'Invalid Nasabah ID format',
+    }),
+
+  page: Joi.number()
+    .integer()
+    .min(1)
+    .max(10000)
+    .default(1)
+    .messages({
+      'number.base': 'Page must be a number',
+      'number.integer': 'Page must be an integer',
+      'number.min': 'Page must be at least 1',
+      'number.max': 'Page must not exceed 10000',
+    }),
+
+  limit: Joi.number()
+    .integer()
+    .min(1)
+    .max(100)
+    .default(10)
+    .messages({
+      'number.base': 'Limit must be a number',
+      'number.integer': 'Limit must be an integer',
+      'number.min': 'Limit must be at least 1',
+      'number.max': 'Limit must not exceed 100',
+    }),
+
+  search: Joi.string()
+    .trim()
+    .max(100)
+    .allow('')
+    .messages({
+      'string.max': 'Search query must not exceed 100 characters',
+    }),
+
+  sortBy: Joi.string()
+    .valid('nama', 'email', 'createdAt', 'updatedAt')
+    .default('createdAt')
+    .messages({
+      'any.only': 'sortBy must be one of: nama, email, createdAt, updatedAt',
+    }),
+
+  sortOrder: Joi.string()
+    .valid('asc', 'desc')
+    .default('desc')
+    .messages({
+      'any.only': 'sortOrder must be either asc or desc',
+    }),
+});
+
+const logCallSchema = Joi.object({
+  nasabahId: Joi.string() // why don't we just expect the table name in camelCase for the payload?
     .uuid({ version: 'uuidv4' })
     .required()
     .messages({
       'string.guid': 'Invalid Nasabah ID format',
       'any.required': 'Nasabah ID is required',
-    }),
-
-  nomorTelepon: Joi.string()
-    .trim()
-    .pattern(/^(\+62|62|0)[0-9]{8,12}$/)
-    .max(20)
-    .required()
-    .messages({
-      'string.pattern.base': 'Phone number format is invalid',
-      'any.required': 'Phone number is required',
     }),
 
   lamaTelepon: Joi.number()
@@ -219,7 +263,8 @@ const logCallSchema = Joi.object({
     }),
 
   hasilTelepon: Joi.string()
-    .max(255)
+    .trim()
+    .uppercase()
     .required()
     .messages({
       'any.required': 'Call result is required',
@@ -247,6 +292,30 @@ const logCallSchema = Joi.object({
   stripUnknown: true,
 });
 
+/**
+ * Dashboard Query Schema
+ * Supports either paginated leads or dashboard summary params
+ */
+const dashboardQuerySchema = Joi.object({
+  // Summary selectors
+  year: Joi.number().integer().min(1970).max(2100),
+  month: Joi.number().integer().min(1).max(12),
+  // Summary controlled by server: frontend may only pass `year` and optional `month`.
+  // Do NOT accept free-form startDate/endDate or summary flag from client anymore.
+  interval: Joi.string().valid('day', 'week', 'month', 'year').default('month'),
+  successSet: Joi.string().trim().allow('', null), // comma-separated list
+
+  // Limits for summary sub-queries
+  callsLimit: Joi.number().integer().min(1).max(100).default(10),
+  assignmentsLimit: Joi.number().integer().min(1).max(100).default(5),
+  typesLimit: Joi.number().integer().min(1).max(100).default(10),
+
+  // Pagination/search for leads should use GET /api/sales/leads instead.
+  page: Joi.forbidden(),
+  limit: Joi.forbidden(),
+  search: Joi.forbidden(),
+}).options({ abortEarly: false, stripUnknown: true });
+
 const updateStatusSchema = Joi.object({
   nasabahId: Joi.string()
     .uuid({ version: 'uuidv4' })
@@ -260,11 +329,22 @@ const updateStatusSchema = Joi.object({
   stripUnknown: true,
 });
 
+const leadsOverviewQuerySchema = Joi.object({
+  month: Joi.number().integer().min(1).max(12),
+  year: Joi.number().integer().min(0),
+}).options({
+  abortEarly: false,
+  stripUnknown: true,
+});
+
 module.exports = {
   createSalesSchema,
   updateSalesSchema,
   resetPasswordSchema,
   salesQuerySchema,
+  callsQuerySchema,
   logCallSchema,
   updateStatusSchema,
+  dashboardQuerySchema,
+  leadsOverviewQuerySchema,
 };

@@ -18,8 +18,11 @@ const {
   updateSalesSchema,
   resetPasswordSchema,
   salesQuerySchema,
+  callsQuerySchema,
   logCallSchema,
   updateStatusSchema,
+  dashboardQuerySchema,
+  leadsOverviewQuerySchema,
 } = require('../validation/schemas/sales.schema');
 
 const {
@@ -27,6 +30,7 @@ const {
   refreshTokenSchema,
   logoutSchema,
   changePasswordSchema,
+  verifyCurrentSchema,
 } = require('../validation/schemas/auth.schema');
 
 const {
@@ -234,6 +238,8 @@ function deepSanitize(data) {
           stripHtml: true,
         });
       }
+    } else if (value instanceof Date) {
+      sanitized[key] = value;
     } else if (typeof value === 'object') {
       sanitized[key] = deepSanitize(value);
     } else {
@@ -401,6 +407,86 @@ function validateGetAllQuery(req, res, next) {
   next();
 }
 
+function validateLeadsOverviewQuery(req, res, next) {
+  const threats = deepSecurityScan(req.query, 'query');
+  if (threats.length > 0) {
+    logSecurityThreat(req, res, threats);
+    if (threats.some(t => t.severity === 'CRITICAL')) {
+      return validationErrorResponse(res, [{
+        field: 'query',
+        message: 'Invalid query parameters',
+        code: 'INVALID_QUERY',
+      }]);
+    }
+  }
+
+  const joiValidation = validateWithJoi(leadsOverviewQuerySchema, req.query);
+  if (joiValidation.hasError) {
+    return validationErrorResponse(res, joiValidation.errors);
+  }
+
+  req.query = joiValidation.value;
+  next();
+}
+
+/**
+ * Validate Dashboard Query
+ */
+function validateDashboardQuery(req, res, next) {
+  const threats = deepSecurityScan(req.query, 'query');
+  if (threats.length > 0) {
+    logSecurityThreat(req, res, threats);
+    if (threats.some(t => t.severity === 'CRITICAL')) {
+      return validationErrorResponse(res, [{ field: 'query', message: 'Invalid query parameters', code: 'INVALID_QUERY' }]);
+    }
+  }
+
+  const joiValidation = validateWithJoi(dashboardQuerySchema, req.query);
+  if (joiValidation.hasError) {
+    return validationErrorResponse(res, joiValidation.errors);
+  }
+
+  // Sanitize search if present
+  if (joiValidation.value.search) {
+    joiValidation.value.search = sanitizeInput(joiValidation.value.search, { maxLength: 100, stripHtml: true });
+  }
+
+  req.query = joiValidation.value;
+  next();
+}
+
+function validateCallHistoryQuery(req, res, next) {
+  // Security scan
+  const threats = deepSecurityScan(req.query, 'query');
+  if (threats.length > 0) {
+    logSecurityThreat(req, res, threats);
+    if (threats.some(t => t.severity === 'CRITICAL')) {
+      return validationErrorResponse(res, [{
+        field: 'query',
+        message: 'Invalid query parameters',
+        code: 'INVALID_QUERY',
+      }]);
+    }
+  }
+
+  // Joi validation
+  const joiValidation = validateWithJoi(callsQuerySchema, req.query);
+  if (joiValidation.hasError) {
+    return validationErrorResponse(res, joiValidation.errors);
+  }
+
+  // Sanitize search
+  if (joiValidation.value.search) {
+    joiValidation.value.search = sanitizeInput(joiValidation.value.search, {
+      maxLength: 100,
+      stripHtml: true,
+    });
+  }
+
+  req.query = joiValidation.value;
+  next();
+}
+
 /**
  * Validate Log Call (Sales Operation)
  */
@@ -466,7 +552,13 @@ function validateLogin(req, res, next) {
  * Validate Refresh Token
  */
 function validateRefreshToken(req, res, next) {
-  const joiValidation = validateWithJoi(refreshTokenSchema, req.body);
+  // Allow refreshToken to be provided in body or cookie for cookie-based flows
+  const payload = Object.assign({}, req.body);
+  if (!payload.refreshToken && req.cookies) {
+    payload.refreshToken = req.cookies.refreshToken || req.cookies.refresh_token || req.cookies.refresh;
+  }
+
+  const joiValidation = validateWithJoi(refreshTokenSchema, payload);
   if (joiValidation.hasError) {
     return validationErrorResponse(res, joiValidation.errors);
   }
@@ -479,7 +571,13 @@ function validateRefreshToken(req, res, next) {
  * Validate Logout
  */
 function validateLogout(req, res, next) {
-  const joiValidation = validateWithJoi(logoutSchema, req.body);
+  // Accept refresh token from cookie if not present in body
+  const payload = Object.assign({}, req.body);
+  if (!payload.refreshToken && req.cookies) {
+    payload.refreshToken = req.cookies.refreshToken || req.cookies.refresh_token || req.cookies.refresh;
+  }
+
+  const joiValidation = validateWithJoi(logoutSchema, payload);
   if (joiValidation.hasError) {
     return validationErrorResponse(res, joiValidation.errors);
   }
@@ -502,6 +600,19 @@ function validateChangePassword(req, res, next) {
 }
 
 /**
+ * Validate Verify Current Password
+ */
+function validateVerifyCurrent(req, res, next) {
+  const joiValidation = validateWithJoi(verifyCurrentSchema, req.body);
+  if (joiValidation.hasError) {
+    return validationErrorResponse(res, joiValidation.errors);
+  }
+
+  req.body = joiValidation.value;
+  next();
+}
+
+/**
  * ========================================
  * EXPORTS
  * ========================================
@@ -514,12 +625,16 @@ module.exports = {
   validateResetPassword,
   validateUUIDParam,
   validateGetAllQuery,
+  validateCallHistoryQuery,
   validateLogCall,
   validateUpdateStatus,
+  validateDashboardQuery,
+  validateLeadsOverviewQuery,
 
   // Auth validation
   validateLogin,
   validateRefreshToken,
   validateLogout,
   validateChangePassword,
+  validateVerifyCurrent,
 };

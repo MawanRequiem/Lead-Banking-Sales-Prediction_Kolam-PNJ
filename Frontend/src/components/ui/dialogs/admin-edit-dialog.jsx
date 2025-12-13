@@ -1,54 +1,64 @@
-import React, { useEffect, useState, useRef, startTransition } from 'react'
-import * as Dialog from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
-import { Button } from '@/components/ui/button'
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select'
+import React, { useEffect, useState, useRef, startTransition } from "react";
+import * as Dialog from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { useLang } from "@/hooks/useLang";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
 
-export default function AdminEditDialog({ open = false, onOpenChange, user = {}, onSave }) {
+export default function AdminEditDialog({
+  open = false,
+  onOpenChange,
+  user = {},
+  onSave,
+}) {
+  const { t } = useLang();
   const [form, setForm] = useState({
-    nama: '',
-    nomorTelepon: '',
-    email: '',
-    domisili: '',
-    role: 'sales',
-    status: 'active',
-  })
+    nama: "",
+    nomorTelepon: "",
+    email: "",
+    domisili: "",
+  });
 
   // track previous open state so we only reset the form when dialog opens
-  const prevOpen = useRef(false)
+  const prevOpen = useRef(false);
   useEffect(() => {
-    const shouldReset = open && !prevOpen.current
-    prevOpen.current = open
-    if (!shouldReset) return
+    const shouldReset = open && !prevOpen.current;
+    prevOpen.current = open;
+    if (!shouldReset) return;
 
     const nextForm = {
-      nama: user.nama || '',
-      nomorTelepon: user.nomorTelepon || user.phone || '',
-      email: user.email || '',
-      domisili: user.domisili || '',
-      role: user.role || 'sales',
-      status: user.status || 'active',
-    }
+      nama: user.nama || "",
+      nomorTelepon: user.nomorTelepon || user.phone || "",
+      email: user.email || "",
+      domisili: user.domisili || "",
+      // role/status intentionally omitted: cannot be edited via this dialog
+    };
 
-    startTransition(() => setForm(nextForm))
-  }, [open, user])
-  
+    startTransition(() => setForm(nextForm));
+  }, [open, user]);
+
   function handleChange(key, value) {
-    setForm((s) => ({ ...s, [key]: value }))
+    setForm((s) => ({ ...s, [key]: value }));
   }
 
   function handleConfirm() {
-    if (typeof onSave === 'function') onSave({ ...user, ...form })
-    if (typeof onOpenChange === 'function') onOpenChange(false)
+    if (typeof onSave === "function") onSave({ ...user, ...form });
+    if (typeof onOpenChange === "function") onOpenChange(false);
   }
 
   function handleCancel() {
-    if (typeof onOpenChange === 'function') onOpenChange(false)
+    if (typeof onOpenChange === "function") onOpenChange(false);
   }
 
   // prevent outside/escape close by swallowing close requests
   function handleOpenChange(value) {
-    if (value && typeof onOpenChange === 'function') onOpenChange(true)
+    if (value && typeof onOpenChange === "function") onOpenChange(true);
     // ignore automatic close requests from outside interactions
   }
 
@@ -60,65 +70,70 @@ export default function AdminEditDialog({ open = false, onOpenChange, user = {},
         onEscapeKeyDown={(e) => e.preventDefault()}
       >
         <Dialog.DialogHeader>
-          <Dialog.DialogTitle>Edit Admin</Dialog.DialogTitle>
-          <Dialog.DialogDescription>Ubah data admin. Tutup hanya dengan Simpan atau Batal.</Dialog.DialogDescription>
+          <Dialog.DialogTitle>
+            {t("dialog.adminEdit.title", "Edit Admin")}
+          </Dialog.DialogTitle>
+          <Dialog.DialogDescription>
+            {t(
+              "dialog.adminEdit.description",
+              "Ubah data admin. Tutup hanya dengan Simpan atau Batal."
+            )}
+          </Dialog.DialogDescription>
         </Dialog.DialogHeader>
 
         <div className="grid gap-3 py-4">
           <div>
-            <label className="text-sm text-muted-foreground">Nama</label>
-            <Input value={form.nama} onChange={(e) => handleChange('nama', e.target.value)} />
+            <label className="text-sm text-muted-foreground">
+              {t("dialog.adminEdit.fields.nama", "Nama")}
+            </label>
+            <Input
+              value={form.nama}
+              onChange={(e) => handleChange("nama", e.target.value)}
+            />
           </div>
 
           <div>
-            <label className="text-sm text-muted-foreground">No. Telepon</label>
-            <Input value={form.nomorTelepon} onChange={(e) => handleChange('nomorTelepon', e.target.value)} />
+            <label className="text-sm text-muted-foreground">
+              {t("dialog.adminEdit.fields.nomorTelepon", "No. Telepon")}
+            </label>
+            <Input
+              value={form.nomorTelepon}
+              onChange={(e) => handleChange("nomorTelepon", e.target.value)}
+            />
           </div>
 
           <div>
-            <label className="text-sm text-muted-foreground">Email</label>
-            <Input value={form.email} onChange={(e) => handleChange('email', e.target.value)} />
+            <label className="text-sm text-muted-foreground">
+              {t("dialog.adminEdit.fields.email", "Email")}
+            </label>
+            <Input
+              value={form.email}
+              onChange={(e) => handleChange("email", e.target.value)}
+            />
           </div>
 
           <div>
-            <label className="text-sm text-muted-foreground">Domisili</label>
-            <Input value={form.domisili} onChange={(e) => handleChange('domisili', e.target.value)} />
+            <label className="text-sm text-muted-foreground">
+              {t("dialog.adminEdit.fields.domisili", "Domisili")}
+            </label>
+            <Input
+              value={form.domisili}
+              onChange={(e) => handleChange("domisili", e.target.value)}
+            />
           </div>
 
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <label className="text-sm text-muted-foreground">Role</label>
-              <Select value={form.role} onValueChange={(v) => handleChange('role', v)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="sales">Sales</SelectItem>
-                  <SelectItem value="admin">Admin</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <label className="text-sm text-muted-foreground">Status</label>
-              <Select value={form.status} onValueChange={(v) => handleChange('status', v)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="active">Aktif</SelectItem>
-                  <SelectItem value="inactive">Nonaktif</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+          {/* Role and status are not editable here; managed by admin endpoints separately */}
         </div>
 
         <Dialog.DialogFooter>
-          <Button variant="ghost" onClick={handleCancel}>Batal</Button>
-          <Button onClick={handleConfirm}>Simpan</Button>
+          <Button variant="ghost" onClick={handleCancel}>
+            {t("dialog.adminEdit.cancel", "Batal")}
+          </Button>
+          <Button onClick={handleConfirm}>
+            {t("dialog.adminEdit.save", "Simpan")}
+          </Button>
         </Dialog.DialogFooter>
       </Dialog.DialogContent>
     </Dialog.Dialog>
-  )
+  );
 }

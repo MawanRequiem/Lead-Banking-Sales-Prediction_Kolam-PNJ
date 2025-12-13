@@ -214,6 +214,11 @@ function logSecurityEvent(error, req, res) {
 function errorHandler(err, req, res, _next) {
   let error = err;
 
+  // Map CORS rejection errors from cors middleware to a ForbiddenError
+  if (err && err.message && err.message.toLowerCase().includes('not allowed by cors')) {
+    error = new ForbiddenError('CORS origin not allowed');
+  }
+
   // Convert known error types
   if (err.name === 'PrismaClientKnownRequestError') {
     error = handlePrismaError(err);

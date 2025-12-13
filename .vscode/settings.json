@@ -16,5 +16,6 @@
     "editor.defaultFormatter": "dbaeumer.vscode-eslint",
     "editor.formatOnSave": true,
     "editor.tabSize": 2
-  }
+  },
+  "prisma.pinToPrisma6": true
 }

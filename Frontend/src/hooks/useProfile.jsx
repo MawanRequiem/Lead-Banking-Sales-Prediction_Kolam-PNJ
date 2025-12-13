@@ -1,45 +1,107 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useState, useEffect } from "react";
+import axios from "@/lib/axios";
+import { useProfileContext } from "@/contexts/profile-context";
+import { useLang } from "@/hooks/useLang";
 
-// Simple profile hook — returns a mock user and stub handlers.
-export default function useProfile(initial = { name: 'MaskDuku', email: 'maskduku@example.com' }) {
-  const [user, setUser] = useState(initial)
+// Profile hook: prefer ProfileContext when available (single fetch). Fallback
+// to local behavior for components not wrapped by provider.
+export default function useProfile(initial = null) {
+  const ctx = useProfileContext();
+  if (ctx) return ctx;
 
-  const changeLanguage = useCallback((lang) => {
-    // stub: replace with real implementation
-    console.log('Change language to', lang)
-  }, [])
+  const [user, setUserState] = useState(initial);
+  const [loading, setLoading] = useState(false);
+  const { lang, setLang } = useLang();
+
+  // On mount, attempt to fetch authoritative profile from backend.
+  useEffect(() => {
+    let mounted = true;
+    async function loadProfile() {
+      setLoading(true);
+      try {
+        const res = await axios.get("/me");
+        if (!mounted) return;
+        const data = res.data && res.data.data ? res.data.data : res.data;
+        if (data) {
+          setUserState({
+            name: data.nama || data.name || null,
+            email: data.email || null,
+            role: data.role || null,
+            phone: data.nomorTelepon || data.phone || null,
+            domisili: data.domisili || null,
+          });
+        }
+      } catch (e) {
+        // ignore; leave user as-is (null or initial)
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    }
+    loadProfile();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const changeLanguage = useCallback(
+    (nextLang) => {
+      try {
+        setLang(nextLang);
+        return nextLang;
+      } catch (e) {
+        console.error("Failed to change language", e);
+        return lang;
+      }
+    },
+    [lang, setLang]
+  );
 
   const changePassword = useCallback(() => {
-    // stub: open change-password modal or route
-    console.log('Open change password')
-  }, [])
+    try {
+      window.dispatchEvent(new CustomEvent("open-verify-current"));
+    } catch (e) {
+      console.error("Failed to dispatch open-verify-current", e);
+    }
+  }, []);
 
   const openPersonalInfo = useCallback(() => {
-    // stub: navigate to profile page or open modal
-    console.log('Open personal info')
-  }, [])
+    try {
+      window.dispatchEvent(new CustomEvent("open-profile-dialog"));
+    } catch (e) {
+      console.error("Failed to dispatch open-profile-dialog", e);
+    }
+  }, []);
 
   const openNotifications = useCallback(() => {
-    // dispatch a custom event so NotificationButton or other listeners can react
     try {
-      window.dispatchEvent(new CustomEvent('open-notifications'))
+      window.dispatchEvent(new CustomEvent("open-notifications"));
     } catch (e) {
-      console.log('Open notifications error', e)
+      // ignore
     }
-  }, [])
+  }, []);
 
-  const logout = useCallback(() => {
-    // stub: clear session, redirect
-    console.log('Logout')
-  }, [])
+  // Do not persist profile to localStorage. Keep profile in-memory only.
+  const setUser = useCallback(
+    (next) => {
+      try {
+        const resolved = typeof next === "function" ? next(user) : next;
+        setUserState(resolved);
+        return resolved;
+      } catch (e) {
+        console.error("Failed to set user", e);
+        return null;
+      }
+    },
+    [user]
+  );
 
   return {
     user,
+    loading,
     setUser,
     changeLanguage,
     changePassword,
     openPersonalInfo,
     openNotifications,
-    logout,
-  }
+  };
 }

@@ -11,14 +11,18 @@ const {
 } = require('../middlewares/rateLimiter.middleware');
 const {
   validateGetAllQuery,
+  validateCallHistoryQuery,
   validateLogCall,
   validateUpdateStatus,
   validateUUIDParam,
+  validateDashboardQuery,
+  validateLeadsOverviewQuery,
 } = require('../middlewares/validation.middleware');
 
 // Global Middleware untuk router ini
 router.use(authenticateToken);
 router.use(requireSales);
+
 
 /**
  * Dashboard Route
@@ -27,19 +31,8 @@ router.use(requireSales);
 router.get(
   '/dashboard',
   searchLimiter,
-  validateGetAllQuery, // Validasi page, limit, search, sortBy
-  controller.getDashboard,
-);
-
-/**
- * Log Call Route
- * Secured with Write Rate Limit (Anti-Spam)
- */
-router.post(
-  '/log-call',
-  writeLimiter,
-  // TODO: Tambahkan 'validateLogCall' di validation.middleware.js untuk validasi body (nasabahId, hasil, dll)
-  controller.logCall,
+  validateDashboardQuery, // Validate dashboard params (year/month/summary/etc.)
+  controller.getDashboardSummary,
 );
 
 /**
@@ -49,7 +42,8 @@ router.post(
 router.get(
   '/export',
   searchLimiter,
-  controller.exportData,
+  validateCallHistoryQuery,
+  controller.exportCallHistory,
 );
 
 /**
@@ -58,8 +52,8 @@ router.get(
  */
 router.post(
   '/log-call',
-  writeLimiter,     // Mencegah spam klik tombol save
-  validateLogCall,  // <--- Validasi aktif di sini!
+  writeLimiter,
+  validateLogCall,
   controller.logCall,
 );
 
@@ -71,6 +65,47 @@ router.patch(
 );
 
 /**
+ * Get All Nasabah
+ * GET /api/sales/leads
+ */
+router.get(
+  '/leads',
+  searchLimiter,
+  validateGetAllQuery,
+  controller.getAllLeads,
+);
+
+/**
+ * Get Leads Overview
+ * GET /api/sales/leads/overview
+ */
+router.get(
+  '/leads/overview',
+  validateLeadsOverviewQuery,
+  controller.getAllLeadsOverview,
+);
+
+/**
+ * Get Assignments Overview
+ * GET /api/sales/assignments/overview
+ */
+router.get(
+  '/assignments/overview',
+  validateLeadsOverviewQuery,
+  controller.getMyLeadsOverview,
+);
+
+/**
+ * Get Call History
+ * GET /api/sales/call-history
+ */
+router.get(
+  '/call-history',
+  validateCallHistoryQuery,
+  controller.getCallHistory,
+);
+
+/**
  * Get Detail Nasabah
  * GET /api/sales/leads/:id
  */
@@ -78,6 +113,17 @@ router.get(
   '/leads/:id',
   validateUUIDParam('id'), // Validasi parameter :id harus UUID
   controller.getLeadDetail,
+);
+
+/**
+ * Get Assignments
+ * GET /api/sales/assignments
+ */
+router.get(
+  '/assignments',
+  searchLimiter,
+  validateGetAllQuery,
+  controller.getAssignments,
 );
 
 module.exports = router;

@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import axios from "@/lib/axios";
 import * as Dialog from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -9,29 +10,67 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
-import { formatDateTime, formatDurationSec } from "@/lib/date-utils";
+import { parseDurationToSeconds } from "@/lib/date-utils";
+import DateField from "../dropdown/date-field";
+import { useLang } from "@/hooks/useLang";
 
 export default function CallResultDialog({
   open,
   onOpenChange,
   onSave,
-  // legacy `caller` prop supported, prefer explicit `callerName` and `callerPhone`
-  caller: callerPhoneProp,
-  callerName = "",
-  callerPhone = undefined,
-  callId = undefined,
-  startedAt,
-  durationSec,
+  nasabah,
 }) {
-  const [result, setResult] = useState("Terkoneksi");
+  const { t } = useLang();
+  const [result, setResult] = useState("");
   const [note, setNote] = useState("");
+  const [duration, setDuration] = useState(""); // HH:MM:SS
+  const [durationSec, setDurationSec] = useState(0); // seconds integer
+  const [followUpDate, setFollowUpDate] = useState(
+    new Date().toISOString().slice(0, 10)
+  );
 
-  const effectivePhone = callerPhone || callerPhoneProp || "";
+  useEffect(() => {
+    if (open) {
+      resetForm();
+    }
+  }, [open]);
 
-  function handleSave() {
-    const payload = { result, note, caller, startedAt, durationSec };
+  function handleDurationChange(e) {
+    const value = e.target.value;
+    setDuration(value);
+
+    // Only parse if matches basic HH:MM:SS pattern
+    if (/^\d{2}:\d{2}:\d{2}$/.test(value)) {
+      const sec = parseDurationToSeconds(value);
+      setDurationSec(sec);
+    }
+  }
+
+  async function handleSave() {
+    const payload = {
+      hasilTelepon: result,
+      catatan: note,
+      nasabahId: nasabah.id,
+      lamaTelepon: durationSec,
+      nextFollowupDate: followUpDate,
+    };
+    try {
+      const res = await axios.post("/sales/log-call", payload);
+      // OPTIONAL: handle success (toast, etc.)
+    } catch (err) {
+      console.error("Failed to save call result:", err);
+      // OPTIONAL: show error toast or message
+    }
     if (typeof onSave === "function") onSave(payload);
     if (typeof onOpenChange === "function") onOpenChange(false);
+  }
+
+  function resetForm() {
+    setResult(null);
+    setNote("");
+    setDuration("");
+    setDurationSec(0);
+    setFollowUpDate(null);
   }
 
   return (
@@ -40,61 +79,79 @@ export default function CallResultDialog({
         <Dialog.DialogOverlay />
         <Dialog.DialogContent className="w-full max-w-md">
           <Dialog.DialogHeader>
-            <Dialog.DialogTitle>Catatan Hasil Telepon</Dialog.DialogTitle>
+            <Dialog.DialogTitle>
+              {t("dialog.callResult.title")}
+            </Dialog.DialogTitle>
             <Dialog.DialogDescription>
-              Catat hasil panggilan dan tambahkan catatan singkat.
+              {t("dialog.callResult.description")}
             </Dialog.DialogDescription>
-
-            <div className="mt-3 text-sm text-muted-foreground">
-              {callId ? (
-                <div>
-                  <strong>ID:</strong> {callId}
-                </div>
-              ) : null}
-              <div>
-                <strong>Nomor:</strong> {effectivePhone || "-"}
-                {callerName ? ` — ${callerName}` : ""}
-              </div>
-              <div>
-                <strong>Waktu Mulai:</strong> {formatDateTime(startedAt) || "-"}
-              </div>
-              <div>
-                <strong>Durasi:</strong> {formatDurationSec(durationSec) || "-"}
-              </div>
-            </div>
           </Dialog.DialogHeader>
 
           <div className="space-y-4 mt-2">
             <div>
-              <label className="block text-sm mb-1">Hasil Panggilan</label>
+              <label className="block text-sm mb-1">
+                {t("dialog.callResult.resultLabel")}
+              </label>
 
               <Select value={result} onValueChange={setResult}>
                 <SelectTrigger className="w-full rounded-md border bg-transparent px-3 py-2">
-                  <SelectValue placeholder="Pilih hasil..." />
+                  <SelectValue
+                    placeholder={t("dialog.callResult.resultPlaceholder")}
+                  />
                 </SelectTrigger>
 
                 <SelectContent>
-                  <SelectItem value="Terkoneksi">Terkoneksi</SelectItem>
-                  <SelectItem value="Voicemail">Voicemail</SelectItem>
-                  <SelectItem value="Tidak Terangkat">
-                    Tidak Terangkat
+                  <SelectItem value="Tertarik">
+                    {t("dialog.callResult.results.interested")}
                   </SelectItem>
-                  <SelectItem value="Tidak Tertarik">Tidak Tertarik</SelectItem>
+                  <SelectItem value="Tidak Tertarik">
+                    {t("dialog.callResult.results.notInterested")}
+                  </SelectItem>
+                  <SelectItem value="Voicemail">
+                    {t("dialog.callResult.results.voicemail")}
+                  </SelectItem>
+                  <SelectItem value="Tidak Terangkat">
+                    {t("dialog.callResult.results.notAnswered")}
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div>
-              <label className="block text-sm mb-1">Catatan</label>
+              <label className="block text-sm mb-1">
+                {t("dialog.callResult.durationLabel")}
+              </label>
+              <input
+                type="text"
+                className="w-full border px-3 py-2 rounded-md"
+                placeholder={t("dialog.callResult.durationPlaceholder")}
+                value={duration}
+                onChange={handleDurationChange}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm mb-1">
+                {t("dialog.callResult.followupLabel")}
+              </label>
+              <DateField value={followUpDate} onChange={setFollowUpDate} />
+            </div>
+
+            <div>
+              <label className="block text-sm mb-1">
+                {t("dialog.callResult.noteLabel")}
+              </label>
               <Textarea
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
-                placeholder="Tulis catatan singkat..."
+                placeholder={t("dialog.callResult.notePlaceholder")}
               />
             </div>
 
             <div className="flex justify-end gap-2">
-              <Button onClick={handleSave}>Simpan</Button>
+              <Button onClick={handleSave}>
+                {t("dialog.callResult.save")}
+              </Button>
             </div>
           </div>
         </Dialog.DialogContent>

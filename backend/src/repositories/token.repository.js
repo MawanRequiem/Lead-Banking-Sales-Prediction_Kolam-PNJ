@@ -68,9 +68,24 @@ async function deleteExpiredTokens() {
   }
 }
 
+async function revokeTokensByUserId(userId) {
+  try {
+    const result = await prisma.refreshToken.updateMany({
+      where: { idUser: userId, revokedAt: null },
+      data: { revokedAt: new Date(), modifiedAt: new Date() },
+    });
+    logger.info(`Revoked ${result.count} refresh tokens for user: ${userId}`);
+    return result;
+  } catch (error) {
+    logger.error('Error revoking tokens by userId:', error);
+    throw error;
+  }
+}
+
 module.exports = {
   createToken,
   findByToken,
   revokeToken,
   deleteExpiredTokens,
+  revokeTokensByUserId,
 };

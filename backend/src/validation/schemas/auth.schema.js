@@ -54,14 +54,14 @@ const refreshTokenSchema = Joi.object({
 
 /**
  * Logout Schema
+ * Allow empty/missing refreshToken so logout is tolerant when tokens are absent
  */
 const logoutSchema = Joi.object({
   refreshToken: Joi.string()
     .min(1)
-    .required()
+    .optional()
     .messages({
       'string.empty': 'Refresh token is required',
-      'any.required': 'Refresh token is required',
     }),
 }).options({
   abortEarly: false,
@@ -75,10 +75,16 @@ const changePasswordSchema = Joi.object({
   currentPassword: Joi.string()
     .min(1)
     .max(128)
-    .required()
     .messages({
       'string.empty': 'Current password is required',
       'any.required': 'Current password is required',
+    }),
+
+  verificationToken: Joi.string()
+    .min(1)
+    .max(1024)
+    .messages({
+      'string.empty': 'Verification token is required',
     }),
 
   newPassword: Joi.string()
@@ -103,6 +109,25 @@ const changePasswordSchema = Joi.object({
       'any.only': 'Confirm password must match new password',
       'any.required': 'Confirm password is required',
     }),
+})
+  .xor('currentPassword', 'verificationToken')
+  .options({
+    abortEarly: false,
+    stripUnknown: true,
+  });
+
+/**
+ * Verify Current Password Schema
+ */
+const verifyCurrentSchema = Joi.object({
+  currentPassword: Joi.string()
+    .min(1)
+    .max(128)
+    .required()
+    .messages({
+      'string.empty': 'Current password is required',
+      'any.required': 'Current password is required',
+    }),
 }).options({
   abortEarly: false,
   stripUnknown: true,
@@ -113,4 +138,5 @@ module.exports = {
   refreshTokenSchema,
   logoutSchema,
   changePasswordSchema,
+  verifyCurrentSchema,
 };
