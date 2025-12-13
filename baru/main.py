@@ -4,11 +4,13 @@ import secrets
 import joblib
 import pandas as pd
 import datetime as dt
+import re
 from dotenv import load_dotenv
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import ORJSONResponse
 from pydantic import BaseModel, Field
+from typing import Optional
 
 # ==============================
 # ENV & LOGGER
@@ -34,27 +36,18 @@ model = None
 # COMMON: LOAD ARTIFACTS
 # ==============================
 def load_artifacts():
-    """
-    Load preprocessor & model ke global variable.
-    Support 2 mode:
-    1) Bundle pkl: {'preprocessor': ..., 'model_cat': ...} atau {'preprocessor': ..., 'model': ...}
-    2) File terpisah: preprocessor.pkl + model.pkl
-    """
     global preprocessor, model
 
     if os.path.exists(BUNDLE_PATH):
         try:
             logger.info(f"Loading bundle from {BUNDLE_PATH}...")
             bundle = joblib.load(BUNDLE_PATH)
-
             if isinstance(bundle, dict):
                 preprocessor = bundle.get("preprocessor", None)
                 model = bundle.get("model_cat") or bundle.get("model")
             else:
                 model = bundle
                 preprocessor = joblib.load(PREPROCESSOR_PATH) if os.path.exists(PREPROCESSOR_PATH) else None
-
-            logger.info("Bundle loaded successfully")
         except Exception as e:
             logger.error(f"Failed to load bundle: {e}")
 
@@ -71,15 +64,11 @@ def load_artifacts():
     else:
         logger.info("Artifacts initialized successfully")
 
-
-# ==============================
-# IMPORT FEATURE ENGINEERING
-# ==============================
+# Import Feature Engineering
 from prediction_feature_engineering import apply_feature_engineering
 
-
 # ==============================
-# FASTAPI APP + LIFESPAN
+# FASTAPI APP
 # ==============================
 async def lifespan(app: FastAPI):
     load_artifacts()
@@ -87,71 +76,107 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(default_response_class=ORJSONResponse, lifespan=lifespan)
 
-
 # ==============================
-# PAYLOAD & SECURITY
+# PAYLOAD & LOGIC (UPDATED)
 # ==============================
 class NasabahPayload(BaseModel):
     umur: int = Field(..., gt=0, lt=120)
     pekerjaan: str = "unknown"
-    gaji: float = 0.0
+    pendidikan: str = "unknown"
     status_pernikahan: str = "single"
+    saldo: float = 0.0
 
+    has_kpr: bool = False
+    has_pinjaman: bool = False
+    has_defaulted: bool = False
 
-@app.middleware("http")
-async def security_middleware(request: Request, call_next):
-    if request.url.path == "/health":
-        return await call_next(request)
+    last_call_date: Optional[dt.datetime] = None
+    campaign: int = 0
+    previous: int = 0
+    pdays: int = -1
+    poutcome: str = "unknown"
 
-    token = request.headers.get("x-token") or ""
+    nomor_telepon: Optional[str] = None
 
-    if not secrets.compare_digest(token, API_SECRET):
-        return ORJSONResponse(status_code=401, content={"error": "Unauthorized"})
+def detect_contact_type(nomor: str | None) -> str:
+    if not nomor:
+        return "unknown"
 
-    return await call_next(request)
+    nomor = nomor.replace(" ", "").replace("-", "")
 
+    # Mobile phone (HP) - dimulai 08 atau +628
+    if re.match(r"^(?:\+?628|08)\d+$", nomor):
+        return "cellular"
 
-# ==============================
-# PREPARE FEATURES UNTUK 1 NASABAH
-# ==============================
-def prepare_features(payload: NasabahPayload) -> pd.DataFrame:
+    # Landline (Telepon rumah/kantor) - dimulai 02 sampai 09
+    if re.match(r"^0[2-9]\d{7,11}$", nomor):
+        return "telephone"
+
+    return "unknown"
+
+def prepare_features(data: NasabahPayload) -> pd.DataFrame:
+    # Mapping input user ke format training model
     job_map = {
         "PNS": "admin.", "Wiraswasta": "entrepreneur", "Ibu Rumah Tangga": "housemaid",
         "Manager": "management", "Pensiunan": "retired", "Mahasiswa": "student",
         "Buruh": "blue-collar", "Tidak Bekerja": "unemployed"
     }
     marital_map = {
-        "Menikah": "married",
-        "Belum Menikah": "single",
-        "Cerai": "divorced"
+        "MENIKAH": "married", "BELUM MENIKAH": "single",
+        "CERAI-HIDUP": "divorced", "CERAI-MATI": "divorced",
+        "Menikah": "married", "Belum Menikah": "single", "Cerai": "divorced" # Fallback
+    }
+    education_map = {
+        "SD": "primary", "SMP": "secondary", "SMA": "secondary",
+        "S1": "tertiary", "S2": "tertiary", "S3": "tertiary",
+    }
+    poutcome_map = {
+        "Tertarik": "success", "Tidak Tertarik": "failure",
     }
 
+    contact_type = detect_contact_type(data.nomor_telepon)
+
+    # Date handling
+    day = 15
+    month = "may"
+    if data.last_call_date:
+        day = data.last_call_date.day
+        month = data.last_call_date.strftime("%b").lower()
+
     df_raw = pd.DataFrame([{
-        "age": payload.umur,
-        "job": job_map.get(payload.pekerjaan, "unknown"),
-        "marital": marital_map.get(payload.status_pernikahan, "single"),
-        "balance": payload.gaji * 5, 
-        "education": "secondary",
-        "default": "no",
-        "housing": "yes",
-        "loan": "no",
-        "contact": "cellular",
-        "day": 15,
-        "month": "may",
-        "duration": 0,
-        "campaign": 1,
-        "pdays": -1,
-        "previous": 0,
-        "poutcome": "unknown"
+        "age": data.umur,
+        "job": job_map.get(data.pekerjaan, "unknown"),
+        "marital": marital_map.get(data.status_pernikahan, "single"),
+        "balance": data.saldo,
+        "education": education_map.get(data.pendidikan, "unknown"),
+        "default": "yes" if data.has_defaulted else "no",
+        "housing": "yes" if data.has_kpr else "no",
+        "loan": "yes" if data.has_pinjaman else "no",
+        "contact": contact_type,
+        "day": day,
+        "month": month,
+        "campaign": data.campaign,
+        "pdays": data.pdays,
+        "previous": data.previous,
+        "poutcome": poutcome_map.get(data.poutcome, "unknown")
     }])
 
+    # Apply FE from external file
     df_fe = apply_feature_engineering(df_raw)
     return df_fe
 
+# ==============================
+# API ENDPOINT
+# ==============================
+@app.middleware("http")
+async def security_middleware(request: Request, call_next):
+    if request.url.path == "/health":
+        return await call_next(request)
+    token = request.headers.get("x-token") or ""
+    if not secrets.compare_digest(token, API_SECRET):
+        return ORJSONResponse(status_code=401, content={"error": "Unauthorized"})
+    return await call_next(request)
 
-# ==============================
-# API ENDPOINT: PREDICT SATU NASABAH
-# ==============================
 @app.post("/predict")
 def predict(payload: NasabahPayload):
     if model is None or preprocessor is None:
@@ -162,18 +187,17 @@ def predict(payload: NasabahPayload):
         X_prepared = preprocessor.transform(features)
         probability = model.predict_proba(X_prepared)[0, 1]
 
-        # score ala batch: 1–10
-        score = (1 + probability * 9)
+        # Skor 0.0 - 1.0 (sesuai request database schema baru)
+        # Jika masih ingin range 1-10 untuk display UI, silakan sesuaikan di FE
 
         return {
             "status": "success",
-            "prob_subscription": float(round(probability, 3)),
-            "score": float(round(score, 3))
+            "prob_subscription": float(round(probability, 4)),
+            "score_prediksi": float(probability) # Sesuai kolom DB skor_prediksi (0-1)
         }
     except Exception as e:
         logger.error(f"Prediction error: {e}")
         raise HTTPException(status_code=500, detail="Prediction failed")
-
 
 @app.get("/health")
 def health():
@@ -183,124 +207,6 @@ def health():
         "preprocessor_loaded": (preprocessor is not None)
     }
 
-
-# ==============================
-# BATCH PIPELINE (PY 1) SEBAGAI FUNGSI
-# ==============================
-def get_priority_level(p):
-    if p >= 0.7:
-        return "HIGH"
-    elif p >= 0.4:
-        return "MEDIUM"
-    else:
-        return "LOW"
-
-
-def build_recommendation(df_raw: pd.DataFrame) -> pd.DataFrame:
-    """
-    Replikasi logika py 1: FE → preprocess → predict → ranking.
-    """
-    if model is None or preprocessor is None:
-        raise RuntimeError("Model/preprocessor belum diload. Panggil load_artifacts() dulu.")
-
-    logger.info("Applying feature engineering (batch)...")
-    df_fe = apply_feature_engineering(df_raw)
-
-    X = df_fe.copy()
-    logger.info("Transforming (batch)...")
-    X_prepared = preprocessor.transform(X)
-
-    logger.info("Predicting (batch)...")
-    proba = model.predict_proba(X_prepared)[:, 1]
-
-    df_rekom = df_raw.copy()
-    df_rekom["prob_subscription"] = proba.round(3)
-    df_rekom["score"] = (1 + proba * 9).round(3)
-    df_rekom = df_rekom.sort_values("prob_subscription", ascending=False).reset_index(drop=True)
-    df_rekom["global_rank"] = df_rekom.index + 1
-    df_rekom["priority_level"] = df_rekom["prob_subscription"].apply(get_priority_level)
-
-    return df_rekom
-
-
-def get_daily_recommendation(df_sorted: pd.DataFrame, date_str: str, calls_per_day: int = 200) -> pd.DataFrame:
-    n = len(df_sorted)
-    base_date = dt.date(2025, 1, 1)
-    target_date = pd.to_datetime(date_str).date()
-
-    day_offset = (target_date - base_date).days
-    start_idx = (day_offset * calls_per_day) % n
-    end_idx = start_idx + calls_per_day
-
-    if end_idx <= n:
-        df_day = df_sorted.iloc[start_idx:end_idx].copy()
-    else:
-        part1 = df_sorted.iloc[start_idx:]
-        part2 = df_sorted.iloc[:end_idx - n]
-        df_day = pd.concat([part1, part2]).copy()
-
-    df_day = df_day.reset_index(drop=True)
-    df_day["daily_rank"] = df_day.index + 1
-    return df_day
-
-
-# ==============================
-# OPTIONAL: ENDPOINT UNTUK BATCH HARIAN
-# ==============================
-@app.get("/daily_recommendation")
-def daily_recommendation(date: str = "2025-01-01", calls_per_day: int = 200):
-    """
-    Contoh endpoint: generate rekomendasi harian dari file bank-full.csv
-    dan return top N dalam JSON (tidak tulis CSV).
-    """
-    if model is None or preprocessor is None:
-        raise HTTPException(status_code=503, detail="Model not initialized")
-
-    if not os.path.exists("bank-full.csv"):
-        raise HTTPException(status_code=500, detail="bank-full.csv not found")
-
-    try:
-        df_raw = pd.read_csv("bank-full.csv", sep=";")
-        df_rekom = build_recommendation(df_raw)
-        df_day = get_daily_recommendation(df_rekom, date_str=date, calls_per_day=calls_per_day)
-
-        top_n = df_day.head(50).to_dict(orient="records")
-        return {
-            "status": "success",
-            "date": date,
-            "calls_per_day": calls_per_day,
-            "count": len(top_n),
-            "data": top_n
-        }
-    except Exception as e:
-        logger.error(f"Daily recommendation error: {e}")
-        raise HTTPException(status_code=500, detail="Daily recommendation failed")
-
-
-# ==============================
-# CLI MODE (JALANKAN SEPERTI PY 1)
-# ==============================
 if __name__ == "__main__":
-    # Mode: script biasa → bikin CSV rekomendasi + harian
-    logging.getLogger("uvicorn").setLevel(logging.WARNING)
-
-    print("Loading artifacts for CLI...")
-    load_artifacts()
-    if preprocessor is None or model is None:
-        raise SystemExit("Gagal load model/preprocessor. Cek file .pkl.")
-
-    print("Loading new data (bank-full.csv)...")
-    df_raw = pd.read_csv("bank-full.csv", sep=";")
-
-    print("Building full recommendation...")
-    df_rekom = build_recommendation(df_raw)
-
-    os.makedirs("output", exist_ok=True)
-    df_rekom.to_csv("output/customer_recommendations.csv", index=False)
-    print("✓ Saved: output/customer_recommendations.csv")
-
-    target_date = "2025-01-01"
-    print(f"Building daily recommendation for {target_date}...")
-    df_day = get_daily_recommendation(df_rekom, target_date)
-    df_day.to_csv(f"output/recommendations_{target_date}.csv", index=False)
-    print(f"✓ Saved: output/recommendations_{target_date}.csv")
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)

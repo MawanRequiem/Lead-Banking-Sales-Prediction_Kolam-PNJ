@@ -1,9 +1,10 @@
 import logging
 import sys
 from apscheduler.schedulers.blocking import BlockingScheduler
+from apscheduler.triggers.cron import CronTrigger
 from batch_scoring import run_batch_scoring
 
-# Setup Logger agar output terlihat di Docker logs
+# Setup Logger agar output terlihat di Docker logs (Azure)
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     level=logging.INFO,
@@ -12,21 +13,23 @@ logging.basicConfig(
 logger = logging.getLogger("ai-scheduler")
 
 def scheduled_job():
-    logger.info("Trigger: Memulai Job Skoring Harian...")
+    logger.info("⏰ Trigger: Memulai Job Skoring Harian (Jam 02:00 WIB)...")
     try:
         run_batch_scoring()
-        logger.info("Job Skoring Selesai.")
+        logger.info("✅ Job Skoring Harian Selesai.")
     except Exception as e:
-        logger.error(f"Job Skoring Gagal: {e}")
+        logger.error(f"❌ Job Skoring Gagal: {e}")
 
 if __name__ == "__main__":
+    # Inisialisasi Scheduler
     scheduler = BlockingScheduler()
 
-    # Jadwalkan setiap hari jam 02:00 Server Time
-    scheduler.add_job(scheduled_job, 'cron', hour=2, minute=0)
+    trigger = CronTrigger(hour=2, minute=0, timezone='Asia/Jakarta')
 
-    logger.info("AI Worker Scheduler Berjalan.")
-    logger.info("Menunggu jadwal eksekusi berikutnya: Jam 02:00")
+    scheduler.add_job(scheduled_job, trigger)
+
+    logger.info("🚀 AI Worker Scheduler Berjalan.")
+    logger.info("📅 Menunggu jadwal eksekusi berikutnya: Jam 02:00 WIB")
 
     try:
         scheduler.start()
