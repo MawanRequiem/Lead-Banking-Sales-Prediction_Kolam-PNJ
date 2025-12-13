@@ -25,6 +25,10 @@ export const dictionaries = {
         back: "Kembali",
         saving: "Menyimpan...",
         submit: "Ubah Kata Sandi",
+        passwordRequirements:
+          "Kata sandi minimal 12 karakter dan mengandung huruf besar, huruf kecil, angka, dan simbol",
+        mismatch:
+          "Konfirmasi kata sandi harus sama dengan kata sandi baru",
       },
       admin: {
         welcome: "Selamat Datang",
@@ -543,6 +547,9 @@ export const dictionaries = {
         back: "Back",
         saving: "Saving...",
         submit: "Change Password",
+        passwordRequirements:
+          "Password must be at least 12 characters and include uppercase, lowercase, number, and symbol",
+        mismatch: "Confirm password must match new password",
       },
       admin: {
         welcome: "Welcome",

@@ -24,6 +24,34 @@ export default function ChangePasswordPage() {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
 
+  // Password requirements: ≥12 chars, uppercase, lowercase, number, special char
+  const pwdPattern =
+    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{12,}$/;
+  const passwordRequirementMessage = t(
+    "page.changePassword.passwordRequirements",
+    "Kata sandi minimal 12 karakter dan mengandung huruf besar, huruf kecil, angka, dan simbol"
+  );
+
+  function validateNewPasswordInputs() {
+    const next = {};
+    if (!pwdPattern.test(newPassword)) {
+      next.newPassword = passwordRequirementMessage;
+    }
+    if (confirmPassword !== newPassword) {
+      next.confirmPassword = t(
+        "page.changePassword.mismatch",
+        "Konfirmasi kata sandi harus sama dengan kata sandi baru"
+      );
+    }
+    setErrors(next);
+    if (Object.keys(next).length) {
+      const firstMsg = Object.values(next)[0];
+      toast.error(firstMsg);
+      return false;
+    }
+    return true;
+  }
+
   async function verifyCurrent() {
     setLoading(true);
     setErrors({});
@@ -56,8 +84,13 @@ export default function ChangePasswordPage() {
   }
 
   async function submitChange() {
-    setLoading(true);
+    // Client-side validation before hitting the server
     setErrors({});
+    const ok = validateNewPasswordInputs();
+    if (!ok) {
+      return;
+    }
+    setLoading(true);
     try {
       const tokenToUse = verificationToken || passedToken;
       const payload = tokenToUse
@@ -75,19 +108,28 @@ export default function ChangePasswordPage() {
       setConfirmPassword("");
       setStep(1);
     } catch (err) {
+      const status = err?.response?.status;
       const data = err?.response?.data;
-      if (data && data.errors) {
+      if (status === 422 && data && Array.isArray(data.errors)) {
         const next = {};
         data.errors.forEach((e) => {
-          if (e && e.message && e.path) next[e.path[0]] = e.message;
+          const key = (e && (e.field || (e.path && e.path[0]))) || "general";
+          const message =
+            (e && e.message) ||
+            t("page.changePassword.failed", "Change password failed");
+          next[key] = message;
         });
         setErrors(next);
+        const firstMsg = Object.values(next)[0];
+        toast.error(firstMsg);
+      } else {
+        const msg =
+          data?.message ||
+          data?.detail ||
+          err.message ||
+          t("page.changePassword.failed", "Change password failed");
+        toast.error(msg);
       }
-      const msg =
-        data?.message ||
-        err.message ||
-        t("page.changePassword.failed", "Change password failed");
-      toast.error(msg);
     } finally {
       setLoading(false);
     }
@@ -196,6 +238,10 @@ export default function ChangePasswordPage() {
                       <Eye className="h-5 w-5" />
                     )}
                   </button>
+                </div>
+                {/* Helper: password requirements */}
+                <div className="text-xs text-muted-foreground mt-1">
+                  {passwordRequirementMessage}
                 </div>
                 {errors.newPassword && (
                   <div className="text-sm text-red-600 mt-1">
